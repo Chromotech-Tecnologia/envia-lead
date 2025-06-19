@@ -15,7 +15,8 @@ import {
   MoreVertical,
   Globe,
   Users,
-  TrendingUp
+  TrendingUp,
+  MessageSquare
 } from 'lucide-react';
 import {
   DropdownMenu,

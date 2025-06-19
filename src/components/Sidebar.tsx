@@ -5,9 +5,7 @@ import {
   BarChart3, 
   MessageSquare, 
   Users, 
-  Settings, 
-  Globe,
-  Home,
+  Settings,
   Bell,
   User,
   HelpCircle,
@@ -30,8 +28,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'flows', label: 'Fluxos', icon: MessageSquare },
     { id: 'leads', label: 'Leads', icon: Users },
-    { id: 'editor', label: 'Editor', icon: Settings },
-    { id: 'preview', label: 'Preview', icon: Globe },
+    { id: 'users', label: 'Usuários', icon: Settings },
   ];
 
   const handleLogout = async () => {
@@ -50,7 +47,6 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
         description: "Você foi desconectado com sucesso.",
       });
       
-      // Aguardar um pouco antes de redirecionar
       setTimeout(() => {
         navigate('/auth');
       }, 100);

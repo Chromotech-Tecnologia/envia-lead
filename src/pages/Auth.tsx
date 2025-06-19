@@ -24,6 +24,7 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         if (session) {
           navigate('/');
         }
@@ -38,24 +39,30 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Tentando fazer login com:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Erro no login:', error);
         toast({
           variant: "destructive",
           title: "Erro no login",
-          description: error.message,
+          description: error.message === "Invalid login credentials" 
+            ? "Email ou senha incorretos" 
+            : error.message,
         });
       } else {
+        console.log('Login realizado com sucesso:', data);
         toast({
           title: "Login realizado com sucesso!",
           description: "Você será redirecionado...",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro inesperado no login:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -71,7 +78,8 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('Tentando criar conta para:', email);
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -83,18 +91,30 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error('Erro no cadastro:', error);
         toast({
           variant: "destructive",
           title: "Erro no cadastro",
-          description: error.message,
+          description: error.message === "User already registered" 
+            ? "Este email já está cadastrado" 
+            : error.message,
         });
       } else {
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar a conta.",
-        });
+        console.log('Cadastro realizado:', data);
+        if (data.user && !data.session) {
+          toast({
+            title: "Cadastro realizado!",
+            description: "Verifique seu email para confirmar a conta.",
+          });
+        } else {
+          toast({
+            title: "Cadastro realizado com sucesso!",
+            description: "Você já pode usar o sistema.",
+          });
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro inesperado no cadastro:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -111,7 +131,7 @@ const Auth = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/`,
       });
 
       if (error) {
@@ -233,7 +253,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full envia-lead-gradient hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       disabled={isLoading}
                     >
                       {isLoading ? "Entrando..." : "Entrar"}
@@ -303,6 +323,7 @@ const Auth = () => {
                           onChange={(e) => setPassword(e.target.value)}
                           className="pl-10 pr-10"
                           required
+                          minLength={6}
                         />
                         <button
                           type="button"
@@ -315,7 +336,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full envia-lead-gradient hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       disabled={isLoading}
                     >
                       {isLoading ? "Criando conta..." : "Criar Conta"}
@@ -352,7 +373,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full envia-lead-gradient hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       disabled={isLoading}
                     >
                       {isLoading ? "Enviando..." : "Enviar Email"}

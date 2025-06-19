@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import ChatWindow from "@/components/chat/ChatWindow";
 
 interface FloatingChatWidgetProps {
   flowData: any;
@@ -48,8 +47,26 @@ const FloatingChatWidget = ({ flowData, position = 'bottom-right' }: FloatingCha
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex-1 overflow-hidden">
-            <ChatWindow flowData={flowData} />
+          <div className="flex-1 p-4 overflow-y-auto">
+            <div className="space-y-4">
+              <div className="bg-gray-100 p-3 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  Olá! Como posso ajudá-lo hoje?
+                </p>
+              </div>
+              {flowData.questions && flowData.questions[0] && (
+                <div className="bg-gray-100 p-3 rounded-lg">
+                  <p className="text-sm text-gray-700 mb-2">
+                    {flowData.questions[0].title}
+                  </p>
+                  <input
+                    type="text"
+                    placeholder={flowData.questions[0].placeholder}
+                    className="w-full p-2 border rounded text-sm"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

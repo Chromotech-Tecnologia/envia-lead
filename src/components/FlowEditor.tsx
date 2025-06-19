@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Eye } from 'lucide-react';
+import { Save, Eye, ArrowLeft } from 'lucide-react';
 import FlowEditorHeader from './flow-editor/FlowEditorHeader';
 import BasicSettings from './flow-editor/BasicSettings';
 import UrlSettings from './flow-editor/UrlSettings';
@@ -16,11 +16,12 @@ interface FlowEditorProps {
   isEditing: boolean;
   flowData: any;
   setFlowData: (data: any) => void;
-  onSave: () => void;
+  onSave: () => Promise<boolean>;
+  onSaveAndExit: () => Promise<void>;
   onPreview: (device?: 'desktop' | 'mobile') => void;
 }
 
-const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onPreview }: FlowEditorProps) => {
+const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onPreview }: FlowEditorProps) => {
   // Inicializar dados do fluxo quando um fluxo for selecionado para edição
   useEffect(() => {
     if (flow && isEditing) {
@@ -53,6 +54,14 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onPreview 
     }
   }, [flow, isEditing, setFlowData]);
 
+  const handleSave = async () => {
+    await onSave();
+  };
+
+  const handleSaveAndExit = async () => {
+    await onSaveAndExit();
+  };
+
   return (
     <div className="space-y-6">
       <FlowEditorHeader isEditing={isEditing} />
@@ -84,15 +93,26 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onPreview 
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end gap-4">
-        <Button variant="outline" onClick={() => onPreview('desktop')}>
-          <Eye className="w-4 h-4 mr-2" />
-          Visualizar
+      <div className="flex justify-between items-center">
+        <Button variant="outline" onClick={() => window.history.back()}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
         </Button>
-        <Button onClick={onSave} className="envia-lead-gradient hover:opacity-90">
-          <Save className="w-4 h-4 mr-2" />
-          Salvar Fluxo
-        </Button>
+        
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={() => onPreview('desktop')}>
+            <Eye className="w-4 h-4 mr-2" />
+            Visualizar
+          </Button>
+          <Button onClick={handleSave} variant="outline">
+            <Save className="w-4 h-4 mr-2" />
+            Salvar
+          </Button>
+          <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90">
+            <Save className="w-4 h-4 mr-2" />
+            Salvar e Sair
+          </Button>
+        </div>
       </div>
     </div>
   );

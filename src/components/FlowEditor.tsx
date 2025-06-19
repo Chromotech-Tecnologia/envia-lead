@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Eye, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import FlowEditorHeader from './flow-editor/FlowEditorHeader';
 import BasicSettings from './flow-editor/BasicSettings';
 import UrlSettings from './flow-editor/UrlSettings';
@@ -22,6 +23,8 @@ interface FlowEditorProps {
 }
 
 const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onPreview }: FlowEditorProps) => {
+  const navigate = useNavigate();
+
   // Inicializar dados do fluxo quando um fluxo for selecionado para edição
   useEffect(() => {
     if (flow && isEditing) {
@@ -62,56 +65,70 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
     await onSaveAndExit();
   };
 
+  const handleGoBack = () => {
+    navigate('/');
+  };
+
   return (
-    <div className="space-y-6">
-      <FlowEditorHeader isEditing={isEditing} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Conteúdo principal com padding bottom para os botões fixos */}
+      <div className="pb-20">
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <FlowEditorHeader isEditing={isEditing} />
 
-      <Tabs defaultValue="basic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="basic">Configurações Básicas</TabsTrigger>
-          <TabsTrigger value="questions">Perguntas</TabsTrigger>
-          <TabsTrigger value="design">Design</TabsTrigger>
-          <TabsTrigger value="integration">Integração</TabsTrigger>
-        </TabsList>
+          <Tabs defaultValue="basic" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">Configurações Básicas</TabsTrigger>
+              <TabsTrigger value="questions">Perguntas</TabsTrigger>
+              <TabsTrigger value="design">Design</TabsTrigger>
+              <TabsTrigger value="integration">Integração</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="basic" className="space-y-6">
-          <BasicSettings flowData={flowData} setFlowData={setFlowData} />
-          <UrlSettings flowData={flowData} setFlowData={setFlowData} />
-          <EmailSettings flowData={flowData} setFlowData={setFlowData} />
-        </TabsContent>
+            <TabsContent value="basic" className="space-y-6">
+              <BasicSettings flowData={flowData} setFlowData={setFlowData} />
+              <UrlSettings flowData={flowData} setFlowData={setFlowData} />
+              <EmailSettings flowData={flowData} setFlowData={setFlowData} />
+            </TabsContent>
 
-        <TabsContent value="questions" className="space-y-6">
-          <QuestionEditor flowData={flowData} setFlowData={setFlowData} />
-        </TabsContent>
+            <TabsContent value="questions" className="space-y-6">
+              <QuestionEditor flowData={flowData} setFlowData={setFlowData} />
+            </TabsContent>
 
-        <TabsContent value="design" className="space-y-6">
-          <DesignSettings flowData={flowData} setFlowData={setFlowData} />
-        </TabsContent>
+            <TabsContent value="design" className="space-y-6">
+              <DesignSettings flowData={flowData} setFlowData={setFlowData} />
+            </TabsContent>
 
-        <TabsContent value="integration" className="space-y-6">
-          <IntegrationCode flow={flow} flowData={flowData} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="integration" className="space-y-6">
+              <IntegrationCode flow={flow} flowData={flowData} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={() => window.history.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => onPreview('desktop')}>
-            <Eye className="w-4 h-4 mr-2" />
-            Visualizar
-          </Button>
-          <Button onClick={handleSave} variant="outline">
-            <Save className="w-4 h-4 mr-2" />
-            Salvar
-          </Button>
-          <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90">
-            <Save className="w-4 h-4 mr-2" />
-            Salvar e Sair
-          </Button>
+      {/* Botões fixos no rodapé */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <Button variant="outline" onClick={handleGoBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onPreview('desktop')}>
+                <Eye className="w-4 h-4 mr-2" />
+                Visualizar
+              </Button>
+              <Button onClick={handleSave} variant="outline">
+                <Save className="w-4 h-4 mr-2" />
+                Salvar
+              </Button>
+              <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90">
+                <Save className="w-4 h-4 mr-2" />
+                Salvar e Sair
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

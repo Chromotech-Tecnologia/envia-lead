@@ -1,220 +1,255 @@
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { X, Send, Phone, Mail, User, MessageCircle } from 'lucide-react';
+import { X, Smartphone, Monitor } from 'lucide-react';
+import { useState } from 'react';
+import ChatConversation from './chat/ChatConversation';
 
 interface ChatPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   flowData: any;
-  device: 'desktop' | 'mobile';
+  device?: 'desktop' | 'mobile';
 }
 
-const ChatPreviewModal = ({ isOpen, onClose, flowData, device }: ChatPreviewModalProps) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responses, setResponses] = useState<Record<number, string>>({});
-  const [isTyping, setIsTyping] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [inputValue, setInputValue] = useState('');
+const ChatPreviewModal = ({ isOpen, onClose, flowData, device = 'desktop' }: ChatPreviewModalProps) => {
+  const [selectedDevice, setSelectedDevice] = useState<'desktop' | 'mobile'>(device);
+  const [chatPosition, setChatPosition] = useState({ x: 'right', y: 'bottom' });
+  const [buttonPosition, setButtonPosition] = useState({ x: 'right', y: 'bottom' });
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const questions = flowData?.questions || [];
-  const currentQuestion = questions[currentQuestionIndex];
-
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentQuestionIndex(0);
-      setResponses({});
-      setShowWelcome(true);
-      setInputValue('');
-    }
-  }, [isOpen]);
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-
-    if (showWelcome) {
-      setShowWelcome(false);
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-      }, 1500);
-      setInputValue('');
-      return;
-    }
-
-    if (currentQuestion) {
-      setResponses(prev => ({
-        ...prev,
-        [currentQuestion.id]: inputValue
-      }));
-
-      setInputValue('');
-      
-      if (currentQuestionIndex < questions.length - 1) {
-        setIsTyping(true);
-        setTimeout(() => {
-          setCurrentQuestionIndex(prev => prev + 1);
-          setIsTyping(false);
-        }, 1500);
-      } else {
-        // Finalizar chat
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-          // Aqui poderia mostrar uma mensagem de finalização
-        }, 1500);
-      }
-    }
+  const getButtonPositionClasses = () => {
+    const xClass = buttonPosition.x === 'right' ? 'right-6' : 'left-6';
+    const yClass = buttonPosition.y === 'bottom' ? 'bottom-6' : 
+                   buttonPosition.y === 'top' ? 'top-6' : 'top-1/2 -translate-y-1/2';
+    return `${xClass} ${yClass}`;
   };
 
-  const getQuestionIcon = (type: string) => {
-    switch (type) {
-      case 'email': return <Mail className="w-4 h-4" />;
-      case 'phone': return <Phone className="w-4 h-4" />;
-      case 'text': return <User className="w-4 h-4" />;
-      default: return <MessageCircle className="w-4 h-4" />;
-    }
+  const getChatPositionClasses = () => {
+    const xClass = chatPosition.x === 'right' ? 'right-6' : 'left-6';
+    const yClass = chatPosition.y === 'bottom' ? 'bottom-20' : 
+                   chatPosition.y === 'top' ? 'top-20' : 'top-1/2 -translate-y-1/2';
+    return `${xClass} ${yClass}`;
   };
 
-  const containerClass = device === 'mobile' 
-    ? "w-80 h-[600px]" 
-    : "w-96 h-[700px]";
+  const handleSubmitResponses = (responses: any) => {
+    console.log('Respostas enviadas:', responses);
+    setIsChatOpen(false);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${containerClass} p-0 max-w-none`}>
-        <div className="flex flex-col h-full bg-white rounded-lg overflow-hidden">
-          {/* Header do Chat */}
-          <div 
-            className="p-4 text-white flex items-center justify-between"
-            style={{ backgroundColor: flowData?.colors?.primary || '#FF6B35' }}
-          >
-            <div className="flex items-center gap-3">
-              {flowData?.avatar ? (
-                <img 
-                  src={flowData.avatar} 
-                  alt="Avatar" 
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: flowData?.colors?.secondary || '#3B82F6' }}
-                >
-                  AL
-                </div>
-              )}
+      <DialogContent className="max-w-6xl h-[90vh] p-0">
+        <div className="flex h-full">
+          {/* Controles laterais */}
+          <div className="w-80 border-r bg-gray-50 p-4 overflow-y-auto">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Preview do Chat</h3>
+                <Button variant="ghost" size="sm" onClick={onClose}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Seletor de dispositivo */}
               <div>
-                <h3 className="font-semibold">Atendimento</h3>
-                <p className="text-xs opacity-80">Online</p>
+                <label className="text-sm font-medium mb-2 block">Dispositivo</label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedDevice === 'desktop' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedDevice('desktop')}
+                  >
+                    <Monitor className="w-4 h-4 mr-2" />
+                    Desktop
+                  </Button>
+                  <Button
+                    variant={selectedDevice === 'mobile' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedDevice('mobile')}
+                  >
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    Mobile
+                  </Button>
+                </div>
+              </div>
+
+              {/* Posição do botão */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição do Botão</label>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-gray-600">Eixo X:</span>
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        variant={buttonPosition.x === 'left' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setButtonPosition(prev => ({ ...prev, x: 'left' }))}
+                      >
+                        Esquerda
+                      </Button>
+                      <Button
+                        variant={buttonPosition.x === 'right' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setButtonPosition(prev => ({ ...prev, x: 'right' }))}
+                      >
+                        Direita
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-600">Eixo Y:</span>
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        variant={buttonPosition.y === 'top' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'top' }))}
+                      >
+                        Topo
+                      </Button>
+                      <Button
+                        variant={buttonPosition.y === 'center' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'center' }))}
+                      >
+                        Centro
+                      </Button>
+                      <Button
+                        variant={buttonPosition.y === 'bottom' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'bottom' }))}
+                      >
+                        Inferior
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Posição do chat */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição do Chat</label>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-gray-600">Eixo X:</span>
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        variant={chatPosition.x === 'left' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setChatPosition(prev => ({ ...prev, x: 'left' }))}
+                      >
+                        Esquerda
+                      </Button>
+                      <Button
+                        variant={chatPosition.x === 'right' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setChatPosition(prev => ({ ...prev, x: 'right' }))}
+                      >
+                        Direita
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-600">Eixo Y:</span>
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        variant={chatPosition.y === 'top' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'top' }))}
+                      >
+                        Topo
+                      </Button>
+                      <Button
+                        variant={chatPosition.y === 'center' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'center' }))}
+                      >
+                        Centro
+                      </Button>
+                      <Button
+                        variant={chatPosition.y === 'bottom' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'bottom' }))}
+                      >
+                        Inferior
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-white hover:bg-white/10"
-            >
-              <X className="w-4 h-4" />
-            </Button>
           </div>
 
-          {/* Área de Mensagens */}
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
-            {/* Mensagem de boas-vindas */}
-            <div className="flex items-start gap-2">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ backgroundColor: flowData?.colors?.primary || '#FF6B35' }}
-              >
-                A
-              </div>
-              <div 
-                className="max-w-[80%] p-3 rounded-lg text-sm"
-                style={{ backgroundColor: 'white' }}
-              >
-                {showWelcome ? (
-                  "Olá! 👋 Como posso te ajudar hoje?"
-                ) : (
-                  currentQuestion ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        {getQuestionIcon(currentQuestion.type)}
-                        <span className="font-medium">{currentQuestion.title}</span>
-                        {currentQuestion.required && (
-                          <Badge variant="destructive" className="text-xs">
-                            Obrigatório
-                          </Badge>
-                        )}
+          {/* Área de preview */}
+          <div className="flex-1 relative bg-gradient-to-br from-blue-50 to-purple-50">
+            <div className={`${selectedDevice === 'mobile' ? 'max-w-sm mx-auto mt-8' : 'w-full h-full'} relative bg-white ${selectedDevice === 'mobile' ? 'rounded-lg shadow-xl' : ''}`}>
+              <div className={`${selectedDevice === 'mobile' ? 'h-[600px]' : 'h-full'} relative overflow-hidden`}>
+                {/* Conteúdo simulado da página */}
+                <div className="p-8 text-center">
+                  <h1 className="text-2xl font-bold mb-4">Página de Exemplo</h1>
+                  <p className="text-gray-600 mb-8">Esta é uma simulação de como o chat aparecerá no seu site.</p>
+                  <div className="space-y-4 text-left max-w-2xl mx-auto">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+
+                {/* Botão flutuante */}
+                <div className={`fixed ${getButtonPositionClasses()} z-50`}>
+                  <Button
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    style={{ 
+                      backgroundColor: flowData?.colors?.primary || '#3B82F6',
+                      border: 'none'
+                    }}
+                  >
+                    {isChatOpen ? (
+                      <X className="w-6 h-6 text-white" />
+                    ) : (
+                      <span className="text-xl">💬</span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Chat aberto */}
+                {isChatOpen && (
+                  <div className={`fixed ${getChatPositionClasses()} z-40`}>
+                    <div className={`bg-white rounded-lg shadow-xl border ${selectedDevice === 'mobile' ? 'w-80 h-96' : 'w-96 h-[500px]'} flex flex-col`}>
+                      {/* Header do chat */}
+                      <div 
+                        className="p-4 rounded-t-lg text-white flex justify-between items-center"
+                        style={{ backgroundColor: flowData?.colors?.primary || '#3B82F6' }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold">A</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{flowData?.name || 'Chat'}</h4>
+                            <p className="text-xs opacity-80">Online</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsChatOpen(false)}
+                          className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
+
+                      {/* Conversa */}
+                      <ChatConversation 
+                        flowData={flowData}
+                        onSubmit={handleSubmitResponses}
+                      />
                     </div>
-                  ) : (
-                    "Obrigado pelas informações! Em breve entraremos em contato. 🎉"
-                  )
+                  </div>
                 )}
               </div>
-            </div>
-
-            {/* Respostas do usuário */}
-            {Object.entries(responses).map(([questionId, response]) => {
-              const question = questions.find((q: any) => q.id.toString() === questionId);
-              return (
-                <div key={questionId} className="flex justify-end">
-                  <div 
-                    className="max-w-[80%] p-3 rounded-lg text-sm text-white"
-                    style={{ backgroundColor: flowData?.colors?.secondary || '#3B82F6' }}
-                  >
-                    {response}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Indicador de digitação */}
-            {isTyping && (
-              <div className="flex items-start gap-2">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: flowData?.colors?.primary || '#FF6B35' }}
-                >
-                  A
-                </div>
-                <div className="bg-white p-3 rounded-lg">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input de Mensagem */}
-          <div className="p-4 border-t bg-white">
-            <div className="flex gap-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={
-                  showWelcome 
-                    ? "Digite sua mensagem..." 
-                    : currentQuestion?.placeholder || "Digite sua resposta..."
-                }
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSendMessage}
-                size="sm"
-                className="envia-lead-gradient hover:opacity-90"
-                disabled={!inputValue.trim()}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
             </div>
           </div>
         </div>

@@ -31,6 +31,7 @@ const Index = () => {
   const [isEditingFlow, setIsEditingFlow] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [userProfile, setUserProfile] = useState(null);
   const [flowData, setFlowData] = useState({
     name: 'Novo Fluxo',
     description: '',
@@ -59,6 +60,28 @@ const Index = () => {
     minimumQuestion: 1
   });
   const { toast } = useToast();
+
+  // Buscar perfil do usuário ao carregar
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*, companies(name)')
+          .eq('id', user.id)
+          .single();
+
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const handleCreateFlow = () => {
     setSelectedFlow(null);
@@ -90,13 +113,23 @@ const Index = () => {
         .single();
 
       if (!profile?.company_id) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Empresa não encontrada. Entre em contato com o suporte.",
-        });
-        return;
+        // Se não tiver company_id, associar à empresa padrão
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ company_id: '00000000-0000-0000-0000-000000000001' })
+          .eq('id', user.id);
+
+        if (updateError) {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Erro ao associar usuário à empresa. Entre em contato com o suporte.",
+          });
+          return;
+        }
       }
+
+      const companyId = profile?.company_id || '00000000-0000-0000-0000-000000000001';
 
       const flowPayload = {
         name: flowData.name,
@@ -106,7 +139,7 @@ const Index = () => {
         whatsapp: flowData.whatsapp,
         colors: flowData.colors,
         minimum_question: flowData.minimumQuestion,
-        company_id: profile.company_id
+        company_id: companyId
       };
 
       let flowId;
@@ -179,6 +212,7 @@ const Index = () => {
 
       setActiveTab('flows');
     } catch (error: any) {
+      console.error('Erro ao salvar fluxo:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar fluxo",
@@ -203,6 +237,13 @@ const Index = () => {
                 <p className="text-gray-600">
                   Plataforma de Geração e Envio de Leads via Chat Inteligente
                 </p>
+                {userProfile && (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-sm">
+                      {userProfile.role === 'admin' ? '👑 Admin' : '👤 Usuário'} - {userProfile.companies?.name || 'Envia Lead Demo'}
+                    </Badge>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">

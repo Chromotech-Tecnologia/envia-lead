@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import {
   MessageSquare,
   Type,
   CheckSquare,
-  RadioButton,
+  Circle,
   Settings,
   Eye,
   Mail,
@@ -69,7 +68,7 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
   const questionTypes = [
     { value: 'text', label: 'Texto Livre', icon: Type },
     { value: 'multiple', label: 'Múltipla Escolha', icon: CheckSquare },
-    { value: 'single', label: 'Escolha Única', icon: RadioButton },
+    { value: 'single', label: 'Escolha Única', icon: Circle },
     { value: 'email', label: 'Email', icon: Mail },
     { value: 'phone', label: 'Telefone', icon: MessageCircle }
   ];

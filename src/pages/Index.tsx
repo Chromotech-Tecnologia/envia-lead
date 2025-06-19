@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import {
   Smartphone,
   Monitor,
   Mail,
-  WhatsApp
+  Phone
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import DashboardMetrics from '@/components/DashboardMetrics';

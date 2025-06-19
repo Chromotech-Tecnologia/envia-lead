@@ -32,7 +32,10 @@ interface Question {
 }
 
 interface QuestionDragDropProps {
-  flowData: any;
+  flowData: {
+    questions: Question[];
+    minimumQuestion: number;
+  };
   setFlowData: (data: any) => void;
 }
 
@@ -73,7 +76,8 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       title: 'Nova Pergunta',
       placeholder: 'Digite aqui...',
       required: false,
-      order: flowData.questions.length + 1
+      order: flowData.questions.length + 1,
+      options: []
     };
 
     setFlowData({

@@ -52,7 +52,8 @@ const Index = () => {
         title: 'Qual é o seu nome?',
         placeholder: 'Digite seu nome completo',
         required: true,
-        order: 1
+        order: 1,
+        options: []
       }
     ],
     minimumQuestion: 1

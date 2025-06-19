@@ -64,8 +64,9 @@ const FlowManager = () => {
   if (isEditorOpen && selectedFlow) {
     return (
       <FlowEditor 
-        flow={selectedFlow} 
-        onClose={handleCloseEditor}
+        flow={selectedFlow}
+        onSave={handleCloseEditor}
+        onCancel={handleCloseEditor}
       />
     );
   }
@@ -188,6 +189,7 @@ const FlowManager = () => {
           isOpen={isPreviewOpen}
           onClose={handleClosePreview}
           flowData={previewFlow}
+          device="desktop"
         />
       )}
     </div>

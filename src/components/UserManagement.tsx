@@ -19,6 +19,7 @@ interface UserProfile {
   role: 'admin' | 'manager' | 'user';
   is_active: boolean;
   created_at: string;
+  company_id: string;
 }
 
 const UserManagement = () => {
@@ -69,18 +70,10 @@ const UserManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile) return;
-
+      // Buscar usuários da empresa ou todos se for admin global
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -120,13 +113,23 @@ const UserManagement = () => {
     try {
       console.log('Criando usuário:', formData);
 
-      // Criar usuário no auth
+      if (!currentUserProfile) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Perfil não encontrado",
+        });
+        return;
+      }
+
+      // Criar usuário no auth com metadados da empresa
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
         email_confirm: true,
         user_metadata: {
           full_name: formData.full_name,
+          company_id: currentUserProfile.company_id,
         }
       });
 
@@ -140,13 +143,14 @@ const UserManagement = () => {
         return;
       }
 
-      // Atualizar perfil criado automaticamente pelo trigger
+      // Atualizar perfil com a role correta
       if (authData.user) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
             full_name: formData.full_name,
             role: formData.role,
+            company_id: currentUserProfile.company_id,
           })
           .eq('id', authData.user.id);
 
@@ -233,7 +237,6 @@ const UserManagement = () => {
 
       console.log('Deletando usuário:', userId);
 
-      // Deletar do profiles (o RLS vai cuidar da permissão)
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -287,6 +290,7 @@ const UserManagement = () => {
   };
 
   const canManageUsers = currentUserProfile?.role === 'admin';
+  const isGlobalAdmin = currentUserProfile?.company_id === '00000000-0000-0000-0000-000000000001';
 
   if (!canManageUsers) {
     return (
@@ -305,8 +309,12 @@ const UserManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h2>
-          <p className="text-gray-600">Gerencie os usuários da sua empresa</p>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isGlobalAdmin ? 'Gerenciar Todos os Usuários' : 'Gerenciar Usuários da Organização'}
+          </h2>
+          <p className="text-gray-600">
+            {isGlobalAdmin ? 'Gerencie usuários de todas as organizações' : 'Gerencie os usuários da sua organização'}
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -420,6 +428,7 @@ const UserManagement = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Função</TableHead>
                   <TableHead>Status</TableHead>
+                  {isGlobalAdmin && <TableHead>Organização</TableHead>}
                   <TableHead>Data de Criação</TableHead>
                   <TableHead className="w-24">Ações</TableHead>
                 </TableRow>
@@ -446,6 +455,13 @@ const UserManagement = () => {
                         {user.is_active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
+                    {isGlobalAdmin && (
+                      <TableCell>
+                        <Badge variant="outline">
+                          {user.company_id === '00000000-0000-0000-0000-000000000001' ? 'Master' : 'Cliente'}
+                        </Badge>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {new Date(user.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>

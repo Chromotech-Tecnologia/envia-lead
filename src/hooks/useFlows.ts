@@ -25,6 +25,15 @@ export const useFlows = () => {
 
   const fetchFlows = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('Usuário não autenticado');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Buscando fluxos para usuário:', user.id);
+
       const { data, error } = await supabase
         .from('flows')
         .select('*')
@@ -35,11 +44,12 @@ export const useFlows = () => {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível carregar os fluxos",
+          description: "Não foi possível carregar os fluxos: " + error.message,
         });
         return;
       }
 
+      console.log('Fluxos carregados:', data);
       setFlows(data || []);
     } catch (error) {
       console.error('Erro inesperado:', error);
@@ -55,13 +65,25 @@ export const useFlows = () => {
 
   const createFlow = async (flowData: Partial<Flow>) => {
     try {
-      const { data: profile } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Usuário não autenticado",
+        });
+        return null;
+      }
+
+      // Buscar o perfil do usuário para obter a company_id
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('company_id')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('id', user.id)
         .single();
 
-      if (!profile) {
+      if (profileError || !profile) {
+        console.error('Erro ao buscar perfil:', profileError);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -69,6 +91,8 @@ export const useFlows = () => {
         });
         return null;
       }
+
+      console.log('Criando fluxo para empresa:', profile.company_id);
 
       const newFlow = {
         name: flowData.name || "Novo Fluxo",
@@ -93,7 +117,7 @@ export const useFlows = () => {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível criar o fluxo",
+          description: "Não foi possível criar o fluxo: " + error.message,
         });
         return null;
       }

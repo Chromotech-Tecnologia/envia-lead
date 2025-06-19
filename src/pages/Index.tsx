@@ -65,15 +65,27 @@ const Index = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
+        console.log('Buscando perfil do usuário...');
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log('Usuário não encontrado');
+          return;
+        }
 
-        const { data: profile } = await supabase
+        console.log('Usuário encontrado:', user.email);
+
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*, companies(name)')
           .eq('id', user.id)
           .single();
 
+        if (error) {
+          console.error('Erro ao buscar perfil:', error);
+          return;
+        }
+
+        console.log('Perfil encontrado:', profile);
         setUserProfile(profile);
       } catch (error) {
         console.error('Erro ao buscar perfil:', error);
@@ -102,34 +114,36 @@ const Index = () => {
 
   const handleSaveFlow = async () => {
     try {
+      console.log('Iniciando salvamento do fluxo...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.error('Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
 
-      // Buscar o company_id do usuário
-      const { data: profile } = await supabase
+      console.log('Usuário autenticado:', user.email);
+
+      // Buscar o perfil do usuário com company_id
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', user.id)
         .single();
 
-      if (!profile?.company_id) {
-        // Se não tiver company_id, associar à empresa padrão
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ company_id: '00000000-0000-0000-0000-000000000001' })
-          .eq('id', user.id);
-
-        if (updateError) {
-          toast({
-            variant: "destructive",
-            title: "Erro",
-            description: "Erro ao associar usuário à empresa. Entre em contato com o suporte.",
-          });
-          return;
-        }
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw new Error('Erro ao buscar perfil do usuário');
       }
 
-      const companyId = profile?.company_id || '00000000-0000-0000-0000-000000000001';
+      console.log('Perfil encontrado:', profile);
+
+      if (!profile?.company_id) {
+        console.error('Company ID não encontrado no perfil');
+        throw new Error('Empresa não encontrada para o usuário');
+      }
+
+      const companyId = profile.company_id;
+      console.log('Company ID:', companyId);
 
       const flowPayload = {
         name: flowData.name,
@@ -142,18 +156,25 @@ const Index = () => {
         company_id: companyId
       };
 
+      console.log('Payload do fluxo:', flowPayload);
+
       let flowId;
 
       if (selectedFlow) {
+        console.log('Atualizando fluxo existente:', selectedFlow.id);
         // Atualizar fluxo existente
         const { error } = await supabase
           .from('flows')
           .update(flowPayload)
           .eq('id', selectedFlow.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao atualizar fluxo:', error);
+          throw error;
+        }
         flowId = selectedFlow.id;
       } else {
+        console.log('Criando novo fluxo...');
         // Criar novo fluxo
         const { data: newFlow, error } = await supabase
           .from('flows')
@@ -161,11 +182,16 @@ const Index = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao criar fluxo:', error);
+          throw error;
+        }
+        console.log('Novo fluxo criado:', newFlow);
         flowId = newFlow.id;
       }
 
       // Salvar URLs
+      console.log('Salvando URLs...');
       await supabase.from('flow_urls').delete().eq('flow_id', flowId);
       if (flowData.urls.length > 0 && flowData.urls[0]) {
         const urlsData = flowData.urls
@@ -173,11 +199,15 @@ const Index = () => {
           .map(url => ({ flow_id: flowId, url: url.trim() }));
         
         if (urlsData.length > 0) {
-          await supabase.from('flow_urls').insert(urlsData);
+          const { error: urlError } = await supabase.from('flow_urls').insert(urlsData);
+          if (urlError) {
+            console.error('Erro ao salvar URLs:', urlError);
+          }
         }
       }
 
       // Salvar emails
+      console.log('Salvando emails...');
       await supabase.from('flow_emails').delete().eq('flow_id', flowId);
       if (flowData.emails.length > 0 && flowData.emails[0]) {
         const emailsData = flowData.emails
@@ -185,11 +215,15 @@ const Index = () => {
           .map(email => ({ flow_id: flowId, email: email.trim() }));
         
         if (emailsData.length > 0) {
-          await supabase.from('flow_emails').insert(emailsData);
+          const { error: emailError } = await supabase.from('flow_emails').insert(emailsData);
+          if (emailError) {
+            console.error('Erro ao salvar emails:', emailError);
+          }
         }
       }
 
       // Salvar perguntas
+      console.log('Salvando perguntas...');
       await supabase.from('questions').delete().eq('flow_id', flowId);
       if (flowData.questions.length > 0) {
         const questionsData = flowData.questions.map((q, index) => ({
@@ -202,8 +236,13 @@ const Index = () => {
           order_index: index + 1
         }));
         
-        await supabase.from('questions').insert(questionsData);
+        const { error: questionError } = await supabase.from('questions').insert(questionsData);
+        if (questionError) {
+          console.error('Erro ao salvar perguntas:', questionError);
+        }
       }
+
+      console.log('Fluxo salvo com sucesso!');
 
       toast({
         title: "Sucesso!",
@@ -238,9 +277,12 @@ const Index = () => {
                   Plataforma de Geração e Envio de Leads via Chat Inteligente
                 </p>
                 {userProfile && (
-                  <div className="mt-2">
+                  <div className="mt-2 flex gap-2">
                     <Badge variant="outline" className="text-sm">
                       {userProfile.role === 'admin' ? '👑 Admin' : '👤 Usuário'} - {userProfile.companies?.name || 'Envia Lead Demo'}
+                    </Badge>
+                    <Badge variant="outline" className="text-sm text-blue-600">
+                      {userProfile.email}
                     </Badge>
                   </div>
                 )}

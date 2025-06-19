@@ -1,89 +1,33 @@
 
-import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Copy, Pause, Play, Trash2, Eye } from 'lucide-react';
-import { useFlows } from "@/hooks/useFlows";
 import FlowEditor from "@/components/FlowEditor";
 import ChatPreviewModal from "@/components/ChatPreviewModal";
+import { useFlowOperations } from "@/hooks/useFlowOperations";
 
 const FlowManager = () => {
-  const { flows, loading, createFlow, updateFlow, deleteFlow, duplicateFlow } = useFlows();
-  const [selectedFlow, setSelectedFlow] = useState<any>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewFlow, setPreviewFlow] = useState<any>(null);
-  const [flowData, setFlowData] = useState<any>({});
-
-  const handleCreateFlow = async () => {
-    const newFlow = await createFlow({
-      name: "Novo Fluxo",
-      description: "Descrição do fluxo",
-    });
-
-    if (newFlow) {
-      setSelectedFlow(newFlow);
-      setFlowData({
-        name: newFlow.name || 'Novo Fluxo',
-        description: newFlow.description || '',
-        emails: [''],
-        whatsapp: newFlow.whatsapp || '',
-        avatar: newFlow.avatar_url || '',
-        position: newFlow.position || 'bottom-right',
-        urls: [''],
-        colors: newFlow.colors || {
-          primary: '#FF6B35',
-          secondary: '#3B82F6',
-          text: '#1F2937',
-          background: '#FFFFFF'
-        },
-        questions: [
-          {
-            id: 1,
-            type: 'text',
-            title: 'Qual é o seu nome?',
-            placeholder: 'Digite seu nome completo',
-            required: true,
-            order: 1
-          }
-        ],
-        minimumQuestion: newFlow.minimum_question || 1
-      });
-      setIsEditorOpen(true);
-    }
-  };
-
-  const handleEditFlow = (flow: any) => {
-    setSelectedFlow(flow);
-    setFlowData({
-      name: flow.name || 'Novo Fluxo',
-      description: flow.description || '',
-      emails: flow.emails || [''],
-      whatsapp: flow.whatsapp || '',
-      avatar: flow.avatar_url || '',
-      position: flow.position || 'bottom-right',
-      urls: flow.urls || [''],
-      colors: flow.colors || {
-        primary: '#FF6B35',
-        secondary: '#3B82F6',
-        text: '#1F2937',
-        background: '#FFFFFF'
-      },
-      questions: flow.questions || [
-        {
-          id: 1,
-          type: 'text',
-          title: 'Qual é o seu nome?',
-          placeholder: 'Digite seu nome completo',
-          required: true,
-          order: 1
-        }
-      ],
-      minimumQuestion: flow.minimum_question || 1
-    });
-    setIsEditorOpen(true);
-  };
+  const {
+    flows,
+    loading,
+    selectedFlow,
+    isEditorOpen,
+    isPreviewOpen,
+    previewFlow,
+    flowData,
+    setFlowData,
+    handleCreateFlow,
+    handleEditFlow,
+    handleSaveFlow,
+    handleSaveAndExit,
+    handlePreviewFlow,
+    handlePreviewFlowFromEditor,
+    handleClosePreview,
+    duplicateFlow,
+    updateFlow,
+    deleteFlow
+  } = useFlowOperations();
 
   const handleDuplicateFlow = async (flowId: string) => {
     await duplicateFlow(flowId);
@@ -99,37 +43,6 @@ const FlowManager = () => {
     }
   };
 
-  const handlePreviewFlow = (flow: any) => {
-    setPreviewFlow(flow);
-    setIsPreviewOpen(true);
-  };
-
-  const handleSaveFlow = async () => {
-    if (selectedFlow) {
-      await updateFlow(selectedFlow.id, {
-        name: flowData.name,
-        description: flowData.description,
-        whatsapp: flowData.whatsapp,
-        avatar_url: flowData.avatar,
-        position: flowData.position,
-        colors: flowData.colors,
-        minimum_question: flowData.minimumQuestion,
-      });
-    }
-    setIsEditorOpen(false);
-    setSelectedFlow(null);
-  };
-
-  const handlePreviewFlowFromEditor = (device?: 'desktop' | 'mobile') => {
-    setPreviewFlow({ ...selectedFlow, ...flowData });
-    setIsPreviewOpen(true);
-  };
-
-  const handleClosePreview = () => {
-    setIsPreviewOpen(false);
-    setPreviewFlow(null);
-  };
-
   if (isEditorOpen && selectedFlow) {
     return (
       <FlowEditor 
@@ -138,6 +51,7 @@ const FlowManager = () => {
         flowData={flowData}
         setFlowData={setFlowData}
         onSave={handleSaveFlow}
+        onSaveAndExit={handleSaveAndExit}
         onPreview={handlePreviewFlowFromEditor}
       />
     );

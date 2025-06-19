@@ -22,11 +22,11 @@ const FlowSearch = ({ searchTerm, onSearchChange }: FlowSearchProps) => {
       </div>
       
       <div className="flex gap-2">
-        <Button variant="outline">
+        <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
           <Plus className="w-4 h-4 mr-2" />
           Importar Fluxo
         </Button>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="envia-lead-gradient hover:opacity-90 text-white">
           <Plus className="w-4 h-4 mr-2" />
           Criar Novo Fluxo
         </Button>

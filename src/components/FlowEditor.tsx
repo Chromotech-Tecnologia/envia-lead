@@ -6,20 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Save,
   Plus,
   Trash2,
   GripVertical,
-  MessageSquare,
   Type,
   CheckSquare,
   Circle,
   Settings,
   Eye,
   Mail,
-  MessageCircle,
-  Palette
+  Phone,
+  Palette,
+  Hash,
+  Copy
 } from 'lucide-react';
 import {
   Select,
@@ -38,6 +40,7 @@ interface FlowEditorProps {
 }
 
 const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
+  const { toast } = useToast();
   const [flowData, setFlowData] = useState({
     name: flow?.name || 'Novo Fluxo',
     description: flow?.description || '',
@@ -47,8 +50,8 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
     position: flow?.position || 'bottom-right',
     urls: flow?.urls || [''],
     colors: {
-      primary: flow?.colors?.primary || '#3B82F6',
-      secondary: flow?.colors?.secondary || '#F8FAFC',
+      primary: flow?.colors?.primary || '#8B5CF6',
+      secondary: flow?.colors?.secondary || '#3B82F6',
       text: flow?.colors?.text || '#1F2937',
       background: flow?.colors?.background || '#FFFFFF'
     },
@@ -70,7 +73,8 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
     { value: 'multiple', label: 'Múltipla Escolha', icon: CheckSquare },
     { value: 'single', label: 'Escolha Única', icon: Circle },
     { value: 'email', label: 'Email', icon: Mail },
-    { value: 'phone', label: 'Telefone', icon: MessageCircle }
+    { value: 'phone', label: 'Telefone', icon: Phone },
+    { value: 'number', label: 'Número', icon: Hash }
   ];
 
   const positionOptions = [
@@ -125,6 +129,32 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
       ...prev,
       urls: [...prev.urls, '']
     }));
+  };
+
+  const copyIntegrationCode = () => {
+    const integrationCode = `<script>
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://envialead.com/chat.js';
+    script.setAttribute('data-flow-id', '${flow?.id || 'FLOW_ID'}');
+    script.setAttribute('data-position', '${flowData.position}');
+    script.setAttribute('data-primary-color', '${flowData.colors.primary}');
+    document.head.appendChild(script);
+  })();
+</script>`;
+
+    navigator.clipboard.writeText(integrationCode).then(() => {
+      toast({
+        title: "Código copiado!",
+        description: "O código de integração foi copiado para a área de transferência.",
+      });
+    }).catch(() => {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o código. Tente novamente.",
+        variant: "destructive",
+      });
+    });
   };
 
   return (
@@ -554,12 +584,12 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <code className="text-sm">
+              <div className="bg-gray-100 p-4 rounded-lg mb-4">
+                <code className="text-sm block whitespace-pre-wrap">
                   {`<script>
   (function() {
     var script = document.createElement('script');
-    script.src = 'https://leadgenpro.com/chat.js';
+    script.src = 'https://envialead.com/chat.js';
     script.setAttribute('data-flow-id', '${flow?.id || 'FLOW_ID'}');
     script.setAttribute('data-position', '${flowData.position}');
     script.setAttribute('data-primary-color', '${flowData.colors.primary}');
@@ -568,7 +598,8 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
 </script>`}
                 </code>
               </div>
-              <Button variant="outline" className="mt-4">
+              <Button onClick={copyIntegrationCode} variant="outline" className="flex items-center gap-2">
+                <Copy className="w-4 h-4" />
                 Copiar Código
               </Button>
             </CardContent>
@@ -582,7 +613,7 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
           <Eye className="w-4 h-4 mr-2" />
           Visualizar
         </Button>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="envia-lead-gradient hover:opacity-90">
           <Save className="w-4 h-4 mr-2" />
           Salvar Fluxo
         </Button>

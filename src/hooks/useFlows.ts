@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +56,7 @@ export const useFlows = () => {
           placeholder: q.placeholder,
           required: q.required,
           order: q.order_index,
-          options: q.options ? JSON.parse(q.options) : []
+          options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : []
         })) || []
       };
     } catch (error) {

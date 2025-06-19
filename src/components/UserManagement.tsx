@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,22 +150,10 @@ const UserManagement = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (editingUser) {
-      await updateUser();
-    } else {
-      await createUser();
-    }
-  };
-
   const updateUser = async () => {
+    if (!editingUser) return;
+
     try {
-      if (!editingUser) return;
-
-      console.log('Atualizando usuário:', editingUser.id, formData);
-
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -185,7 +174,7 @@ const UserManagement = () => {
 
       toast({
         title: "Usuário atualizado!",
-        description: "As alterações foram salvas com sucesso.",
+        description: "As informações do usuário foram atualizadas.",
       });
 
       resetForm();
@@ -203,29 +192,18 @@ const UserManagement = () => {
   };
 
   const deleteUser = async (userId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este usuário?')) {
+      return;
+    }
+
     try {
-      if (userId === currentUserProfile?.id) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Você não pode excluir sua própria conta",
-        });
-        return;
-      }
-
-      if (!confirm('Tem certeza que deseja excluir este usuário?')) {
-        return;
-      }
-
-      console.log('Deletando usuário:', userId);
-
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
 
       if (error) {
-        console.error('Erro ao deletar usuário:', error);
+        console.error('Erro ao excluir usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao excluir usuário",
@@ -236,29 +214,18 @@ const UserManagement = () => {
 
       toast({
         title: "Usuário excluído!",
-        description: "O usuário foi removido com sucesso.",
+        description: "O usuário foi excluído com sucesso.",
       });
 
       fetchUsers();
     } catch (error: any) {
-      console.error('Erro inesperado ao deletar usuário:', error);
+      console.error('Erro inesperado ao excluir usuário:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
         description: "Não foi possível excluir o usuário",
       });
     }
-  };
-
-  const openEditDialog = (user: UserProfile) => {
-    setEditingUser(user);
-    setFormData({
-      email: user.email,
-      full_name: user.full_name || '',
-      role: user.role,
-      password: '',
-    });
-    setIsDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -268,7 +235,31 @@ const UserManagement = () => {
       role: 'user',
       password: '',
     });
+  };
+
+  const openCreateDialog = () => {
+    resetForm();
     setEditingUser(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (user: UserProfile) => {
+    setFormData({
+      email: user.email,
+      full_name: user.full_name || '',
+      role: user.role,
+      password: '',
+    });
+    setEditingUser(user);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (editingUser) {
+      updateUser();
+    } else {
+      createUser();
+    }
   };
 
   const canManageUsers = currentUserProfile?.role === 'admin';
@@ -287,74 +278,58 @@ const UserManagement = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isGlobalAdmin ? 'Gerenciar Todos os Usuários' : 'Gerenciar Usuários da Organização'}
-          </h2>
-          <p className="text-gray-600">
-            {isGlobalAdmin ? 'Gerencie usuários de todas as organizações' : 'Gerencie os usuários da sua organização'}
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
+          <p className="text-gray-600 mt-2">Gerencie os usuários da sua organização</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700">
               <Plus className="w-4 h-4 mr-2" />
-              Novo Usuário
+              Adicionar Usuário
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
+                {editingUser ? 'Editar Usuário' : 'Criar Novo Usuário'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="usuario@empresa.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10"
-                    disabled={!!editingUser}
-                    required
-                  />
-                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  disabled={!!editingUser}
+                />
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="full_name">Nome Completo</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="full_name"
-                    type="text"
-                    placeholder="Nome completo do usuário"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+                <Input
+                  id="full_name"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="role">Função</Label>
-                <Select 
-                  value={formData.role} 
-                  onValueChange={(value: 'admin' | 'manager' | 'user') => 
-                    setFormData(prev => ({ ...prev, role: value }))
-                  }
-                >
+                <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a função" />
+                    <SelectValue placeholder="Selecione uma função" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Usuário</SelectItem>
@@ -363,115 +338,85 @@ const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-
               {!editingUser && (
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    required
-                    minLength={6}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
               )}
-
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  {editingUser ? 'Atualizar' : 'Criar Usuário'}
+                <Button onClick={handleSubmit} className="flex-1">
+                  {editingUser ? 'Atualizar' : 'Criar'} Usuário
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
               </div>
-            </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
 
       <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Função</TableHead>
-                  <TableHead>Status</TableHead>
-                  {isGlobalAdmin && <TableHead>Organização</TableHead>}
-                  <TableHead>Data de Criação</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.full_name || 'Sem nome'}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        user.role === 'admin' ? 'destructive' : 
-                        user.role === 'manager' ? 'default' : 'secondary'
-                      }>
-                        <Shield className="w-3 h-3 mr-1" />
-                        {user.role === 'admin' ? 'Admin' : 
-                         user.role === 'manager' ? 'Gerente' : 'Usuário'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                        {user.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    {isGlobalAdmin && (
-                      <TableCell>
-                        <Badge variant="outline">
-                          {user.company_id === '00000000-0000-0000-0000-000000000001' ? 'Master' : 'Cliente'}
-                        </Badge>
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
+        <CardHeader>
+          <CardTitle>Usuários</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.full_name || 'Sem nome'}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                      {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Gerente' : 'Usuário'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.is_active ? 'default' : 'destructive'}>
+                      {user.is_active ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(user)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      {user.id !== currentUserProfile?.id && (
                         <Button
+                          variant="outline"
                           size="sm"
-                          variant="ghost"
-                          onClick={() => openEditDialog(user)}
+                          onClick={() => deleteUser(user.id)}
+                          className="text-red-600 hover:text-red-700"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                        {user.id !== currentUserProfile?.id && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteUser(user.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

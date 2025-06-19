@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ const FlowManager = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewFlow, setPreviewFlow] = useState<any>(null);
+  const [flowData, setFlowData] = useState<any>({});
 
   const handleCreateFlow = async () => {
     const newFlow = await createFlow({
@@ -22,12 +24,64 @@ const FlowManager = () => {
 
     if (newFlow) {
       setSelectedFlow(newFlow);
+      setFlowData({
+        name: newFlow.name || 'Novo Fluxo',
+        description: newFlow.description || '',
+        emails: [''],
+        whatsapp: newFlow.whatsapp || '',
+        avatar: newFlow.avatar_url || '',
+        position: newFlow.position || 'bottom-right',
+        urls: [''],
+        colors: newFlow.colors || {
+          primary: '#FF6B35',
+          secondary: '#3B82F6',
+          text: '#1F2937',
+          background: '#FFFFFF'
+        },
+        questions: [
+          {
+            id: 1,
+            type: 'text',
+            title: 'Qual é o seu nome?',
+            placeholder: 'Digite seu nome completo',
+            required: true,
+            order: 1
+          }
+        ],
+        minimumQuestion: newFlow.minimum_question || 1
+      });
       setIsEditorOpen(true);
     }
   };
 
   const handleEditFlow = (flow: any) => {
     setSelectedFlow(flow);
+    setFlowData({
+      name: flow.name || 'Novo Fluxo',
+      description: flow.description || '',
+      emails: flow.emails || [''],
+      whatsapp: flow.whatsapp || '',
+      avatar: flow.avatar_url || '',
+      position: flow.position || 'bottom-right',
+      urls: flow.urls || [''],
+      colors: flow.colors || {
+        primary: '#FF6B35',
+        secondary: '#3B82F6',
+        text: '#1F2937',
+        background: '#FFFFFF'
+      },
+      questions: flow.questions || [
+        {
+          id: 1,
+          type: 'text',
+          title: 'Qual é o seu nome?',
+          placeholder: 'Digite seu nome completo',
+          required: true,
+          order: 1
+        }
+      ],
+      minimumQuestion: flow.minimum_question || 1
+    });
     setIsEditorOpen(true);
   };
 
@@ -50,9 +104,25 @@ const FlowManager = () => {
     setIsPreviewOpen(true);
   };
 
-  const handleCloseEditor = () => {
+  const handleSaveFlow = async () => {
+    if (selectedFlow) {
+      await updateFlow(selectedFlow.id, {
+        name: flowData.name,
+        description: flowData.description,
+        whatsapp: flowData.whatsapp,
+        avatar_url: flowData.avatar,
+        position: flowData.position,
+        colors: flowData.colors,
+        minimum_question: flowData.minimumQuestion,
+      });
+    }
     setIsEditorOpen(false);
     setSelectedFlow(null);
+  };
+
+  const handlePreviewFlowFromEditor = (device?: 'desktop' | 'mobile') => {
+    setPreviewFlow({ ...selectedFlow, ...flowData });
+    setIsPreviewOpen(true);
   };
 
   const handleClosePreview = () => {
@@ -64,7 +134,11 @@ const FlowManager = () => {
     return (
       <FlowEditor 
         flow={selectedFlow}
-        onSave={handleCloseEditor}
+        isEditing={true}
+        flowData={flowData}
+        setFlowData={setFlowData}
+        onSave={handleSaveFlow}
+        onPreview={handlePreviewFlowFromEditor}
       />
     );
   }

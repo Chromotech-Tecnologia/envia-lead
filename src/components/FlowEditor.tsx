@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Eye } from 'lucide-react';
@@ -14,35 +14,44 @@ import IntegrationCode from './flow-editor/IntegrationCode';
 interface FlowEditorProps {
   flow?: any;
   isEditing: boolean;
+  flowData: any;
+  setFlowData: (data: any) => void;
+  onSave: () => void;
+  onPreview: (device?: 'desktop' | 'mobile') => void;
 }
 
-const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
-  const [flowData, setFlowData] = useState({
-    name: flow?.name || 'Novo Fluxo',
-    description: flow?.description || '',
-    emails: flow?.emails || [''],
-    whatsapp: flow?.whatsapp || '',
-    avatar: flow?.avatar || '',
-    position: flow?.position || 'bottom-right',
-    urls: flow?.urls || [''],
-    colors: {
-      primary: flow?.colors?.primary || '#FF6B35',
-      secondary: flow?.colors?.secondary || '#3B82F6',
-      text: flow?.colors?.text || '#1F2937',
-      background: flow?.colors?.background || '#FFFFFF'
-    },
-    questions: flow?.questions || [
-      {
-        id: 1,
-        type: 'text',
-        title: 'Qual é o seu nome?',
-        placeholder: 'Digite seu nome completo',
-        required: true,
-        order: 1
-      }
-    ],
-    minimumQuestion: flow?.minimumQuestion || 3
-  });
+const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onPreview }: FlowEditorProps) => {
+  // Inicializar dados do fluxo quando um fluxo for selecionado para edição
+  useEffect(() => {
+    if (flow && isEditing) {
+      setFlowData({
+        name: flow.name || 'Novo Fluxo',
+        description: flow.description || '',
+        emails: flow.emails || [''],
+        whatsapp: flow.whatsapp || '',
+        avatar: flow.avatar_url || '',
+        position: flow.position || 'bottom-right',
+        urls: flow.urls || [''],
+        colors: flow.colors || {
+          primary: '#FF6B35',
+          secondary: '#3B82F6',
+          text: '#1F2937',
+          background: '#FFFFFF'
+        },
+        questions: flow.questions || [
+          {
+            id: 1,
+            type: 'text',
+            title: 'Qual é o seu nome?',
+            placeholder: 'Digite seu nome completo',
+            required: true,
+            order: 1
+          }
+        ],
+        minimumQuestion: flow.minimum_question || 1
+      });
+    }
+  }, [flow, isEditing, setFlowData]);
 
   return (
     <div className="space-y-6">
@@ -76,11 +85,11 @@ const FlowEditor = ({ flow, isEditing }: FlowEditorProps) => {
       </Tabs>
 
       <div className="flex justify-end gap-4">
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => onPreview('desktop')}>
           <Eye className="w-4 h-4 mr-2" />
           Visualizar
         </Button>
-        <Button className="envia-lead-gradient hover:opacity-90">
+        <Button onClick={onSave} className="envia-lead-gradient hover:opacity-90">
           <Save className="w-4 h-4 mr-2" />
           Salvar Fluxo
         </Button>

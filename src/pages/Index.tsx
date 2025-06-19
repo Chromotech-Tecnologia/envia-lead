@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,19 +12,52 @@ import {
   BarChart3,
   Globe,
   Smartphone,
-  Monitor
+  Monitor,
+  Eye
 } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import Sidebar from '@/components/Sidebar';
 import DashboardMetrics from '@/components/DashboardMetrics';
 import FlowManager from '@/components/FlowManager';
 import LeadsTable from '@/components/LeadsTable';
 import FlowEditor from '@/components/FlowEditor';
-import ChatPreview from '@/components/ChatPreview';
+import ChatPreviewModal from '@/components/ChatPreviewModal';
+import FloatingChatButton from '@/components/FloatingChatButton';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedFlow, setSelectedFlow] = useState(null);
   const [isEditingFlow, setIsEditingFlow] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [flowData, setFlowData] = useState({
+    name: 'Novo Fluxo',
+    description: '',
+    emails: [''],
+    whatsapp: '',
+    avatar: '',
+    position: 'bottom-right',
+    urls: [''],
+    colors: {
+      primary: '#FF6B35',
+      secondary: '#3B82F6',
+      text: '#1F2937',
+      background: '#FFFFFF'
+    },
+    questions: [
+      {
+        id: 1,
+        type: 'text',
+        title: 'Qual é o seu nome?',
+        placeholder: 'Digite seu nome completo',
+        required: true,
+        order: 1
+      }
+    ],
+    minimumQuestion: 1
+  });
+  const { toast } = useToast();
 
   const handleCreateFlow = () => {
     setSelectedFlow(null);
@@ -36,6 +69,121 @@ const Index = () => {
     setSelectedFlow(flow);
     setIsEditingFlow(true);
     setActiveTab('editor');
+  };
+
+  const handlePreviewFlow = (device: 'desktop' | 'mobile' = 'desktop') => {
+    setPreviewDevice(device);
+    setShowPreview(true);
+  };
+
+  const handleSaveFlow = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      // Buscar o company_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.company_id) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Empresa não encontrada. Entre em contato com o suporte.",
+        });
+        return;
+      }
+
+      const flowPayload = {
+        name: flowData.name,
+        description: flowData.description,
+        avatar_url: flowData.avatar,
+        position: flowData.position,
+        whatsapp: flowData.whatsapp,
+        colors: flowData.colors,
+        minimum_question: flowData.minimumQuestion,
+        company_id: profile.company_id
+      };
+
+      let flowId;
+
+      if (selectedFlow) {
+        // Atualizar fluxo existente
+        const { error } = await supabase
+          .from('flows')
+          .update(flowPayload)
+          .eq('id', selectedFlow.id);
+
+        if (error) throw error;
+        flowId = selectedFlow.id;
+      } else {
+        // Criar novo fluxo
+        const { data: newFlow, error } = await supabase
+          .from('flows')
+          .insert(flowPayload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        flowId = newFlow.id;
+      }
+
+      // Salvar URLs
+      await supabase.from('flow_urls').delete().eq('flow_id', flowId);
+      if (flowData.urls.length > 0 && flowData.urls[0]) {
+        const urlsData = flowData.urls
+          .filter(url => url.trim())
+          .map(url => ({ flow_id: flowId, url: url.trim() }));
+        
+        if (urlsData.length > 0) {
+          await supabase.from('flow_urls').insert(urlsData);
+        }
+      }
+
+      // Salvar emails
+      await supabase.from('flow_emails').delete().eq('flow_id', flowId);
+      if (flowData.emails.length > 0 && flowData.emails[0]) {
+        const emailsData = flowData.emails
+          .filter(email => email.trim())
+          .map(email => ({ flow_id: flowId, email: email.trim() }));
+        
+        if (emailsData.length > 0) {
+          await supabase.from('flow_emails').insert(emailsData);
+        }
+      }
+
+      // Salvar perguntas
+      await supabase.from('questions').delete().eq('flow_id', flowId);
+      if (flowData.questions.length > 0) {
+        const questionsData = flowData.questions.map((q, index) => ({
+          flow_id: flowId,
+          type: q.type,
+          title: q.title,
+          placeholder: q.placeholder,
+          options: q.options || null,
+          required: q.required,
+          order_index: index + 1
+        }));
+        
+        await supabase.from('questions').insert(questionsData);
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: `Fluxo ${selectedFlow ? 'atualizado' : 'criado'} com sucesso.`,
+      });
+
+      setActiveTab('flows');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar fluxo",
+        description: error.message,
+      });
+    }
   };
 
   return (
@@ -106,7 +254,14 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="editor" className="space-y-6">
-              <FlowEditor flow={selectedFlow} isEditing={isEditingFlow} />
+              <FlowEditor 
+                flow={selectedFlow} 
+                isEditing={isEditingFlow}
+                flowData={flowData}
+                setFlowData={setFlowData}
+                onSave={handleSaveFlow}
+                onPreview={handlePreviewFlow}
+              />
             </TabsContent>
 
             <TabsContent value="preview" className="space-y-6">
@@ -122,7 +277,16 @@ const Index = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChatPreview device="desktop" />
+                    <div className="space-y-4">
+                      <Button 
+                        onClick={() => handlePreviewFlow('desktop')}
+                        className="w-full envia-lead-gradient hover:opacity-90"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Visualizar Desktop
+                      </Button>
+                      <FloatingChatButton flowData={flowData} position="bottom-right" />
+                    </div>
                   </CardContent>
                 </Card>
                 
@@ -137,7 +301,13 @@ const Index = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChatPreview device="mobile" />
+                    <Button 
+                      onClick={() => handlePreviewFlow('mobile')}
+                      className="w-full envia-lead-gradient hover:opacity-90"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Visualizar Mobile
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -145,6 +315,13 @@ const Index = () => {
           </Tabs>
         </div>
       </main>
+
+      <ChatPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        flowData={flowData}
+        device={previewDevice}
+      />
     </div>
   );
 };

@@ -342,6 +342,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_global_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

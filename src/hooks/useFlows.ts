@@ -78,7 +78,7 @@ export const useFlows = () => {
       // Buscar o perfil do usuário para obter a company_id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', user.id)
         .single();
 
@@ -88,6 +88,16 @@ export const useFlows = () => {
           variant: "destructive",
           title: "Erro",
           description: "Perfil do usuário não encontrado",
+        });
+        return null;
+      }
+
+      // Verificar se o usuário tem permissão para criar fluxos
+      if (profile.role !== 'admin') {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Apenas administradores podem criar fluxos",
         });
         return null;
       }

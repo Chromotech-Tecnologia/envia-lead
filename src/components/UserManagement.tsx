@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +69,6 @@ const UserManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Buscar usuários da empresa ou todos se for admin global
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -99,16 +97,6 @@ const UserManagement = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (editingUser) {
-      await updateUser();
-    } else {
-      await createUser();
-    }
-  };
-
   const createUser = async () => {
     try {
       console.log('Criando usuário:', formData);
@@ -122,41 +110,25 @@ const UserManagement = () => {
         return;
       }
 
-      // Criar usuário no auth com metadados da empresa
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true,
-        user_metadata: {
+      // Usar edge function para criar usuário
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: formData.email,
+          password: formData.password,
           full_name: formData.full_name,
+          role: formData.role,
           company_id: currentUserProfile.company_id,
         }
       });
 
-      if (authError) {
-        console.error('Erro ao criar usuário no auth:', authError);
+      if (error) {
+        console.error('Erro ao criar usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar usuário",
-          description: authError.message,
+          description: error.message,
         });
         return;
-      }
-
-      // Atualizar perfil com a role correta
-      if (authData.user) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: formData.full_name,
-            role: formData.role,
-            company_id: currentUserProfile.company_id,
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar perfil:', updateError);
-        }
       }
 
       toast({
@@ -174,6 +146,16 @@ const UserManagement = () => {
         title: "Erro inesperado",
         description: "Não foi possível criar o usuário",
       });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingUser) {
+      await updateUser();
+    } else {
+      await createUser();
     }
   };
 

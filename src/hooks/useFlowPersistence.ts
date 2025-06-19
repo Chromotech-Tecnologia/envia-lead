@@ -8,25 +8,38 @@ export const useFlowPersistence = (flowId: string) => {
 
   const saveFlowUrls = async (flowId: string, urls: string[]) => {
     try {
+      console.log('Salvando URLs para flow:', flowId, urls);
+      
       // Deletar URLs existentes
-      await supabase
+      const { error: deleteError } = await supabase
         .from('flow_urls')
         .delete()
         .eq('flow_id', flowId);
 
-      // Inserir novas URLs
-      const urlsToInsert = urls.filter(url => url.trim()).map(url => ({
-        flow_id: flowId,
-        url: url.trim()
-      }));
+      if (deleteError) {
+        console.error('Erro ao deletar URLs existentes:', deleteError);
+        throw deleteError;
+      }
 
-      if (urlsToInsert.length > 0) {
-        const { error } = await supabase
+      // Inserir novas URLs (apenas as que não estão vazias)
+      const validUrls = urls.filter(url => url && url.trim() !== '');
+      if (validUrls.length > 0) {
+        const urlsToInsert = validUrls.map(url => ({
+          flow_id: flowId,
+          url: url.trim()
+        }));
+
+        const { error: insertError } = await supabase
           .from('flow_urls')
           .insert(urlsToInsert);
         
-        if (error) throw error;
+        if (insertError) {
+          console.error('Erro ao inserir URLs:', insertError);
+          throw insertError;
+        }
       }
+
+      console.log('URLs salvas com sucesso');
     } catch (error) {
       console.error('Erro ao salvar URLs:', error);
       throw error;
@@ -35,25 +48,38 @@ export const useFlowPersistence = (flowId: string) => {
 
   const saveFlowEmails = async (flowId: string, emails: string[]) => {
     try {
+      console.log('Salvando emails para flow:', flowId, emails);
+      
       // Deletar emails existentes
-      await supabase
+      const { error: deleteError } = await supabase
         .from('flow_emails')
         .delete()
         .eq('flow_id', flowId);
 
-      // Inserir novos emails
-      const emailsToInsert = emails.filter(email => email.trim()).map(email => ({
-        flow_id: flowId,
-        email: email.trim()
-      }));
+      if (deleteError) {
+        console.error('Erro ao deletar emails existentes:', deleteError);
+        throw deleteError;
+      }
 
-      if (emailsToInsert.length > 0) {
-        const { error } = await supabase
+      // Inserir novos emails (apenas os que não estão vazios)
+      const validEmails = emails.filter(email => email && email.trim() !== '');
+      if (validEmails.length > 0) {
+        const emailsToInsert = validEmails.map(email => ({
+          flow_id: flowId,
+          email: email.trim()
+        }));
+
+        const { error: insertError } = await supabase
           .from('flow_emails')
           .insert(emailsToInsert);
         
-        if (error) throw error;
+        if (insertError) {
+          console.error('Erro ao inserir emails:', insertError);
+          throw insertError;
+        }
       }
+
+      console.log('Emails salvos com sucesso');
     } catch (error) {
       console.error('Erro ao salvar emails:', error);
       throw error;
@@ -62,30 +88,42 @@ export const useFlowPersistence = (flowId: string) => {
 
   const saveFlowQuestions = async (flowId: string, questions: any[]) => {
     try {
+      console.log('Salvando perguntas para flow:', flowId, questions);
+      
       // Deletar perguntas existentes
-      await supabase
+      const { error: deleteError } = await supabase
         .from('questions')
         .delete()
         .eq('flow_id', flowId);
 
-      // Inserir novas perguntas
-      const questionsToInsert = questions.map((question, index) => ({
-        flow_id: flowId,
-        type: question.type,
-        title: question.title,
-        placeholder: question.placeholder || null,
-        options: question.options || null,
-        required: question.required || false,
-        order_index: index + 1
-      }));
+      if (deleteError) {
+        console.error('Erro ao deletar perguntas existentes:', deleteError);
+        throw deleteError;
+      }
 
-      if (questionsToInsert.length > 0) {
-        const { error } = await supabase
+      // Inserir novas perguntas
+      if (questions && questions.length > 0) {
+        const questionsToInsert = questions.map((question, index) => ({
+          flow_id: flowId,
+          type: question.type || 'text',
+          title: question.title || 'Pergunta sem título',
+          placeholder: question.placeholder || null,
+          options: question.options ? JSON.stringify(question.options) : null,
+          required: question.required || false,
+          order_index: question.order || (index + 1)
+        }));
+
+        const { error: insertError } = await supabase
           .from('questions')
           .insert(questionsToInsert);
         
-        if (error) throw error;
+        if (insertError) {
+          console.error('Erro ao inserir perguntas:', insertError);
+          throw insertError;
+        }
       }
+
+      console.log('Perguntas salvas com sucesso');
     } catch (error) {
       console.error('Erro ao salvar perguntas:', error);
       throw error;
@@ -94,28 +132,46 @@ export const useFlowPersistence = (flowId: string) => {
 
   const saveCompleteFlow = async (flowData: any) => {
     try {
+      console.log('Iniciando salvamento completo do fluxo:', flowId, flowData);
+
       // Salvar dados principais do fluxo
+      const flowUpdateData = {
+        name: flowData.name || 'Novo Fluxo',
+        description: flowData.description || null,
+        whatsapp: flowData.whatsapp || null,
+        avatar_url: flowData.avatar || null,
+        position: flowData.position || 'bottom-right',
+        colors: flowData.colors || {
+          primary: '#FF6B35',
+          secondary: '#3B82F6',
+          text: '#1F2937',
+          background: '#FFFFFF'
+        },
+        minimum_question: flowData.minimumQuestion || 1,
+      };
+
+      console.log('Atualizando dados principais do fluxo:', flowUpdateData);
+
       const { error: flowError } = await supabase
         .from('flows')
-        .update({
-          name: flowData.name,
-          description: flowData.description,
-          whatsapp: flowData.whatsapp,
-          avatar_url: flowData.avatar,
-          position: flowData.position,
-          colors: flowData.colors,
-          minimum_question: flowData.minimumQuestion,
-        })
+        .update(flowUpdateData)
         .eq('id', flowId);
 
-      if (flowError) throw flowError;
+      if (flowError) {
+        console.error('Erro ao atualizar fluxo:', flowError);
+        throw flowError;
+      }
 
-      // Salvar URLs, emails e perguntas
+      console.log('Dados principais do fluxo atualizados com sucesso');
+
+      // Salvar URLs, emails e perguntas em paralelo
       await Promise.all([
-        saveFlowUrls(flowId, flowData.urls || []),
-        saveFlowEmails(flowId, flowData.emails || []),
+        saveFlowUrls(flowId, flowData.urls || ['']),
+        saveFlowEmails(flowId, flowData.emails || ['']),
         saveFlowQuestions(flowId, flowData.questions || [])
       ]);
+
+      console.log('Todos os dados salvos com sucesso');
 
       toast({
         title: "Fluxo salvo com sucesso!",
@@ -128,7 +184,7 @@ export const useFlowPersistence = (flowId: string) => {
       toast({
         variant: "destructive",
         title: "Erro ao salvar fluxo",
-        description: "Ocorreu um erro ao salvar as configurações.",
+        description: `Ocorreu um erro ao salvar as configurações: ${error.message}`,
       });
       return false;
     }

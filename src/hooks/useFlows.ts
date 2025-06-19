@@ -16,12 +16,59 @@ export interface Flow {
   minimum_question: number | null;
   company_id: string;
   colors: any;
+  urls?: string[];
+  emails?: string[];
+  questions?: any[];
 }
 
 export const useFlows = () => {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const fetchFlowDetails = async (flowId: string) => {
+    try {
+      // Buscar URLs do fluxo
+      const { data: urlsData } = await supabase
+        .from('flow_urls')
+        .select('url')
+        .eq('flow_id', flowId);
+
+      // Buscar emails do fluxo
+      const { data: emailsData } = await supabase
+        .from('flow_emails')
+        .select('email')
+        .eq('flow_id', flowId);
+
+      // Buscar perguntas do fluxo
+      const { data: questionsData } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('flow_id', flowId)
+        .order('order_index');
+
+      return {
+        urls: urlsData?.map(item => item.url) || [''],
+        emails: emailsData?.map(item => item.email) || [''],
+        questions: questionsData?.map(q => ({
+          id: q.id,
+          type: q.type,
+          title: q.title,
+          placeholder: q.placeholder,
+          required: q.required,
+          order: q.order_index,
+          options: q.options ? JSON.parse(q.options) : []
+        })) || []
+      };
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do fluxo:', error);
+      return {
+        urls: [''],
+        emails: [''],
+        questions: []
+      };
+    }
+  };
 
   const fetchFlows = async () => {
     try {
@@ -50,7 +97,19 @@ export const useFlows = () => {
       }
 
       console.log('Fluxos carregados:', data);
-      setFlows(data || []);
+
+      // Carregar detalhes de cada fluxo
+      const flowsWithDetails = await Promise.all(
+        (data || []).map(async (flow) => {
+          const details = await fetchFlowDetails(flow.id);
+          return {
+            ...flow,
+            ...details
+          };
+        })
+      );
+
+      setFlows(flowsWithDetails);
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
@@ -109,11 +168,16 @@ export const useFlows = () => {
         description: flowData.description,
         company_id: profile.company_id,
         is_active: flowData.is_active || false,
-        colors: flowData.colors || {},
+        colors: flowData.colors || {
+          primary: '#FF6B35',
+          secondary: '#3B82F6',
+          text: '#1F2937',
+          background: '#FFFFFF'
+        },
         avatar_url: flowData.avatar_url,
-        position: flowData.position,
+        position: flowData.position || 'bottom-right',
         whatsapp: flowData.whatsapp,
-        minimum_question: flowData.minimum_question,
+        minimum_question: flowData.minimum_question || 1,
       };
 
       const { data, error } = await supabase
@@ -222,13 +286,8 @@ export const useFlows = () => {
 
   const duplicateFlow = async (id: string) => {
     try {
-      const { data: originalFlow, error: fetchError } = await supabase
-        .from('flows')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError || !originalFlow) {
+      const originalFlow = flows.find(flow => flow.id === id);
+      if (!originalFlow) {
         toast({
           variant: "destructive",
           title: "Erro",

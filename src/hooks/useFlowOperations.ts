@@ -13,6 +13,35 @@ export const useFlowOperations = () => {
   
   const { saveCompleteFlow } = useFlowPersistence(selectedFlow?.id);
 
+  const initializeFlowData = (flow: any) => {
+    return {
+      name: flow?.name || 'Novo Fluxo',
+      description: flow?.description || '',
+      emails: flow?.emails && flow.emails.length > 0 ? flow.emails : [''],
+      whatsapp: flow?.whatsapp || '',
+      avatar: flow?.avatar_url || '',
+      position: flow?.position || 'bottom-right',
+      urls: flow?.urls && flow.urls.length > 0 ? flow.urls : [''],
+      colors: flow?.colors || {
+        primary: '#FF6B35',
+        secondary: '#3B82F6',
+        text: '#1F2937',
+        background: '#FFFFFF'
+      },
+      questions: flow?.questions && flow.questions.length > 0 ? flow.questions : [
+        {
+          id: Date.now(),
+          type: 'text',
+          title: 'Qual é o seu nome?',
+          placeholder: 'Digite seu nome completo',
+          required: true,
+          order: 1
+        }
+      ],
+      minimumQuestion: flow?.minimum_question || 1
+    };
+  };
+
   const handleCreateFlow = async () => {
     const newFlow = await createFlow({
       name: "Novo Fluxo",
@@ -21,69 +50,24 @@ export const useFlowOperations = () => {
 
     if (newFlow) {
       setSelectedFlow(newFlow);
-      setFlowData({
-        name: newFlow.name || 'Novo Fluxo',
-        description: newFlow.description || '',
-        emails: [''],
-        whatsapp: newFlow.whatsapp || '',
-        avatar: newFlow.avatar_url || '',
-        position: newFlow.position || 'bottom-right',
-        urls: [''],
-        colors: newFlow.colors || {
-          primary: '#FF6B35',
-          secondary: '#3B82F6',
-          text: '#1F2937',
-          background: '#FFFFFF'
-        },
-        questions: [
-          {
-            id: 1,
-            type: 'text',
-            title: 'Qual é o seu nome?',
-            placeholder: 'Digite seu nome completo',
-            required: true,
-            order: 1
-          }
-        ],
-        minimumQuestion: newFlow.minimum_question || 1
-      });
+      const initialData = initializeFlowData(newFlow);
+      setFlowData(initialData);
       setIsEditorOpen(true);
     }
   };
 
   const handleEditFlow = (flow: any) => {
+    console.log('Editando fluxo:', flow);
     setSelectedFlow(flow);
-    setFlowData({
-      name: flow.name || 'Novo Fluxo',
-      description: flow.description || '',
-      emails: flow.emails || [''],
-      whatsapp: flow.whatsapp || '',
-      avatar: flow.avatar_url || '',
-      position: flow.position || 'bottom-right',
-      urls: flow.urls || [''],
-      colors: flow.colors || {
-        primary: '#FF6B35',
-        secondary: '#3B82F6',
-        text: '#1F2937',
-        background: '#FFFFFF'
-      },
-      questions: flow.questions || [
-        {
-          id: 1,
-          type: 'text',
-          title: 'Qual é o seu nome?',
-          placeholder: 'Digite seu nome completo',
-          required: true,
-          order: 1
-        }
-      ],
-      minimumQuestion: flow.minimum_question || 1
-    });
+    const initialData = initializeFlowData(flow);
+    console.log('Dados iniciais do fluxo:', initialData);
+    setFlowData(initialData);
     setIsEditorOpen(true);
   };
 
   const handleSaveFlow = async () => {
     if (selectedFlow && flowData) {
+      console.log('Salvando fluxo com dados:', flowData);
       return await saveCompleteFlow(flowData);
     }
     return false;
@@ -94,17 +78,41 @@ export const useFlowOperations = () => {
     if (success) {
       setIsEditorOpen(false);
       setSelectedFlow(null);
+      setFlowData({});
     }
   };
 
   const handlePreviewFlow = (flow: any) => {
-    setPreviewFlow(flow);
+    // Garantir que o fluxo tenha todos os dados necessários para o preview
+    const previewData = {
+      ...flow,
+      urls: flow.urls || [''],
+      emails: flow.emails || [''],
+      questions: flow.questions || [],
+      colors: flow.colors || {
+        primary: '#FF6B35',
+        secondary: '#3B82F6',
+        text: '#1F2937',
+        background: '#FFFFFF'
+      }
+    };
+    setPreviewFlow(previewData);
     setIsPreviewOpen(true);
   };
 
   const handlePreviewFlowFromEditor = () => {
-    setPreviewFlow({ ...selectedFlow, ...flowData });
-    setIsPreviewOpen(true);
+    if (selectedFlow && flowData) {
+      const previewData = { 
+        ...selectedFlow, 
+        ...flowData,
+        // Garantir que arrays não sejam undefined
+        urls: flowData.urls || [''],
+        emails: flowData.emails || [''],
+        questions: flowData.questions || []
+      };
+      setPreviewFlow(previewData);
+      setIsPreviewOpen(true);
+    }
   };
 
   const handleClosePreview = () => {

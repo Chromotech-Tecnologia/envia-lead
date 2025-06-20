@@ -3,13 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface BasicSettingsProps {
   flowData: any;
@@ -17,24 +10,6 @@ interface BasicSettingsProps {
 }
 
 const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
-  const buttonPositionOptions = [
-    { value: 'bottom-right', label: 'Inferior Direito' },
-    { value: 'bottom-left', label: 'Inferior Esquerdo' },
-    { value: 'top-right', label: 'Superior Direito' },
-    { value: 'top-left', label: 'Superior Esquerdo' },
-    { value: 'center-right', label: 'Centro Direito' },
-    { value: 'center-left', label: 'Centro Esquerdo' }
-  ];
-
-  const chatPositionOptions = [
-    { value: 'bottom-right', label: 'Inferior Direito' },
-    { value: 'bottom-left', label: 'Inferior Esquerdo' },
-    { value: 'top-right', label: 'Superior Direito' },
-    { value: 'top-left', label: 'Superior Esquerdo' },
-    { value: 'center-right', label: 'Centro Direito' },
-    { value: 'center-left', label: 'Centro Esquerdo' }
-  ];
-
   return (
     <div className="space-y-6">
       <Card>
@@ -87,53 +62,6 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
               onChange={(e) => setFlowData(prev => ({...prev, whatsapp: e.target.value}))}
               placeholder="Ex: 5511999999999"
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Posicionamento do Chat</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="buttonPosition">Posição do Botão Flutuante</Label>
-              <Select 
-                value={flowData.buttonPosition || flowData.position || 'bottom-right'} 
-                onValueChange={(value) => setFlowData(prev => ({...prev, buttonPosition: value}))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {buttonPositionOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="chatPosition">Posição do Chat Aberto</Label>
-              <Select 
-                value={flowData.chatPosition || 'bottom-right'} 
-                onValueChange={(value) => setFlowData(prev => ({...prev, chatPosition: value}))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {chatPositionOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </CardContent>
       </Card>

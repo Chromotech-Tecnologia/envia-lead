@@ -2,10 +2,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Copy, Pause, Play, Trash2, Eye } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit, Copy, Trash2, Eye, Search } from 'lucide-react';
 import FlowEditor from "@/components/FlowEditor";
 import ChatPreviewModal from "@/components/ChatPreviewModal";
 import { useFlowOperations } from "@/hooks/useFlowOperations";
+import { useState } from 'react';
 
 const FlowManager = () => {
   const {
@@ -21,6 +25,7 @@ const FlowManager = () => {
     handleEditFlow,
     handleSaveFlow,
     handleSaveAndExit,
+    handleExitEditor,
     handlePreviewFlow,
     handlePreviewFlowFromEditor,
     handleClosePreview,
@@ -28,6 +33,9 @@ const FlowManager = () => {
     updateFlow,
     deleteFlow
   } = useFlowOperations();
+
+  const [searchFilter, setSearchFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const handleDuplicateFlow = async (flowId: string) => {
     await duplicateFlow(flowId);
@@ -43,6 +51,16 @@ const FlowManager = () => {
     }
   };
 
+  // Filtrar fluxos
+  const filteredFlows = flows.filter(flow => {
+    const matchesSearch = flow.name.toLowerCase().includes(searchFilter.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && flow.is_active) ||
+      (statusFilter === 'inactive' && !flow.is_active);
+    
+    return matchesSearch && matchesStatus;
+  });
+
   if (isEditorOpen && selectedFlow) {
     return (
       <FlowEditor 
@@ -52,6 +70,7 @@ const FlowManager = () => {
         setFlowData={setFlowData}
         onSave={handleSaveFlow}
         onSaveAndExit={handleSaveAndExit}
+        onExit={handleExitEditor}
         onPreview={handlePreviewFlowFromEditor}
       />
     );
@@ -78,7 +97,30 @@ const FlowManager = () => {
         </Button>
       </div>
 
-      {flows.length === 0 ? (
+      {/* Filtros */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="active">Ativos</SelectItem>
+            <SelectItem value="inactive">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filteredFlows.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <div className="max-w-md mx-auto">
@@ -86,37 +128,46 @@ const FlowManager = () => {
                 <Plus className="w-8 h-8 text-purple-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Nenhum fluxo encontrado
+                {flows.length === 0 ? 'Nenhum fluxo encontrado' : 'Nenhum fluxo corresponde aos filtros'}
               </h3>
               <p className="text-gray-600 mb-4">
-                Comece criando seu primeiro fluxo de captura de leads
+                {flows.length === 0 ? 'Comece criando seu primeiro fluxo de captura de leads' : 'Tente ajustar os filtros de busca'}
               </p>
-              <Button onClick={handleCreateFlow} className="bg-purple-600 hover:bg-purple-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Primeiro Fluxo
-              </Button>
+              {flows.length === 0 && (
+                <Button onClick={handleCreateFlow} className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeiro Fluxo
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {flows.map((flow) => (
+          {filteredFlows.map((flow) => (
             <Card key={flow.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{flow.name}</CardTitle>
-                  <Badge variant={flow.is_active ? "default" : "secondary"}>
-                    {flow.is_active ? "Ativo" : "Inativo"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={flow.is_active}
+                      onCheckedChange={() => handleToggleActive(flow)}
+                    />
+                    <Badge variant={flow.is_active ? "default" : "secondary"}>
+                      {flow.is_active ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
                 </div>
                 <CardDescription>{flow.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEditFlow(flow)}
+                    className="w-full"
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Editar
@@ -125,6 +176,7 @@ const FlowManager = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handlePreviewFlow(flow)}
+                    className="w-full"
                   >
                     <Eye className="w-4 h-4 mr-1" />
                     Preview
@@ -133,6 +185,7 @@ const FlowManager = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDuplicateFlow(flow.id)}
+                    className="w-full"
                   >
                     <Copy className="w-4 h-4 mr-1" />
                     Duplicar
@@ -140,25 +193,8 @@ const FlowManager = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleToggleActive(flow)}
-                  >
-                    {flow.is_active ? (
-                      <>
-                        <Pause className="w-4 h-4 mr-1" />
-                        Pausar
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-1" />
-                        Ativar
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     onClick={() => handleDeleteFlow(flow.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="w-full text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Excluir

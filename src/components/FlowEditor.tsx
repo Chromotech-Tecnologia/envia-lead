@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Eye, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import FlowEditorHeader from './flow-editor/FlowEditorHeader';
 import BasicSettings from './flow-editor/BasicSettings';
 import UrlSettings from './flow-editor/UrlSettings';
@@ -19,12 +18,11 @@ interface FlowEditorProps {
   setFlowData: (data: any) => void;
   onSave: () => Promise<boolean>;
   onSaveAndExit: () => Promise<void>;
+  onExit: () => void;
   onPreview: (device?: 'desktop' | 'mobile') => void;
 }
 
-const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onPreview }: FlowEditorProps) => {
-  const navigate = useNavigate();
-
+const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onExit, onPreview }: FlowEditorProps) => {
   // Inicializar dados do fluxo quando um fluxo for selecionado para edição
   useEffect(() => {
     if (flow && isEditing) {
@@ -35,6 +33,8 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
         whatsapp: flow.whatsapp || '',
         avatar: flow.avatar_url || '',
         position: flow.position || 'bottom-right',
+        buttonPosition: flow.position || 'bottom-right',
+        chatPosition: flow.position || 'bottom-right',
         urls: flow.urls || [''],
         colors: flow.colors || {
           primary: '#FF6B35',
@@ -52,7 +52,9 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
             order: 1
           }
         ],
-        minimumQuestion: flow.minimum_question || 1
+        minimumQuestion: flow.minimum_question || 1,
+        welcomeMessage: flow.welcome_message || 'Olá! Como posso ajudá-lo?',
+        showWhatsappButton: flow.show_whatsapp_button !== false
       });
     }
   }, [flow, isEditing, setFlowData]);
@@ -66,7 +68,7 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
   };
 
   const handleGoBack = () => {
-    navigate('/');
+    onExit();
   };
 
   return (

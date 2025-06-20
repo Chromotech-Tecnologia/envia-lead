@@ -2,14 +2,16 @@
 import { useFlows } from "@/hooks/useFlows";
 import { useFlowPersistence } from "@/hooks/useFlowPersistence";
 import { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 export const useFlowOperations = () => {
-  const { flows, loading, createFlow, updateFlow, deleteFlow, duplicateFlow } = useFlows();
+  const { flows, loading, createFlow, updateFlow, deleteFlow, duplicateFlow, refetch } = useFlows();
   const [selectedFlow, setSelectedFlow] = useState<any>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewFlow, setPreviewFlow] = useState<any>(null);
   const [flowData, setFlowData] = useState<any>({});
+  const { toast } = useToast();
   
   const { saveCompleteFlow } = useFlowPersistence(selectedFlow?.id);
 
@@ -21,6 +23,8 @@ export const useFlowOperations = () => {
       whatsapp: flow?.whatsapp || '',
       avatar: flow?.avatar_url || '',
       position: flow?.position || 'bottom-right',
+      buttonPosition: flow?.position || 'bottom-right',
+      chatPosition: flow?.position || 'bottom-right',
       urls: flow?.urls && flow.urls.length > 0 ? flow.urls : [''],
       colors: flow?.colors || {
         primary: '#FF6B35',
@@ -38,7 +42,9 @@ export const useFlowOperations = () => {
           order: 1
         }
       ],
-      minimumQuestion: flow?.minimum_question || 1
+      minimumQuestion: flow?.minimum_question || 1,
+      welcomeMessage: flow?.welcome_message || 'Olá! Como posso ajudá-lo?',
+      showWhatsappButton: flow?.show_whatsapp_button !== false
     };
   };
 
@@ -68,7 +74,17 @@ export const useFlowOperations = () => {
   const handleSaveFlow = async () => {
     if (selectedFlow && flowData) {
       console.log('Salvando fluxo com dados:', flowData);
-      return await saveCompleteFlow(flowData);
+      const success = await saveCompleteFlow(flowData);
+      if (success) {
+        // Recarregar os dados automaticamente após salvar
+        await refetch();
+        toast({
+          title: "Sucesso!",
+          description: "Fluxo salvo e dados atualizados!",
+          className: "border-green-500 bg-green-50 text-green-900",
+        });
+      }
+      return success;
     }
     return false;
   };
@@ -80,6 +96,12 @@ export const useFlowOperations = () => {
       setSelectedFlow(null);
       setFlowData({});
     }
+  };
+
+  const handleExitEditor = () => {
+    setIsEditorOpen(false);
+    setSelectedFlow(null);
+    setFlowData({});
   };
 
   const handlePreviewFlow = (flow: any) => {
@@ -105,7 +127,6 @@ export const useFlowOperations = () => {
       const previewData = { 
         ...selectedFlow, 
         ...flowData,
-        // Garantir que arrays não sejam undefined
         urls: flowData.urls || [''],
         emails: flowData.emails || [''],
         questions: flowData.questions || []
@@ -133,6 +154,7 @@ export const useFlowOperations = () => {
     handleEditFlow,
     handleSaveFlow,
     handleSaveAndExit,
+    handleExitEditor,
     handlePreviewFlow,
     handlePreviewFlowFromEditor,
     handleClosePreview,

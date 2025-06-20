@@ -1,254 +1,146 @@
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Smartphone, Monitor } from 'lucide-react';
+import { Monitor, Smartphone } from 'lucide-react';
 import { useState } from 'react';
-import ChatConversation from './chat/ChatConversation';
+import ChatPreview from './ChatPreview';
 
 interface ChatPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   flowData: any;
-  device?: 'desktop' | 'mobile';
+  device: 'desktop' | 'mobile';
 }
 
-const ChatPreviewModal = ({ isOpen, onClose, flowData, device = 'desktop' }: ChatPreviewModalProps) => {
-  const [selectedDevice, setSelectedDevice] = useState<'desktop' | 'mobile'>(device);
-  const [chatPosition, setChatPosition] = useState({ x: 'right', y: 'bottom' });
-  const [buttonPosition, setButtonPosition] = useState({ x: 'right', y: 'bottom' });
-  const [isChatOpen, setIsChatOpen] = useState(false);
-
-  const getButtonPositionClasses = () => {
-    const xClass = buttonPosition.x === 'right' ? 'right-6' : 'left-6';
-    const yClass = buttonPosition.y === 'bottom' ? 'bottom-6' : 
-                   buttonPosition.y === 'top' ? 'top-6' : 'top-1/2 -translate-y-1/2';
-    return `${xClass} ${yClass}`;
-  };
-
-  const getChatPositionClasses = () => {
-    const xClass = chatPosition.x === 'right' ? 'right-6' : 'left-6';
-    const yClass = chatPosition.y === 'bottom' ? 'bottom-20' : 
-                   chatPosition.y === 'top' ? 'top-20' : 'top-1/2 -translate-y-1/2';
-    return `${xClass} ${yClass}`;
-  };
-
-  const handleSubmitResponses = (responses: any) => {
-    console.log('Respostas enviadas:', responses);
-    setIsChatOpen(false);
-  };
+const ChatPreviewModal = ({ isOpen, onClose, flowData, device: initialDevice }: ChatPreviewModalProps) => {
+  const [device, setDevice] = useState<'desktop' | 'mobile'>(initialDevice);
+  const [horizontalPosition, setHorizontalPosition] = useState<'left' | 'center' | 'right'>('right');
+  const [verticalPosition, setVerticalPosition] = useState<'top' | 'center' | 'bottom'>('bottom');
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] p-0">
-        <div className="flex h-full">
-          {/* Controles laterais */}
-          <div className="w-80 border-r bg-gray-50 p-4 overflow-y-auto">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Preview do Chat</h3>
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                  <X className="w-4 h-4" />
+        <DialogHeader className="p-6 pb-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle>Preview do Chat</DialogTitle>
+            <div className="flex items-center gap-4">
+              {/* Controles de Posição */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Horizontal:</span>
+                <select 
+                  value={horizontalPosition} 
+                  onChange={(e) => setHorizontalPosition(e.target.value as any)}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="left">Esquerda</option>
+                  <option value="center">Centro</option>
+                  <option value="right">Direita</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Vertical:</span>
+                <select 
+                  value={verticalPosition} 
+                  onChange={(e) => setVerticalPosition(e.target.value as any)}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="top">Topo</option>
+                  <option value="center">Centro</option>
+                  <option value="bottom">Inferior</option>
+                </select>
+              </div>
+              
+              {/* Controles de Dispositivo */}
+              <div className="flex items-center gap-2 border rounded-lg p-1">
+                <Button
+                  variant={device === 'desktop' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDevice('desktop')}
+                >
+                  <Monitor className="w-4 h-4" />
                 </Button>
-              </div>
-
-              {/* Seletor de dispositivo */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Dispositivo</label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={selectedDevice === 'desktop' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedDevice('desktop')}
-                  >
-                    <Monitor className="w-4 h-4 mr-2" />
-                    Desktop
-                  </Button>
-                  <Button
-                    variant={selectedDevice === 'mobile' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedDevice('mobile')}
-                  >
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Mobile
-                  </Button>
-                </div>
-              </div>
-
-              {/* Posição do botão */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Posição do Botão</label>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-xs text-gray-600">Eixo X:</span>
-                    <div className="flex gap-1 mt-1">
-                      <Button
-                        variant={buttonPosition.x === 'left' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setButtonPosition(prev => ({ ...prev, x: 'left' }))}
-                      >
-                        Esquerda
-                      </Button>
-                      <Button
-                        variant={buttonPosition.x === 'right' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setButtonPosition(prev => ({ ...prev, x: 'right' }))}
-                      >
-                        Direita
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-600">Eixo Y:</span>
-                    <div className="flex gap-1 mt-1">
-                      <Button
-                        variant={buttonPosition.y === 'top' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'top' }))}
-                      >
-                        Topo
-                      </Button>
-                      <Button
-                        variant={buttonPosition.y === 'center' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'center' }))}
-                      >
-                        Centro
-                      </Button>
-                      <Button
-                        variant={buttonPosition.y === 'bottom' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setButtonPosition(prev => ({ ...prev, y: 'bottom' }))}
-                      >
-                        Inferior
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Posição do chat */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Posição do Chat</label>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-xs text-gray-600">Eixo X:</span>
-                    <div className="flex gap-1 mt-1">
-                      <Button
-                        variant={chatPosition.x === 'left' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setChatPosition(prev => ({ ...prev, x: 'left' }))}
-                      >
-                        Esquerda
-                      </Button>
-                      <Button
-                        variant={chatPosition.x === 'right' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setChatPosition(prev => ({ ...prev, x: 'right' }))}
-                      >
-                        Direita
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-600">Eixo Y:</span>
-                    <div className="flex gap-1 mt-1">
-                      <Button
-                        variant={chatPosition.y === 'top' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'top' }))}
-                      >
-                        Topo
-                      </Button>
-                      <Button
-                        variant={chatPosition.y === 'center' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'center' }))}
-                      >
-                        Centro
-                      </Button>
-                      <Button
-                        variant={chatPosition.y === 'bottom' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setChatPosition(prev => ({ ...prev, y: 'bottom' }))}
-                      >
-                        Inferior
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Button
+                  variant={device === 'mobile' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDevice('mobile')}
+                >
+                  <Smartphone className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </div>
-
-          {/* Área de preview */}
-          <div className="flex-1 relative bg-gradient-to-br from-blue-50 to-purple-50">
-            <div className={`${selectedDevice === 'mobile' ? 'max-w-sm mx-auto mt-8' : 'w-full h-full'} relative bg-white ${selectedDevice === 'mobile' ? 'rounded-lg shadow-xl' : ''}`}>
-              <div className={`${selectedDevice === 'mobile' ? 'h-[600px]' : 'h-full'} relative overflow-hidden`}>
-                {/* Conteúdo simulado da página */}
-                <div className="p-8 text-center">
-                  <h1 className="text-2xl font-bold mb-4">Página de Exemplo</h1>
-                  <p className="text-gray-600 mb-8">Esta é uma simulação de como o chat aparecerá no seu site.</p>
-                  <div className="space-y-4 text-left max-w-2xl mx-auto">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </DialogHeader>
+        
+        <div className="flex-1 p-6 pt-4">
+          <div 
+            className={`mx-auto border rounded-lg overflow-hidden h-full relative ${
+              device === 'mobile' ? 'max-w-sm' : 'max-w-4xl'
+            }`}
+            style={{ 
+              aspectRatio: device === 'mobile' ? '9/16' : '16/9',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }}
+          >
+            {/* Simulação de Site */}
+            <div className="h-full bg-white relative overflow-hidden">
+              {/* Header do site simulado */}
+              <div className="bg-white border-b p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-600 rounded"></div>
+                    <span className="font-semibold">Minha Empresa</span>
+                  </div>
+                  <div className="flex gap-4 text-sm text-gray-600">
+                    <span>Home</span>
+                    <span>Produtos</span>
+                    <span>Contato</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Botão flutuante */}
-                <div className={`fixed ${getButtonPositionClasses()} z-50`}>
-                  <Button
-                    onClick={() => setIsChatOpen(!isChatOpen)}
-                    className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-                    style={{ 
-                      backgroundColor: flowData?.colors?.primary || '#3B82F6',
-                      border: 'none'
-                    }}
-                  >
-                    {isChatOpen ? (
-                      <X className="w-6 h-6 text-white" />
-                    ) : (
-                      <span className="text-xl">💬</span>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Chat aberto */}
-                {isChatOpen && (
-                  <div className={`fixed ${getChatPositionClasses()} z-40`}>
-                    <div className={`bg-white rounded-lg shadow-xl border ${selectedDevice === 'mobile' ? 'w-80 h-96' : 'w-96 h-[500px]'} flex flex-col`}>
-                      {/* Header do chat */}
-                      <div 
-                        className="p-4 rounded-t-lg text-white flex justify-between items-center"
-                        style={{ backgroundColor: flowData?.colors?.primary || '#3B82F6' }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-bold">A</span>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{flowData?.name || 'Chat'}</h4>
-                            <p className="text-xs opacity-80">Online</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsChatOpen(false)}
-                          className="text-white hover:bg-white/20 h-8 w-8 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Conversa */}
-                      <ChatConversation 
-                        flowData={flowData}
-                        onSubmit={handleSubmitResponses}
-                      />
-                    </div>
+              {/* Conteúdo do site simulado */}
+              <div className="p-6 space-y-4">
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Bem-vindo à Nossa Empresa
+                </h1>
+                <p className="text-gray-600">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-100 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Produto 1</h3>
+                    <p className="text-sm text-gray-600">
+                      Descrição do produto aqui...
+                    </p>
                   </div>
-                )}
+                  <div className="bg-gray-100 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Produto 2</h3>
+                    <p className="text-sm text-gray-600">
+                      Descrição do produto aqui...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat Widget */}
+              <div 
+                className="absolute"
+                style={{
+                  [horizontalPosition === 'left' ? 'left' : horizontalPosition === 'right' ? 'right' : 'left']: 
+                    horizontalPosition === 'center' ? '50%' : '20px',
+                  [verticalPosition === 'top' ? 'top' : verticalPosition === 'bottom' ? 'bottom' : 'top']: 
+                    verticalPosition === 'center' ? '50%' : '20px',
+                  transform: horizontalPosition === 'center' || verticalPosition === 'center' ? 
+                    `translate(${horizontalPosition === 'center' ? '-50%' : '0'}, ${verticalPosition === 'center' ? '-50%' : '0'})` : 
+                    'none'
+                }}
+              >
+                <ChatPreview 
+                  flowData={flowData} 
+                  device={device}
+                  position={`${verticalPosition}-${horizontalPosition}`}
+                />
               </div>
             </div>
           </div>

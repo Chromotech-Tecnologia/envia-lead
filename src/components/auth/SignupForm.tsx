@@ -22,9 +22,9 @@ const SignupForm = () => {
     setIsLoading(true);
 
     try {
-      console.log('Iniciando cadastro para:', email);
-      console.log('Dados da empresa:', companyName);
-      console.log('Nome completo:', fullName);
+      console.log('SignupForm: Iniciando cadastro para:', email);
+      console.log('SignupForm: Dados da empresa:', companyName);
+      console.log('SignupForm: Nome completo:', fullName);
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -39,7 +39,7 @@ const SignupForm = () => {
       });
 
       if (error) {
-        console.error('Erro no cadastro:', error);
+        console.error('SignupForm: Erro no cadastro:', error);
         let errorMessage = error.message;
         
         // Melhorar as mensagens de erro para o usuário
@@ -61,24 +61,24 @@ const SignupForm = () => {
         return;
       }
 
-      console.log('Resultado do cadastro:', data);
+      console.log('SignupForm: Resultado do cadastro:', data);
       
       if (data.user) {
         if (data.session) {
-          console.log('Usuário criado e logado automaticamente');
+          console.log('SignupForm: Usuário criado e logado automaticamente');
           toast({
             title: "Organização criada com sucesso!",
             description: "Bem-vindo! Sua conta foi criada e você já está logado.",
           });
         } else {
-          console.log('Usuário criado, aguardando confirmação de email');
+          console.log('SignupForm: Usuário criado, aguardando confirmação de email');
           toast({
             title: "Cadastro realizado!",
             description: "Verifique seu email para confirmar a conta antes de fazer login.",
           });
         }
       } else {
-        console.error('Nenhum usuário retornado do cadastro');
+        console.error('SignupForm: Nenhum usuário retornado do cadastro');
         toast({
           variant: "destructive",
           title: "Erro inesperado",
@@ -86,7 +86,7 @@ const SignupForm = () => {
         });
       }
     } catch (error: any) {
-      console.error('Erro inesperado no cadastro:', error);
+      console.error('SignupForm: Erro inesperado no cadastro:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",

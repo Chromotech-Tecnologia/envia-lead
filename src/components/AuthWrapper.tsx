@@ -19,14 +19,37 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     console.log('AuthWrapper: Configurando listener de autenticação');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('AuthWrapper: Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN' && session && location.pathname === '/auth') {
-          console.log('AuthWrapper: Usuário logado, redirecionando para dashboard');
-          navigate('/');
+        if (event === 'SIGNED_IN' && session) {
+          console.log('AuthWrapper: Usuário logado, verificando perfil...');
+          
+          // Aguardar um pouco para o trigger processar
+          setTimeout(async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error('AuthWrapper: Erro ao buscar perfil:', error);
+              } else {
+                console.log('AuthWrapper: Perfil encontrado:', profile);
+              }
+            } catch (error) {
+              console.error('AuthWrapper: Erro inesperado ao buscar perfil:', error);
+            }
+          }, 2000);
+          
+          if (location.pathname === '/auth') {
+            console.log('AuthWrapper: Redirecionando para dashboard');
+            navigate('/');
+          }
         } else if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
           console.log('AuthWrapper: Usuário deslogado, redirecionando para auth');
           navigate('/auth');

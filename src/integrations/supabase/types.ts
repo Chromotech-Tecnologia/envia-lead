@@ -354,6 +354,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      test_trigger_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          trigger_name: string
+          event_manipulation: string
+          action_statement: string
+        }[]
+      }
     }
     Enums: {
       company_status: "active" | "inactive" | "trial"

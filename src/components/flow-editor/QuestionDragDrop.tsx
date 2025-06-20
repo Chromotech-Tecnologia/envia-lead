@@ -17,7 +17,7 @@ interface QuestionDragDropProps {
 const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
   const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
 
-  const questions = flowData.questions || [];
+  const questions = flowData?.questions || [];
 
   const addQuestion = (type: string) => {
     const newQuestion = {
@@ -30,8 +30,8 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       options: type === 'select' || type === 'radio' ? ['Opção 1', 'Opção 2'] : []
     };
     
-    setFlowData(prev => ({
-      ...prev,
+    setFlowData((prev: any) => ({
+      ...(prev || {}),
       questions: [...questions, newQuestion]
     }));
     
@@ -40,15 +40,15 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
   };
 
   const updateQuestion = (id: number, updates: any) => {
-    setFlowData(prev => ({
-      ...prev,
+    setFlowData((prev: any) => ({
+      ...(prev || {}),
       questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
     }));
   };
 
   const deleteQuestion = (id: number) => {
-    setFlowData(prev => ({
-      ...prev,
+    setFlowData((prev: any) => ({
+      ...(prev || {}),
       questions: questions.filter(q => q.id !== id)
     }));
   };
@@ -66,8 +66,8 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       order: index
     }));
 
-    setFlowData(prev => ({
-      ...prev,
+    setFlowData((prev: any) => ({
+      ...(prev || {}),
       questions: updatedQuestions
     }));
   };
@@ -90,8 +90,8 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
             <Label htmlFor="welcomeMessage">Mensagem de Boas-vindas</Label>
             <Textarea
               id="welcomeMessage"
-              value={flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?'}
-              onChange={(e) => setFlowData(prev => ({...prev, welcomeMessage: e.target.value}))}
+              value={flowData?.welcomeMessage || 'Olá! Como posso ajudá-lo?'}
+              onChange={(e) => setFlowData((prev: any) => ({...(prev || {}), welcomeMessage: e.target.value}))}
               placeholder="Ex: Olá! Bem-vindo ao nosso atendimento. Como posso ajudá-lo hoje?"
               className="min-h-[80px]"
             />

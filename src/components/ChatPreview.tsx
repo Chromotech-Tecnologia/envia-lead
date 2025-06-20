@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Phone } from 'lucide-react';
@@ -10,9 +9,11 @@ import TypingIndicator from './chat/TypingIndicator';
 
 interface ChatPreviewProps {
   device: 'desktop' | 'mobile';
+  flowData?: any;
+  position?: string;
 }
 
-const ChatPreview = ({ device }: ChatPreviewProps) => {
+const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
@@ -128,7 +129,7 @@ const ChatPreview = ({ device }: ChatPreviewProps) => {
           <ChatWindow device={device} onClose={() => setIsOpen(false)}>
             <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
               <ChatMessage
-                message="Olá! Sou seu assistente virtual da Envia Lead. Vou te ajudar a encontrar a melhor solução para você! 😊"
+                message={flowData?.welcomeMessage || "Olá! Sou seu assistente virtual da Envia Lead. Vou te ajudar a encontrar a melhor solução para você! 😊"}
                 isBot={true}
                 time="09:00"
               />
@@ -177,15 +178,17 @@ const ChatPreview = ({ device }: ChatPreviewProps) => {
                     time="09:05"
                   />
                   
-                  <div className="text-center">
-                    <Button 
-                      onClick={resetChat}
-                      className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-                    >
-                      <Phone className="w-4 h-4" />
-                      Conversar no WhatsApp
-                    </Button>
-                  </div>
+                  {flowData?.showWhatsappButton !== false && flowData?.whatsapp && (
+                    <div className="text-center">
+                      <Button 
+                        onClick={resetChat}
+                        className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Conversar no WhatsApp
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

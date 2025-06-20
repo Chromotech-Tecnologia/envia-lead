@@ -54,14 +54,24 @@ const UserManagement = () => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('UserManagement: Erro ao buscar perfil atual:', error);
         toast({
           variant: "destructive",
           title: "Erro",
           description: "Não foi possível carregar seu perfil.",
+        });
+        return;
+      }
+
+      if (!data) {
+        console.log('UserManagement: Perfil não encontrado');
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Perfil não encontrado. Tente fazer logout e login novamente.",
         });
         return;
       }
@@ -82,10 +92,24 @@ const UserManagement = () => {
         return;
       }
 
-      console.log('UserManagement: Buscando lista de usuários');
+      // Buscar perfil atual para obter company_id
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!currentProfile) {
+        console.log('UserManagement: Perfil atual não encontrado');
+        setUsers([]);
+        return;
+      }
+
+      console.log('UserManagement: Buscando usuários da empresa:', currentProfile.company_id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .eq('company_id', currentProfile.company_id)
         .order('created_at', { ascending: false });
 
       if (error) {

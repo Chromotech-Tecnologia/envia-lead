@@ -69,24 +69,54 @@ export const useFlows = () => {
     }
   };
 
+  const fetchUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('useFlows: Usuário não autenticado');
+      return null;
+    }
+
+    console.log('useFlows: Buscando perfil para usuário:', user.id);
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('useFlows: Erro ao buscar perfil:', error);
+      throw error;
+    }
+
+    if (!profile) {
+      console.log('useFlows: Perfil não encontrado, usuário pode não ter perfil ainda');
+      return null;
+    }
+
+    console.log('useFlows: Perfil encontrado:', profile);
+    return profile;
+  };
+
   const fetchFlows = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('Usuário não autenticado');
+      const profile = await fetchUserProfile();
+      if (!profile) {
+        console.log('useFlows: Sem perfil, não é possível carregar fluxos');
+        setFlows([]);
         setLoading(false);
         return;
       }
 
-      console.log('Buscando fluxos para usuário:', user.id);
+      console.log('useFlows: Buscando fluxos para empresa:', profile.company_id);
 
       const { data, error } = await supabase
         .from('flows')
         .select('*')
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar fluxos:', error);
+        console.error('useFlows: Erro ao buscar fluxos:', error);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -95,7 +125,7 @@ export const useFlows = () => {
         return;
       }
 
-      console.log('Fluxos carregados:', data);
+      console.log('useFlows: Fluxos carregados:', data?.length || 0);
 
       // Carregar detalhes de cada fluxo
       const flowsWithDetails = await Promise.all(
@@ -110,7 +140,7 @@ export const useFlows = () => {
 
       setFlows(flowsWithDetails);
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('useFlows: Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -123,29 +153,12 @@ export const useFlows = () => {
 
   const createFlow = async (flowData: Partial<Flow>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const profile = await fetchUserProfile();
+      if (!profile) {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Usuário não autenticado",
-        });
-        return null;
-      }
-
-      // Buscar o perfil do usuário para obter a company_id
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id, role')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('Erro ao buscar perfil:', profileError);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Perfil do usuário não encontrado",
+          description: "Perfil do usuário não encontrado. Tente fazer logout e login novamente.",
         });
         return null;
       }
@@ -160,7 +173,7 @@ export const useFlows = () => {
         return null;
       }
 
-      console.log('Criando fluxo para empresa:', profile.company_id);
+      console.log('useFlows: Criando fluxo para empresa:', profile.company_id);
 
       const newFlow = {
         name: flowData.name || "Novo Fluxo",
@@ -186,7 +199,7 @@ export const useFlows = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao criar fluxo:', error);
+        console.error('useFlows: Erro ao criar fluxo:', error);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -203,7 +216,7 @@ export const useFlows = () => {
 
       return data;
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('useFlows: Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",

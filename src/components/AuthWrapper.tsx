@@ -15,6 +15,73 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const createProfileIfNotExists = async (user: User) => {
+    try {
+      console.log('AuthWrapper: Verificando/criando perfil para usuário:', user.id);
+      
+      // Primeiro, verificar se já existe
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('AuthWrapper: Erro ao verificar perfil existente:', fetchError);
+        return;
+      }
+
+      if (existingProfile) {
+        console.log('AuthWrapper: Perfil já existe:', existingProfile);
+        return;
+      }
+
+      console.log('AuthWrapper: Perfil não existe, criando...');
+
+      // Criar empresa primeiro
+      const companyName = user.user_metadata?.company_name || 'Nova Empresa';
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName,
+          email: user.email,
+          status: 'trial'
+        })
+        .select()
+        .single();
+
+      if (companyError) {
+        console.error('AuthWrapper: Erro ao criar empresa:', companyError);
+        return;
+      }
+
+      console.log('AuthWrapper: Empresa criada:', company);
+
+      // Criar perfil
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email || '',
+          company_id: company.id,
+          role: 'admin',
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error('AuthWrapper: Erro ao criar perfil:', profileError);
+        return;
+      }
+
+      console.log('AuthWrapper: Perfil criado com sucesso:', profile);
+    } catch (error) {
+      console.error('AuthWrapper: Erro inesperado ao criar perfil:', error);
+    }
+  };
+
   useEffect(() => {
     console.log('AuthWrapper: Configurando listener de autenticação');
     
@@ -24,27 +91,13 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN' && session) {
-          console.log('AuthWrapper: Usuário logado, verificando perfil...');
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('AuthWrapper: Usuário logado, verificando/criando perfil...');
           
-          // Aguardar um pouco para o trigger processar
+          // Aguardar um pouco e tentar criar perfil se necessário
           setTimeout(async () => {
-            try {
-              const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (error) {
-                console.error('AuthWrapper: Erro ao buscar perfil:', error);
-              } else {
-                console.log('AuthWrapper: Perfil encontrado:', profile);
-              }
-            } catch (error) {
-              console.error('AuthWrapper: Erro inesperado ao buscar perfil:', error);
-            }
-          }, 2000);
+            await createProfileIfNotExists(session.user);
+          }, 1000);
           
           if (location.pathname === '/auth') {
             console.log('AuthWrapper: Redirecionando para dashboard');
@@ -58,13 +111,18 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     );
 
     // Verificar sessão inicial
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('AuthWrapper: Erro ao obter sessão:', error);
       } else {
         console.log('AuthWrapper: Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Verificar/criar perfil para sessão existente
+          await createProfileIfNotExists(session.user);
+        }
         
         if (!session && location.pathname !== '/auth') {
           console.log('AuthWrapper: Sem sessão, redirecionando para auth');

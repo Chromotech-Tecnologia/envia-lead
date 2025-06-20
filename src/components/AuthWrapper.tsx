@@ -16,88 +16,46 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const location = useLocation();
 
   useEffect(() => {
-    console.log('=== AUTHWRAPPER: Configurando listener de autenticação ===');
+    console.log('AuthWrapper: Configurando listener de autenticação');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('=== AUTHWRAPPER: Auth state changed ===');
-        console.log('Event:', event);
-        console.log('Session:', session ? {
-          user_id: session.user.id,
-          user_email: session.user.email,
-          expires_at: session.expires_at
-        } : null);
-        
+      (event, session) => {
+        console.log('AuthWrapper: Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN' && session) {
-          console.log('=== USUÁRIO LOGADO ===');
-          
-          // Verificar se perfil existe
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, companies(*)')
-            .eq('id', session.user.id)
-            .single();
-          
-          console.log('Profile encontrado:', profile);
-          console.log('Profile error:', profileError);
-          
-          if (location.pathname === '/auth') {
-            console.log('Redirecionando para dashboard');
-            navigate('/');
-          }
-        } else if (event === 'SIGNED_OUT') {
-          console.log('=== USUÁRIO DESLOGADO ===');
-          if (location.pathname !== '/auth') {
-            console.log('Redirecionando para auth');
-            navigate('/auth');
-          }
+        if (event === 'SIGNED_IN' && session && location.pathname === '/auth') {
+          console.log('AuthWrapper: Usuário logado, redirecionando para dashboard');
+          navigate('/');
+        } else if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
+          console.log('AuthWrapper: Usuário deslogado, redirecionando para auth');
+          navigate('/auth');
         }
       }
     );
 
     // Verificar sessão inicial
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('=== ERRO AO OBTER SESSÃO ===', error);
+        console.error('AuthWrapper: Erro ao obter sessão:', error);
       } else {
-        console.log('=== SESSÃO INICIAL ===');
-        console.log('Session:', session ? {
-          user_id: session.user.id,
-          user_email: session.user.email,
-          expires_at: session.expires_at
-        } : 'Nenhuma sessão');
-        
+        console.log('AuthWrapper: Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session) {
-          // Verificar se perfil existe
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, companies(*)')
-            .eq('id', session.user.id)
-            .single();
-          
-          console.log('Profile inicial encontrado:', profile);
-          console.log('Profile inicial error:', profileError);
-          
-          if (location.pathname === '/auth') {
-            console.log('Com sessão, redirecionando para dashboard');
-            navigate('/');
-          }
-        } else if (location.pathname !== '/auth') {
-          console.log('Sem sessão, redirecionando para auth');
+        if (!session && location.pathname !== '/auth') {
+          console.log('AuthWrapper: Sem sessão, redirecionando para auth');
           navigate('/auth');
+        } else if (session && location.pathname === '/auth') {
+          console.log('AuthWrapper: Com sessão, redirecionando para dashboard');
+          navigate('/');
         }
       }
       setLoading(false);
     });
 
     return () => {
-      console.log('=== AUTHWRAPPER: Removendo listener ===');
+      console.log('AuthWrapper: Removendo listener de autenticação');
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);

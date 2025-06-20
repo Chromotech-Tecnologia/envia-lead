@@ -8,7 +8,31 @@
   }
   window.enviaLeadLoaded = true;
 
-  const flowId = window.enviaLeadId;
+  // Extrair ID do fluxo do atributo do script ou variável global
+  let flowId = window.enviaLeadId;
+  
+  // Se não encontrar na variável global, tentar extrair do script
+  if (!flowId) {
+    const scripts = document.querySelectorAll('script[data-flow-id]');
+    if (scripts.length > 0) {
+      flowId = scripts[0].getAttribute('data-flow-id');
+    }
+  }
+
+  // Também tentar buscar por EL_ ID format
+  if (!flowId) {
+    const scripts = document.querySelectorAll('script');
+    for (let script of scripts) {
+      if (script.src && script.src.includes('envialead-chat.js')) {
+        const match = script.src.match(/[?&]id=([^&]+)/);
+        if (match) {
+          flowId = match[1];
+          break;
+        }
+      }
+    }
+  }
+  
   const currentUrl = window.location.href;
   
   console.log('[EnviaLead] Flow ID:', flowId);
@@ -24,7 +48,34 @@
     try {
       console.log('[EnviaLead] Buscando dados do fluxo...');
       
-      const response = await fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?id=eq.${flowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
+      // Buscar fluxo pelo ID correto
+      let actualFlowId = flowId;
+      
+      // Se o ID começa com EL_, extrair o ID real
+      if (flowId.startsWith('EL_')) {
+        // Buscar por todos os fluxos e encontrar o que corresponde ao código
+        const allFlowsResponse = await fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?select=*,questions(*),flow_urls(*),flow_emails(*)`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
+          }
+        });
+
+        if (allFlowsResponse.ok) {
+          const allFlows = await allFlowsResponse.json();
+          const targetFlow = allFlows.find(flow => {
+            const code = `EL_${flow.id.replace(/-/g, '').substring(0, 16).toUpperCase()}`;
+            return code === flowId;
+          });
+          
+          if (targetFlow) {
+            actualFlowId = targetFlow.id;
+            console.log('[EnviaLead] Flow ID convertido de', flowId, 'para', actualFlowId);
+          }
+        }
+      }
+
+      const response = await fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?id=eq.${actualFlowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
         headers: {
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA',
           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
@@ -47,10 +98,11 @@
       // Verificar se a URL atual está autorizada para este fluxo
       const isUrlAuthorized = flow.flow_urls && flow.flow_urls.some(urlObj => {
         const authorizedUrl = urlObj.url;
-        return currentUrl.includes(authorizedUrl) || authorizedUrl === '*';
+        if (authorizedUrl === '*') return true;
+        return currentUrl.includes(authorizedUrl);
       });
 
-      if (!isUrlAuthorized) {
+      if (!isUrlAuthorized && flow.flow_urls && flow.flow_urls.length > 0) {
         console.log('[EnviaLead] URL não autorizada para este fluxo');
         return;
       }

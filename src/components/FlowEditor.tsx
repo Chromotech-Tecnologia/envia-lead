@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,7 @@ import EmailSettings from './flow-editor/EmailSettings';
 import QuestionEditor from './flow-editor/QuestionEditor';
 import DesignSettings from './flow-editor/DesignSettings';
 import IntegrationCode from './flow-editor/IntegrationCode';
+import FloatingChatButton from './FloatingChatButton';
 
 interface FlowEditorProps {
   flow?: any;
@@ -23,6 +23,8 @@ interface FlowEditorProps {
 }
 
 const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onExit, onPreview }: FlowEditorProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+
   // Inicializar dados do fluxo quando um fluxo for selecionado para edição
   useEffect(() => {
     if (flow && isEditing) {
@@ -71,6 +73,10 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
     onExit();
   };
 
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Conteúdo principal com padding bottom para os botões fixos */}
@@ -107,6 +113,14 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
         </div>
       </div>
 
+      {/* Preview do botão flutuante */}
+      {showPreview && (
+        <FloatingChatButton 
+          flowData={flowData} 
+          position={flowData.buttonPosition || 'bottom-right'}
+        />
+      )}
+
       {/* Botões fixos no rodapé */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
         <div className="container mx-auto px-4 py-4">
@@ -117,9 +131,9 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
             </Button>
             
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => onPreview('desktop')}>
+              <Button variant="outline" onClick={handlePreview}>
                 <Eye className="w-4 h-4 mr-2" />
-                Visualizar
+                {showPreview ? 'Ocultar Preview' : 'Visualizar'}
               </Button>
               <Button onClick={handleSave} variant="outline">
                 <Save className="w-4 h-4 mr-2" />

@@ -33,11 +33,12 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
     var e=b.head||b.getElementsByTagName("head")[0];
     var f=b.createElement("script");
     f.setAttribute("src",c);
+    f.setAttribute("data-flow-id",d);
     f.setAttribute("charset","UTF-8");
     f.defer=true;
     a.enviaLeadId=d;
     e.appendChild(f);
-  } catch(g){}
+  } catch(g){console.error('[EnviaLead] Erro ao carregar script:',g);}
 })(window,document,"https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/envialead-chat.js","${flowCode}")
 </script>`;
   };

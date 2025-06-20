@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,9 +44,13 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
 
   const updateQuestion = (id: number, updates: any) => {
     setFlowData((prev: any) => {
-      const currentData = prev || {};
+      if (!prev || typeof prev !== 'object') {
+        return {
+          questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
+        };
+      }
       return {
-        ...currentData,
+        ...prev,
         questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
       };
     });

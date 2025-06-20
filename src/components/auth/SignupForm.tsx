@@ -22,11 +22,20 @@ const SignupForm = () => {
     setIsLoading(true);
 
     try {
-      console.log('Iniciando cadastro para:', email);
-      console.log('Dados da empresa:', companyName);
+      console.log('=== INICIANDO CADASTRO ===');
+      console.log('Email:', email);
       console.log('Nome completo:', fullName);
+      console.log('Nome da empresa:', companyName);
 
-      const { data, error } = await supabase.auth.signUp({
+      // Primeiro, verificar se o usuário já existe
+      const { data: existingUser } = await supabase.auth.getUser();
+      if (existingUser.user) {
+        console.log('Usuário já está logado, fazendo logout primeiro');
+        await supabase.auth.signOut();
+      }
+
+      // Tentar criar o usuário
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -38,19 +47,20 @@ const SignupForm = () => {
         }
       });
 
-      if (error) {
-        console.error('Erro no cadastro:', error);
-        let errorMessage = error.message;
+      console.log('=== RESULTADO DO SIGNUP ===');
+      console.log('Data:', signUpData);
+      console.log('Error:', signUpError);
+
+      if (signUpError) {
+        console.error('Erro no signup:', signUpError);
         
-        // Melhorar as mensagens de erro para o usuário
-        if (error.message.includes("User already registered")) {
+        let errorMessage = signUpError.message;
+        if (signUpError.message.includes("User already registered")) {
           errorMessage = "Este email já está cadastrado. Tente fazer login.";
-        } else if (error.message.includes("Password should be at least")) {
+        } else if (signUpError.message.includes("Password should be at least")) {
           errorMessage = "A senha deve ter pelo menos 6 caracteres.";
-        } else if (error.message.includes("Invalid email")) {
+        } else if (signUpError.message.includes("Invalid email")) {
           errorMessage = "Email inválido. Verifique o formato.";
-        } else if (error.message.includes("signup_disabled")) {
-          errorMessage = "Cadastro temporariamente desabilitado. Tente novamente mais tarde.";
         }
 
         toast({
@@ -61,17 +71,44 @@ const SignupForm = () => {
         return;
       }
 
-      console.log('Resultado do cadastro:', data);
-      
-      if (data.user) {
-        if (data.session) {
-          console.log('Usuário criado e logado automaticamente');
+      if (signUpData.user) {
+        console.log('=== USUÁRIO CRIADO COM SUCESSO ===');
+        console.log('User ID:', signUpData.user.id);
+        console.log('User email:', signUpData.user.email);
+        console.log('User metadata:', signUpData.user.user_metadata);
+
+        // Aguardar um pouco para o trigger processar
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Verificar se o perfil foi criado
+        console.log('=== VERIFICANDO PERFIL CRIADO ===');
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, companies(*)')
+          .eq('id', signUpData.user.id)
+          .single();
+
+        console.log('Profile data:', profileData);
+        console.log('Profile error:', profileError);
+
+        // Verificar empresas criadas
+        console.log('=== VERIFICANDO EMPRESAS ===');
+        const { data: companiesData, error: companiesError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('email', email);
+
+        console.log('Companies data:', companiesData);
+        console.log('Companies error:', companiesError);
+
+        if (signUpData.session) {
+          console.log('Usuário logado automaticamente');
           toast({
             title: "Organização criada com sucesso!",
             description: "Bem-vindo! Sua conta foi criada e você já está logado.",
           });
         } else {
-          console.log('Usuário criado, aguardando confirmação de email');
+          console.log('Usuário criado, aguardando confirmação por email');
           toast({
             title: "Cadastro realizado!",
             description: "Verifique seu email para confirmar a conta antes de fazer login.",
@@ -86,7 +123,7 @@ const SignupForm = () => {
         });
       }
     } catch (error: any) {
-      console.error('Erro inesperado no cadastro:', error);
+      console.error('=== ERRO INESPERADO ===', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",

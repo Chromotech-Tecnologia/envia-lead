@@ -41,7 +41,7 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
   const updateQuestion = (id: number, updates: any) => {
     setFlowData((prev: any) => {
       const currentData = prev || {};
-      const updatedQuestions = questions.map(q => q.id === id ? { ...q, ...updates } : q);
+      const updatedQuestions = questions.map((q: any) => q.id === id ? { ...q, ...updates } : q);
       return {
         ...currentData,
         questions: updatedQuestions
@@ -54,7 +54,7 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       const currentData = prev || {};
       return {
         ...currentData,
-        questions: questions.filter(q => q.id !== id)
+        questions: questions.filter((q: any) => q.id !== id)
       };
     });
   };
@@ -66,7 +66,7 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    const updatedQuestions = items.map((item, index) => ({
+    const updatedQuestions = items.map((item: any, index: number) => ({
       ...item,
       order: index
     }));

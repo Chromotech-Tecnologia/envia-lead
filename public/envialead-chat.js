@@ -1,6 +1,5 @@
-
 (function() {
-  console.log('[EnviaLead] Script iniciado');
+  console.log('[EnviaLead] Script iniciado v2.0');
   
   if (window.enviaLeadLoaded) {
     console.log('[EnviaLead] Script já carregado');
@@ -30,14 +29,27 @@
   }
   
   const currentUrl = window.location.href;
+  const currentDomain = window.location.hostname;
   
   console.log('[EnviaLead] Flow ID:', flowId);
   console.log('[EnviaLead] URL atual:', currentUrl);
+  console.log('[EnviaLead] Domínio atual:', currentDomain);
 
   if (!flowId) {
     console.error('[EnviaLead] ID do fluxo não fornecido');
     return;
   }
+
+  // Configuração da API baseada no ambiente
+  const API_BASE = 'https://fuzkdrkhvmaimpgzvimq.supabase.co';
+  const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA';
+
+  // Headers padrão para todas as requisições
+  const defaultHeaders = {
+    'apikey': API_KEY,
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json'
+  };
 
   // Função para buscar dados do fluxo
   async function fetchFlowData() {
@@ -50,11 +62,8 @@
       if (flowId.startsWith('EL_')) {
         console.log('[EnviaLead] Convertendo ID do formato EL_...');
         
-        const response = await fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?select=*,questions(*),flow_urls(*),flow_emails(*)`, {
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
-          }
+        const response = await fetch(`${API_BASE}/rest/v1/flows?select=*,questions(*),flow_urls(*),flow_emails(*)`, {
+          headers: defaultHeaders
         });
 
         if (response.ok) {
@@ -73,11 +82,8 @@
       }
 
       // Buscar o fluxo específico
-      const flowResponse = await fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?id=eq.${actualFlowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
-        }
+      const flowResponse = await fetch(`${API_BASE}/rest/v1/flows?id=eq.${actualFlowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
+        headers: defaultHeaders
       });
 
       if (!flowResponse.ok) {
@@ -101,20 +107,41 @@
         return;
       }
 
-      // Verificar URLs autorizadas
+      // Verificar URLs autorizadas - LÓGICA MELHORADA
       const authorizedUrls = flow.flow_urls?.map(urlObj => urlObj.url) || [];
       console.log('[EnviaLead] URLs autorizadas:', authorizedUrls);
       
       if (authorizedUrls.length > 0) {
-        const isUrlAuthorized = authorizedUrls.some(url => {
-          if (url === '*') return true;
-          return currentUrl.includes(url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
-        });
+        let isUrlAuthorized = false;
+        
+        for (const authorizedUrl of authorizedUrls) {
+          if (authorizedUrl === '*') {
+            isUrlAuthorized = true;
+            break;
+          }
+          
+          // Normalizar URLs para comparação
+          const normalizedAuth = authorizedUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+          const normalizedCurrent = currentUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+          
+          console.log('[EnviaLead] Comparando:', normalizedCurrent, 'com', normalizedAuth);
+          
+          // Verificar correspondência exata ou se a URL atual contém a autorizada
+          if (normalizedCurrent === normalizedAuth || 
+              normalizedCurrent.includes(normalizedAuth) ||
+              currentDomain.includes(normalizedAuth.split('/')[0])) {
+            isUrlAuthorized = true;
+            console.log('[EnviaLead] URL autorizada encontrada:', authorizedUrl);
+            break;
+          }
+        }
 
         if (!isUrlAuthorized) {
-          console.log('[EnviaLead] URL não autorizada:', currentUrl);
+          console.log('[EnviaLead] URL não autorizada. Atual:', currentUrl, 'Autorizadas:', authorizedUrls);
           return;
         }
+      } else {
+        console.log('[EnviaLead] Nenhuma URL configurada, permitindo em qualquer domínio');
       }
 
       console.log('[EnviaLead] Criando widget do chat...');
@@ -128,6 +155,12 @@
   // Função para criar o widget do chat
   function createChatWidget(flowData) {
     console.log('[EnviaLead] Criando widget para fluxo:', flowData.name);
+
+    // Verificar se já existe um widget
+    if (document.getElementById('envialead-chat-container')) {
+      console.log('[EnviaLead] Widget já existe, removendo...');
+      document.getElementById('envialead-chat-container').remove();
+    }
 
     // Processar perguntas ordenadas
     const questions = flowData.questions ? flowData.questions
@@ -308,6 +341,8 @@
     
     document.body.appendChild(chatContainer);
 
+    console.log('[EnviaLead] Widget adicionado ao DOM');
+
     // Variáveis do chat
     let currentQuestionIndex = 0;
     let responses = {};
@@ -316,11 +351,11 @@
     // Event listeners
     floatingButton.addEventListener('click', toggleChat);
     
-    // Fechar bolha de boas-vindas
+    // Configurar event listeners após inserção no DOM
     setTimeout(() => {
-      const closeBtn = document.getElementById('envialead-close-welcome');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
+      const closeWelcomeBtn = document.getElementById('envialead-close-welcome');
+      if (closeWelcomeBtn) {
+        closeWelcomeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           welcomeBubble.style.opacity = '0';
           setTimeout(() => {
@@ -337,6 +372,7 @@
 
     function toggleChat() {
       isOpen = !isOpen;
+      console.log('[EnviaLead] Toggle chat:', isOpen);
       if (isOpen) {
         chatWindow.style.display = 'flex';
         welcomeBubble.style.display = 'none';
@@ -605,13 +641,9 @@
 
         console.log('[EnviaLead] Salvando lead:', leadData);
 
-        const response = await fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/leads', {
+        const response = await fetch(`${API_BASE}/rest/v1/leads`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
-          },
+          headers: defaultHeaders,
           body: JSON.stringify(leadData)
         });
 
@@ -651,11 +683,17 @@
     return positions[position] || positions['bottom-right'];
   }
 
-  // Inicializar
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', fetchFlowData);
-  } else {
+  // Inicializar - aguardar DOM estar pronto
+  function initialize() {
+    console.log('[EnviaLead] Inicializando...');
     fetchFlowData();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    // DOM já está pronto, executar imediatamente
+    setTimeout(initialize, 100);
   }
 
 })();

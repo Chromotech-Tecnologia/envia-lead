@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Mail, User, Shield } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -45,8 +45,12 @@ const UserManagement = () => {
   const fetchCurrentUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('UserManagement: Nenhum usuário autenticado');
+        return;
+      }
 
+      console.log('UserManagement: Buscando perfil para usuário:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -54,13 +58,19 @@ const UserManagement = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao buscar perfil atual:', error);
+        console.error('UserManagement: Erro ao buscar perfil atual:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar seu perfil.",
+        });
         return;
       }
 
+      console.log('UserManagement: Perfil atual encontrado:', data);
       setCurrentUserProfile(data);
     } catch (error) {
-      console.error('Erro ao buscar perfil atual:', error);
+      console.error('UserManagement: Erro inesperado ao buscar perfil:', error);
     }
   };
 
@@ -68,15 +78,19 @@ const UserManagement = () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('UserManagement: Nenhum usuário autenticado para buscar lista');
+        return;
+      }
 
+      console.log('UserManagement: Buscando lista de usuários');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar usuários:', error);
+        console.error('UserManagement: Erro ao buscar usuários:', error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar usuários",
@@ -85,9 +99,10 @@ const UserManagement = () => {
         return;
       }
 
+      console.log('UserManagement: Usuários encontrados:', data?.length || 0);
       setUsers(data || []);
     } catch (error: any) {
-      console.error('Erro inesperado:', error);
+      console.error('UserManagement: Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -100,13 +115,32 @@ const UserManagement = () => {
 
   const createUser = async () => {
     try {
-      console.log('Criando usuário:', formData);
+      console.log('UserManagement: Criando usuário:', formData);
 
       if (!currentUserProfile) {
         toast({
           variant: "destructive",
           title: "Erro",
           description: "Perfil não encontrado",
+        });
+        return;
+      }
+
+      // Validações básicas
+      if (!formData.email || !formData.password || !formData.full_name) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Todos os campos são obrigatórios",
+        });
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "A senha deve ter pelo menos 6 caracteres",
         });
         return;
       }
@@ -123,15 +157,16 @@ const UserManagement = () => {
       });
 
       if (error) {
-        console.error('Erro ao criar usuário:', error);
+        console.error('UserManagement: Erro ao criar usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar usuário",
-          description: error.message,
+          description: error.message || "Não foi possível criar o usuário",
         });
         return;
       }
 
+      console.log('UserManagement: Usuário criado com sucesso:', data);
       toast({
         title: "Usuário criado!",
         description: "O usuário foi criado com sucesso.",
@@ -141,7 +176,7 @@ const UserManagement = () => {
       setIsDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
-      console.error('Erro inesperado ao criar usuário:', error);
+      console.error('UserManagement: Erro inesperado ao criar usuário:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -154,6 +189,8 @@ const UserManagement = () => {
     if (!editingUser) return;
 
     try {
+      console.log('UserManagement: Atualizando usuário:', editingUser.id);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -163,7 +200,7 @@ const UserManagement = () => {
         .eq('id', editingUser.id);
 
       if (error) {
-        console.error('Erro ao atualizar usuário:', error);
+        console.error('UserManagement: Erro ao atualizar usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao atualizar usuário",
@@ -182,7 +219,7 @@ const UserManagement = () => {
       setEditingUser(null);
       fetchUsers();
     } catch (error: any) {
-      console.error('Erro inesperado ao atualizar usuário:', error);
+      console.error('UserManagement: Erro inesperado ao atualizar usuário:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -197,13 +234,15 @@ const UserManagement = () => {
     }
 
     try {
+      console.log('UserManagement: Excluindo usuário:', userId);
+      
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
 
       if (error) {
-        console.error('Erro ao excluir usuário:', error);
+        console.error('UserManagement: Erro ao excluir usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao excluir usuário",
@@ -219,7 +258,7 @@ const UserManagement = () => {
 
       fetchUsers();
     } catch (error: any) {
-      console.error('Erro inesperado ao excluir usuário:', error);
+      console.error('UserManagement: Erro inesperado ao excluir usuário:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -263,7 +302,6 @@ const UserManagement = () => {
   };
 
   const canManageUsers = currentUserProfile?.role === 'admin';
-  const isGlobalAdmin = currentUserProfile?.company_id === '00000000-0000-0000-0000-000000000001';
 
   if (!canManageUsers) {
     return (
@@ -315,6 +353,7 @@ const UserManagement = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   disabled={!!editingUser}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -323,6 +362,7 @@ const UserManagement = () => {
                   id="full_name"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -346,7 +386,10 @@ const UserManagement = () => {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    minLength={6}
+                    required
                   />
+                  <p className="text-sm text-gray-500">Mínimo de 6 caracteres</p>
                 </div>
               )}
               <div className="flex gap-2 pt-4">
@@ -364,7 +407,7 @@ const UserManagement = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Usuários</CardTitle>
+          <CardTitle>Usuários ({users.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -415,6 +458,13 @@ const UserManagement = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              {users.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                    Nenhum usuário encontrado
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

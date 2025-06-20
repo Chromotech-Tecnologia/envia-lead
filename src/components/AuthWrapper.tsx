@@ -16,30 +16,48 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const location = useLocation();
 
   useEffect(() => {
+    console.log('AuthWrapper: Configurando listener de autenticação');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('AuthWrapper: Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session && location.pathname === '/auth') {
+        if (event === 'SIGNED_IN' && session && location.pathname === '/auth') {
+          console.log('AuthWrapper: Usuário logado, redirecionando para dashboard');
           navigate('/');
-        } else if (!session && location.pathname !== '/auth') {
+        } else if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
+          console.log('AuthWrapper: Usuário deslogado, redirecionando para auth');
           navigate('/auth');
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (!session && location.pathname !== '/auth') {
-        navigate('/auth');
+    // Verificar sessão inicial
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('AuthWrapper: Erro ao obter sessão:', error);
+      } else {
+        console.log('AuthWrapper: Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session && location.pathname !== '/auth') {
+          console.log('AuthWrapper: Sem sessão, redirecionando para auth');
+          navigate('/auth');
+        } else if (session && location.pathname === '/auth') {
+          console.log('AuthWrapper: Com sessão, redirecionando para dashboard');
+          navigate('/');
+        }
       }
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthWrapper: Removendo listener de autenticação');
+      subscription.unsubscribe();
+    };
   }, [navigate, location.pathname]);
 
   if (loading) {

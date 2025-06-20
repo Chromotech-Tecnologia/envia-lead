@@ -1,12 +1,10 @@
+
 import { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, MessageCircle } from 'lucide-react';
-import QuestionCard from './QuestionCard';
+import WelcomeMessageSettings from './WelcomeMessageSettings';
+import QuestionTypeButtons from './QuestionTypeButtons';
+import EmptyQuestionsState from './EmptyQuestionsState';
+import QuestionsList from './QuestionsList';
 
 interface QuestionDragDropProps {
   flowData: any;
@@ -37,20 +35,16 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       };
     });
     
-    // Abrir em modo de edição automaticamente
     setEditingQuestion(newQuestion.id);
   };
 
   const updateQuestion = (id: number, updates: any) => {
     setFlowData((prev: any) => {
-      if (!prev || typeof prev !== 'object') {
-        return {
-          questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
-        };
-      }
+      const currentData = prev || {};
+      const updatedQuestions = questions.map(q => q.id === id ? { ...q, ...updates } : q);
       return {
-        ...prev,
-        questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
+        ...currentData,
+        questions: updatedQuestions
       };
     });
   };
@@ -72,18 +66,15 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Atualizar ordem
     const updatedQuestions = items.map((item, index) => ({
       ...item,
       order: index
     }));
 
     setFlowData((prev: any) => {
-      if (!prev || typeof prev !== 'object') {
-        return { questions: updatedQuestions };
-      }
+      const currentData = prev || {};
       return {
-        ...prev,
+        ...currentData,
         questions: updatedQuestions
       };
     });
@@ -91,41 +82,8 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Mensagem de Saudação */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            Mensagem de Saudação
-          </CardTitle>
-          <CardDescription>
-            Configure a mensagem inicial que aparecerá para o usuário
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <Label htmlFor="welcomeMessage">Mensagem de Boas-vindas</Label>
-            <Textarea
-              id="welcomeMessage"
-              value={flowData?.welcomeMessage || 'Olá! Como posso ajudá-lo?'}
-              onChange={(e) => setFlowData((prev: any) => {
-                const currentData = prev || {};
-                return {
-                  ...currentData,
-                  welcomeMessage: e.target.value
-                };
-              })}
-              placeholder="Ex: Olá! Bem-vindo ao nosso atendimento. Como posso ajudá-lo hoje?"
-              className="min-h-[80px]"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Esta mensagem aparecerá na bolha de boas-vindas e como primeira mensagem do chat
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <WelcomeMessageSettings flowData={flowData} setFlowData={setFlowData} />
 
-      {/* Perguntas */}
       <Card>
         <CardHeader>
           <CardTitle>Perguntas do Fluxo</CardTitle>
@@ -134,81 +92,20 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => addQuestion('text')} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Texto
-            </Button>
-            <Button onClick={() => addQuestion('email')} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Email
-            </Button>
-            <Button onClick={() => addQuestion('phone')} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Telefone
-            </Button>
-            <Button onClick={() => addQuestion('select')} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Seleção
-            </Button>
-            <Button onClick={() => addQuestion('radio')} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Múltipla Escolha
-            </Button>
-            <Button onClick={() => addQuestion('bot_message')} variant="outline" size="sm" className="bg-blue-50 text-blue-700 border-blue-200">
-              <Plus className="w-4 h-4 mr-1" />
-              Mensagem Bot
-            </Button>
-          </div>
+          <QuestionTypeButtons onAddQuestion={addQuestion} />
 
           {questions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nenhuma pergunta adicionada ainda.</p>
-              <p className="text-sm">Use os botões acima para adicionar perguntas.</p>
-            </div>
+            <EmptyQuestionsState />
           ) : (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="questions">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="space-y-3"
-                  >
-                    {questions
-                      .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .map((question, index) => (
-                        <Draggable
-                          key={question.id}
-                          draggableId={question.id.toString()}
-                          index={index}
-                        >
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={snapshot.isDragging ? "opacity-70" : ""}
-                            >
-                              <QuestionCard
-                                question={question}
-                                index={index + 1}
-                                isEditing={editingQuestion === question.id}
-                                onEdit={() => setEditingQuestion(question.id)}
-                                onSave={() => setEditingQuestion(null)}
-                                onDelete={() => deleteQuestion(question.id)}
-                                onUpdate={(updates) => updateQuestion(question.id, updates)}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+            <QuestionsList
+              questions={questions}
+              editingQuestion={editingQuestion}
+              onDragEnd={onDragEnd}
+              onEditQuestion={setEditingQuestion}
+              onSaveQuestion={() => setEditingQuestion(null)}
+              onDeleteQuestion={deleteQuestion}
+              onUpdateQuestion={updateQuestion}
+            />
           )}
         </CardContent>
       </Card>

@@ -30,27 +30,36 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       options: type === 'select' || type === 'radio' ? ['Opção 1', 'Opção 2'] : []
     };
     
-    setFlowData((prev: any) => ({
-      ...(prev || {}),
-      questions: [...questions, newQuestion]
-    }));
+    setFlowData((prev: any) => {
+      const currentData = prev || {};
+      return {
+        ...currentData,
+        questions: [...questions, newQuestion]
+      };
+    });
     
     // Abrir em modo de edição automaticamente
     setEditingQuestion(newQuestion.id);
   };
 
   const updateQuestion = (id: number, updates: any) => {
-    setFlowData((prev: any) => ({
-      ...(prev || {}),
-      questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
-    }));
+    setFlowData((prev: any) => {
+      const currentData = prev || {};
+      return {
+        ...currentData,
+        questions: questions.map(q => q.id === id ? { ...q, ...updates } : q)
+      };
+    });
   };
 
   const deleteQuestion = (id: number) => {
-    setFlowData((prev: any) => ({
-      ...(prev || {}),
-      questions: questions.filter(q => q.id !== id)
-    }));
+    setFlowData((prev: any) => {
+      const currentData = prev || {};
+      return {
+        ...currentData,
+        questions: questions.filter(q => q.id !== id)
+      };
+    });
   };
 
   const onDragEnd = (result: any) => {
@@ -66,10 +75,13 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
       order: index
     }));
 
-    setFlowData((prev: any) => ({
-      ...(prev || {}),
-      questions: updatedQuestions
-    }));
+    setFlowData((prev: any) => {
+      const currentData = prev || {};
+      return {
+        ...currentData,
+        questions: updatedQuestions
+      };
+    });
   };
 
   return (
@@ -91,7 +103,13 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
             <Textarea
               id="welcomeMessage"
               value={flowData?.welcomeMessage || 'Olá! Como posso ajudá-lo?'}
-              onChange={(e) => setFlowData((prev: any) => ({...(prev || {}), welcomeMessage: e.target.value}))}
+              onChange={(e) => setFlowData((prev: any) => {
+                const currentData = prev || {};
+                return {
+                  ...currentData,
+                  welcomeMessage: e.target.value
+                };
+              })}
               placeholder="Ex: Olá! Bem-vindo ao nosso atendimento. Como posso ajudá-lo hoje?"
               className="min-h-[80px]"
             />

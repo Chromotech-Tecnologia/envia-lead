@@ -1,11 +1,11 @@
 
-// EnviaLead Chat Widget - API System v5.0
+// EnviaLead Chat Widget - API System v6.0
 // Este arquivo funciona como uma API que busca dados do servidor e exibe o chat
 
 (function() {
   'use strict';
 
-  console.log('[EnviaLead] Inicializando API do chat v5.0...');
+  console.log('[EnviaLead] Inicializando API do chat v6.0...');
 
   // Prevenir carregamento duplo
   if (window.enviaLeadLoaded) {
@@ -14,7 +14,7 @@
   }
   window.enviaLeadLoaded = true;
 
-  // Configurações da API - URL do seu sistema EnviaLead
+  // Configurações da API
   const API_BASE = 'https://fuzkdrkhvmaimpgzvimq.supabase.co';
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA';
 
@@ -53,22 +53,6 @@
       console.log('[EnviaLead] Flow ID da variável global:', flowId);
     }
     
-    // Método 4: Buscar em scripts que contenham envialead
-    if (!flowId) {
-      const allScripts = document.getElementsByTagName('script');
-      for (let i = 0; i < allScripts.length; i++) {
-        const script = allScripts[i];
-        if (script.src && script.src.includes('envialead')) {
-          const srcFlowId = script.getAttribute('data-flow-id');
-          if (srcFlowId) {
-            flowId = srcFlowId;
-            console.log('[EnviaLead] Flow ID encontrado em script EnviaLead:', flowId);
-            break;
-          }
-        }
-      }
-    }
-    
     console.log('[EnviaLead] Flow ID final extraído:', flowId);
     return flowId;
   }
@@ -77,15 +61,13 @@
   async function convertFlowId(flowId) {
     console.log('[EnviaLead] Convertendo Flow ID:', flowId);
     
-    if (!flowId.startsWith('EL_')) {
-      console.log('[EnviaLead] Flow ID já no formato correto');
+    if (!flowId || !flowId.startsWith('EL_')) {
+      console.log('[EnviaLead] Flow ID já no formato correto ou inválido');
       return flowId;
     }
 
-    console.log('[EnviaLead] Convertendo ID do formato EL_...');
-    
     try {
-      const response = await fetch(`${API_BASE}/rest/v1/flows?select=*,questions(*),flow_urls(*),flow_emails(*)`, {
+      const response = await fetch(`${API_BASE}/rest/v1/flows?select=*`, {
         headers: defaultHeaders
       });
 
@@ -94,10 +76,7 @@
         console.log('[EnviaLead] Total de fluxos encontrados:', allFlows.length);
         
         for (const flow of allFlows) {
-          // Gerar código EL_ baseado no ID do fluxo
           const code = `EL_${flow.id.replace(/-/g, '').substring(0, 16).toUpperCase()}`;
-          console.log('[EnviaLead] Comparando:', code, 'com', flowId);
-          
           if (code === flowId) {
             console.log('[EnviaLead] Flow ID convertido:', flowId, '->', flow.id);
             return flow.id;
@@ -105,8 +84,6 @@
         }
         
         console.log('[EnviaLead] Nenhum fluxo encontrado para o código:', flowId);
-      } else {
-        console.error('[EnviaLead] Erro na resposta da API:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('[EnviaLead] Erro ao converter Flow ID:', error);
@@ -122,6 +99,10 @@
       
       const actualFlowId = await convertFlowId(flowId);
       console.log('[EnviaLead] Flow ID após conversão:', actualFlowId);
+
+      if (!actualFlowId) {
+        throw new Error('Flow ID inválido');
+      }
 
       const response = await fetch(`${API_BASE}/rest/v1/flows?id=eq.${actualFlowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
         headers: defaultHeaders
@@ -144,9 +125,6 @@
       const flow = flows[0];
       console.log('[EnviaLead] Fluxo encontrado:', flow.name);
       console.log('[EnviaLead] Fluxo ativo:', flow.is_active);
-      console.log('[EnviaLead] URLs do fluxo:', flow.flow_urls);
-      console.log('[EnviaLead] Perguntas do fluxo:', flow.questions);
-      console.log('[EnviaLead] Cores do fluxo:', flow.colors);
       
       return flow;
     } catch (error) {
@@ -166,7 +144,6 @@
       return true;
     }
 
-    // Filtrar URLs vazias
     const validUrls = authorizedUrls.filter(urlObj => urlObj.url && urlObj.url.trim() !== '');
     if (validUrls.length === 0) {
       console.log('[EnviaLead] Nenhuma URL válida configurada, permitindo em qualquer domínio');
@@ -184,7 +161,6 @@
         return true;
       }
       
-      // Normalizar URLs para comparação
       const normalizedAuth = authorizedUrl.toLowerCase()
         .replace(/^https?:\/\//, '')
         .replace(/\/$/, '');
@@ -192,24 +168,10 @@
         .replace(/^https?:\/\//, '')
         .replace(/\/$/, '');
       
-      console.log('[EnviaLead] Comparando:', normalizedCurrent, 'com', normalizedAuth);
-      
-      // Verificar correspondência exata
-      if (normalizedCurrent === normalizedAuth) {
-        console.log('[EnviaLead] Correspondência exata encontrada');
-        return true;
-      }
-      
-      // Verificar se a URL atual contém a autorizada
-      if (normalizedCurrent.includes(normalizedAuth)) {
-        console.log('[EnviaLead] URL atual contém a autorizada');
-        return true;
-      }
-      
-      // Verificar domínio
-      const authDomain = normalizedAuth.split('/')[0];
-      if (currentDomain.includes(authDomain) || authDomain.includes(currentDomain)) {
-        console.log('[EnviaLead] Domínio autorizado:', authDomain);
+      if (normalizedCurrent === normalizedAuth || 
+          normalizedCurrent.includes(normalizedAuth) || 
+          currentDomain.includes(normalizedAuth.split('/')[0])) {
+        console.log('[EnviaLead] URL autorizada');
         return true;
       }
     }
@@ -238,14 +200,11 @@
         body: JSON.stringify(leadData)
       });
 
-      console.log('[EnviaLead] Status do salvamento:', response.status);
-
       if (response.ok) {
         console.log('[EnviaLead] Lead salvo com sucesso');
         return true;
       } else {
-        const errorText = await response.text();
-        console.error('[EnviaLead] Erro ao salvar lead:', response.status, errorText);
+        console.error('[EnviaLead] Erro ao salvar lead:', response.status);
         return false;
       }
     } catch (error) {
@@ -254,199 +213,7 @@
     }
   }
 
-  // Criar o widget do chat
-  function createWidget(flowData) {
-    console.log('[EnviaLead] Criando widget para fluxo:', flowData.name);
-
-    // Remover widget existente
-    const existing = document.getElementById('envialead-chat-container');
-    if (existing) {
-      console.log('[EnviaLead] Widget já existe, removendo...');
-      existing.remove();
-    }
-
-    // Injetar estilos CSS
-    injectStyles();
-
-    // Usar as cores do fluxo ou padrão
-    const colors = flowData.colors || {
-      primary: '#FF6B35',
-      secondary: '#3B82F6',
-      text: '#1F2937',
-      background: '#FFFFFF'
-    };
-
-    console.log('[EnviaLead] Usando cores:', colors);
-
-    const position = flowData.position || 'bottom-right';
-    const positionStyles = getPositionStyles(position);
-
-    // Container principal
-    const container = document.createElement('div');
-    container.id = 'envialead-chat-container';
-    container.style.cssText = `
-      position: fixed;
-      z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ${positionStyles}
-    `;
-
-    // Botão flutuante
-    const button = document.createElement('div');
-    button.id = 'envialead-floating-button';
-    button.style.cssText = `
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary});
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
-      font-size: 24px;
-    `;
-    button.innerHTML = '💬';
-
-    // Hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.transform = 'scale(1.1)';
-      button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = 'scale(1)';
-      button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    });
-
-    // Bolha de boas-vindas
-    const welcomeBubble = document.createElement('div');
-    welcomeBubble.id = 'envialead-welcome-bubble';
-    welcomeBubble.style.cssText = `
-      position: absolute;
-      bottom: 70px;
-      right: 0;
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px 16px;
-      max-width: 250px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      display: block;
-      opacity: 1;
-      transition: all 0.3s ease;
-      animation: slideIn 0.3s ease-out;
-    `;
-
-    const welcomeMessage = flowData.welcome_message || 'Olá! Como posso ajudá-lo?';
-    welcomeBubble.innerHTML = `
-      <div style="position: relative;">
-        <button id="envialead-close-welcome" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border: none; background: #f3f4f6; border-radius: 50%; cursor: pointer; font-size: 12px; color: #6b7280; display: flex; align-items: center; justify-content: center;">×</button>
-        <p style="margin: 0; font-size: 14px; color: ${colors.text}; line-height: 1.4;">${welcomeMessage}</p>
-      </div>
-    `;
-
-    // Janela do chat
-    const chatWindow = document.createElement('div');
-    chatWindow.id = 'envialead-chat-window';
-    const chatWindowPosition = getChatWindowPosition(position);
-    chatWindow.style.cssText = `
-      position: fixed;
-      ${chatWindowPosition}
-      width: 350px;
-      height: 500px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-      z-index: 10001;
-      animation: chatSlideIn 0.3s ease-out;
-    `;
-
-    // Header do chat
-    const chatHeader = document.createElement('div');
-    chatHeader.style.cssText = `
-      background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary});
-      color: white;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    `;
-
-    chatHeader.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 12px;">
-        ${flowData.avatar_url ? 
-          `<img src="${flowData.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" alt="Avatar">` : 
-          '<div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px;">👤</div>'
-        }
-        <div>
-          <div style="font-weight: 600; font-size: 14px;">${flowData.name || 'Atendimento'}</div>
-          <div style="font-size: 12px; opacity: 0.9;">Online</div>
-        </div>
-      </div>
-      <button id="envialead-close-chat" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">×</button>
-    `;
-
-    // Área de mensagens
-    const chatMessages = document.createElement('div');
-    chatMessages.id = 'envialead-chat-messages';
-    chatMessages.style.cssText = `
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      background: #f9fafb;
-    `;
-
-    // Área de input
-    const chatInputArea = document.createElement('div');
-    chatInputArea.id = 'envialead-chat-input-area';
-    chatInputArea.style.cssText = `
-      padding: 16px;
-      border-top: 1px solid #e5e7eb;
-      background: white;
-    `;
-
-    chatWindow.appendChild(chatHeader);
-    chatWindow.appendChild(chatMessages);
-    chatWindow.appendChild(chatInputArea);
-
-    container.appendChild(button);
-    container.appendChild(welcomeBubble);
-    container.appendChild(chatWindow);
-    document.body.appendChild(container);
-
-    console.log('[EnviaLead] Widget adicionado ao DOM');
-
-    // Inicializar chat
-    initializeChat(flowData, colors);
-
-    // Event listeners
-    button.addEventListener('click', () => toggleChat());
-    
-    const closeWelcomeBtn = welcomeBubble.querySelector('#envialead-close-welcome');
-    if (closeWelcomeBtn) {
-      closeWelcomeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        welcomeBubble.style.opacity = '0';
-        setTimeout(() => {
-          welcomeBubble.style.display = 'none';
-        }, 300);
-      });
-    }
-    
-    const closeChatBtn = chatWindow.querySelector('#envialead-close-chat');
-    if (closeChatBtn) {
-      closeChatBtn.addEventListener('click', () => toggleChat());
-    }
-
-    console.log('[EnviaLead] Widget criado com sucesso!');
-  }
-
-  // Funcionalidade do chat
+  // Variáveis globais do chat
   let chatOpen = false;
   let currentQuestionIndex = 0;
   let responses = {};
@@ -454,11 +221,11 @@
   let flowData = null;
   let colors = null;
 
+  // Inicializar chat
   function initializeChat(flow, flowColors) {
     flowData = flow;
     colors = flowColors;
     
-    // Processar perguntas do fluxo
     questions = flow.questions ? flow.questions
       .map(q => ({
         id: q.id,
@@ -466,33 +233,37 @@
         title: q.title,
         placeholder: q.placeholder,
         required: q.required,
-        order: q.order_index || 0,
+        order: q.order_index || q.order || 0,
         options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : []
       }))
       .sort((a, b) => a.order - b.order) : [];
     
     console.log('[EnviaLead] Chat inicializado com', questions.length, 'perguntas');
-    console.log('[EnviaLead] Perguntas processadas:', questions);
   }
 
+  // Toggle chat
   function toggleChat() {
     chatOpen = !chatOpen;
     console.log('[EnviaLead] Toggle chat:', chatOpen);
     
     const chatWindow = document.getElementById('envialead-chat-window');
     const welcomeBubble = document.getElementById('envialead-welcome-bubble');
+    const floatingButton = document.getElementById('envialead-floating-button');
     
     if (chatOpen) {
       chatWindow.style.display = 'flex';
-      welcomeBubble.style.display = 'none';
+      if (welcomeBubble) welcomeBubble.style.display = 'none';
+      floatingButton.innerHTML = '×';
       if (currentQuestionIndex === 0) {
         setTimeout(() => showNextQuestion(), 500);
       }
     } else {
       chatWindow.style.display = 'none';
+      floatingButton.innerHTML = '💬';
     }
   }
 
+  // Adicionar mensagem
   function addMessage(text, isBot = true) {
     const chatMessages = document.getElementById('envialead-chat-messages');
     const messageDiv = document.createElement('div');
@@ -522,6 +293,7 @@
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
+  // Mostrar indicador de digitação
   function showTypingIndicator() {
     const chatMessages = document.getElementById('envialead-chat-messages');
     const typingDiv = document.createElement('div');
@@ -548,6 +320,7 @@
     return typingDiv;
   }
 
+  // Remover indicador de digitação
   function removeTypingIndicator() {
     const typing = document.getElementById('typing-indicator');
     if (typing) {
@@ -555,6 +328,7 @@
     }
   }
 
+  // Mostrar próxima pergunta
   function showNextQuestion() {
     if (currentQuestionIndex >= questions.length) {
       showCompletion();
@@ -564,7 +338,6 @@
     const question = questions[currentQuestionIndex];
     console.log('[EnviaLead] Mostrando pergunta:', question.title);
     
-    // Mostrar indicador de digitação
     const typing = showTypingIndicator();
     
     setTimeout(() => {
@@ -574,6 +347,7 @@
     }, 1500);
   }
 
+  // Mostrar input da pergunta
   function showQuestionInput(question) {
     const inputArea = document.getElementById('envialead-chat-input-area');
     
@@ -591,7 +365,7 @@
                  onfocus="this.style.borderColor='${colors.primary}'"
                  onblur="this.style.borderColor='#e5e7eb'"
                  ${question.required ? 'required' : ''}>
-          <button id="send-answer" style="margin-top: 8px; width: 100%; padding: 12px; background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Enviar</button>
+          <button id="send-answer" style="margin-top: 8px; width: 100%; padding: 12px; background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">Enviar</button>
         `;
         break;
         
@@ -627,7 +401,6 @@
     
     inputArea.innerHTML = inputHTML;
     
-    // Event listeners
     const sendBtn = document.getElementById('send-answer');
     const input = document.getElementById('question-input');
     
@@ -646,19 +419,11 @@
         return;
       }
       
-      // Salvar resposta
       responses[question.id] = answer;
-      
-      // Mostrar resposta do usuário
       addMessage(answer, false);
-      
-      // Próxima pergunta
       currentQuestionIndex++;
-      
-      // Limpar área de input
       inputArea.innerHTML = '';
       
-      // Mostrar próxima pergunta
       setTimeout(() => showNextQuestion(), 1000);
     };
     
@@ -677,22 +442,21 @@
     }
   }
 
+  // Mostrar finalização
   function showCompletion() {
     addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
     
-    // Salvar lead
     saveLead(flowData.id, responses);
     
-    // Mostrar botão do WhatsApp se configurado
     if (flowData.whatsapp) {
       setTimeout(() => showWhatsAppButton(), 2000);
     }
   }
 
+  // Mostrar botão WhatsApp
   function showWhatsAppButton() {
     const inputArea = document.getElementById('envialead-chat-input-area');
     
-    // Preparar texto com respostas
     let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
     
     questions.forEach(q => {
@@ -711,17 +475,176 @@
     `;
   }
 
+  // Criar widget
+  function createWidget(flowData) {
+    console.log('[EnviaLead] Criando widget para fluxo:', flowData.name);
+
+    const existing = document.getElementById('envialead-chat-container');
+    if (existing) {
+      existing.remove();
+    }
+
+    injectStyles();
+
+    const colors = flowData.colors || {
+      primary: '#FF6B35',
+      secondary: '#3B82F6',
+      text: '#1F2937',
+      background: '#FFFFFF'
+    };
+
+    const position = flowData.position || 'bottom-right';
+    const positionStyles = getPositionStyles(position);
+
+    const container = document.createElement('div');
+    container.id = 'envialead-chat-container';
+    container.style.cssText = `
+      position: fixed;
+      z-index: 10000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ${positionStyles}
+    `;
+
+    const button = document.createElement('div');
+    button.id = 'envialead-floating-button';
+    button.style.cssText = `
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary});
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      font-size: 24px;
+    `;
+    button.innerHTML = '💬';
+
+    const welcomeBubble = document.createElement('div');
+    welcomeBubble.id = 'envialead-welcome-bubble';
+    welcomeBubble.style.cssText = `
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 16px;
+      max-width: 250px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: block;
+      opacity: 1;
+      transition: all 0.3s ease;
+    `;
+
+    const welcomeMessage = flowData.welcome_message || 'Olá! Como posso ajudá-lo?';
+    welcomeBubble.innerHTML = `
+      <div style="position: relative;">
+        <button id="envialead-close-welcome" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border: none; background: #f3f4f6; border-radius: 50%; cursor: pointer; font-size: 12px;">×</button>
+        <p style="margin: 0; font-size: 14px; color: ${colors.text};">${welcomeMessage}</p>
+      </div>
+    `;
+
+    const chatWindow = document.createElement('div');
+    chatWindow.id = 'envialead-chat-window';
+    const chatWindowPosition = getChatWindowPosition(position);
+    chatWindow.style.cssText = `
+      position: fixed;
+      ${chatWindowPosition}
+      width: 350px;
+      height: 500px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 10001;
+    `;
+
+    const chatHeader = document.createElement('div');
+    chatHeader.style.cssText = `
+      background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary});
+      color: white;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    `;
+
+    chatHeader.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        ${flowData.avatar_url ? 
+          `<img src="${flowData.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%;" alt="Avatar">` : 
+          '<div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">👤</div>'
+        }
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">${flowData.name || 'Atendimento'}</div>
+          <div style="font-size: 12px; opacity: 0.9;">Online</div>
+        </div>
+      </div>
+      <button id="envialead-close-chat" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">×</button>
+    `;
+
+    const chatMessages = document.createElement('div');
+    chatMessages.id = 'envialead-chat-messages';
+    chatMessages.style.cssText = `
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background: #f9fafb;
+    `;
+
+    const chatInputArea = document.createElement('div');
+    chatInputArea.id = 'envialead-chat-input-area';
+    chatInputArea.style.cssText = `
+      padding: 16px;
+      border-top: 1px solid #e5e7eb;
+      background: white;
+    `;
+
+    chatWindow.appendChild(chatHeader);
+    chatWindow.appendChild(chatMessages);
+    chatWindow.appendChild(chatInputArea);
+
+    container.appendChild(button);
+    container.appendChild(welcomeBubble);
+    container.appendChild(chatWindow);
+    document.body.appendChild(container);
+
+    initializeChat(flowData, colors);
+
+    button.addEventListener('click', toggleChat);
+    
+    setTimeout(() => {
+      const closeWelcomeBtn = document.getElementById('envialead-close-welcome');
+      if (closeWelcomeBtn) {
+        closeWelcomeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          welcomeBubble.style.display = 'none';
+        });
+      }
+      
+      const closeChatBtn = document.getElementById('envialead-close-chat');
+      if (closeChatBtn) {
+        closeChatBtn.addEventListener('click', toggleChat);
+      }
+    }, 100);
+
+    console.log('[EnviaLead] Widget criado com sucesso!');
+  }
+
   // Utilitários
   function getPositionStyles(position) {
     const positions = {
       'bottom-right': 'bottom: 20px; right: 20px;',
       'bottom-left': 'bottom: 20px; left: 20px;',
       'top-right': 'top: 20px; right: 20px;',
-      'top-left': 'top: 20px; left: 20px;',
-      'center-right': 'top: 50%; right: 20px; transform: translateY(-50%);',
-      'center-left': 'top: 50%; left: 20px; transform: translateY(-50%);'
+      'top-left': 'top: 20px; left: 20px;'
     };
-    
     return positions[position] || positions['bottom-right'];
   }
 
@@ -729,9 +652,9 @@
     const positions = {
       'bottom-right': 'bottom: 90px; right: 20px;',
       'bottom-left': 'bottom: 90px; left: 20px;',
-      'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);'
+      'top-right': 'top: 90px; right: 20px;',
+      'top-left': 'top: 90px; left: 20px;'
     };
-    
     return positions[position] || positions['bottom-right'];
   }
 
@@ -743,14 +666,6 @@
     const style = document.createElement('style');
     style.id = 'envialead-styles';
     style.textContent = `
-      @keyframes slideIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes chatSlideIn {
-        from { opacity: 0; transform: scale(0.9) translateY(20px); }
-        to { opacity: 1; transform: scale(1) translateY(0); }
-      }
       @keyframes typing {
         0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
         30% { opacity: 1; transform: scale(1); }
@@ -759,64 +674,53 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      
-      #envialead-chat-container * {
-        box-sizing: border-box;
-      }
-      
-      #envialead-floating-button:hover {
-        transform: scale(1.1) !important;
-      }
-      
-      #envialead-chat-window {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      }
     `;
     document.head.appendChild(style);
   }
 
   // Inicialização principal
   async function initialize() {
-    const flowId = extractFlowId();
-    const currentUrl = window.location.href;
-    
-    console.log('[EnviaLead] Inicializando com Flow ID:', flowId);
-    console.log('[EnviaLead] URL atual:', currentUrl);
+    try {
+      const flowId = extractFlowId();
+      const currentUrl = window.location.href;
+      
+      console.log('[EnviaLead] Inicializando com Flow ID:', flowId);
+      console.log('[EnviaLead] URL atual:', currentUrl);
 
-    if (!flowId) {
-      console.error('[EnviaLead] Flow ID não encontrado');
-      return;
+      if (!flowId) {
+        console.error('[EnviaLead] Flow ID não encontrado');
+        return;
+      }
+
+      const flow = await fetchFlowData(flowId);
+      
+      if (!flow) {
+        console.error('[EnviaLead] Fluxo não encontrado');
+        return;
+      }
+
+      if (!flow.is_active) {
+        console.log('[EnviaLead] Fluxo está inativo');
+        return;
+      }
+
+      if (!isUrlAuthorized(currentUrl, flow.flow_urls)) {
+        console.log('[EnviaLead] URL não autorizada para este fluxo');
+        return;
+      }
+
+      console.log('[EnviaLead] Criando widget...');
+      createWidget(flow);
+    } catch (error) {
+      console.error('[EnviaLead] Erro na inicialização:', error);
     }
-
-    const flow = await fetchFlowData(flowId);
-    
-    if (!flow) {
-      console.error('[EnviaLead] Fluxo não encontrado');
-      return;
-    }
-
-    console.log('[EnviaLead] Fluxo carregado:', flow.name);
-
-    if (!flow.is_active) {
-      console.log('[EnviaLead] Fluxo está inativo');
-      return;
-    }
-
-    // Verificar URLs autorizadas
-    if (!isUrlAuthorized(currentUrl, flow.flow_urls)) {
-      console.log('[EnviaLead] URL não autorizada para este fluxo');
-      return;
-    }
-
-    console.log('[EnviaLead] Criando widget...');
-    createWidget(flow);
   }
 
   // Iniciar quando DOM estiver pronto
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);
   } else {
-    initialize();
+    setTimeout(initialize, 100);
   }
 
 })();

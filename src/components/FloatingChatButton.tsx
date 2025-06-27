@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, MessageCircle } from 'lucide-react';
 
 interface FloatingChatButtonProps {
@@ -11,6 +11,9 @@ const FloatingChatButton = ({ flowData, position }: FloatingChatButtonProps) => 
   const [isOpen, setIsOpen] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [messages, setMessages] = useState<Array<{id: string, text: string, isBot: boolean, timestamp: number}>>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   console.log('[FloatingChatButton] FlowData recebido:', flowData);
 
@@ -57,32 +60,87 @@ const FloatingChatButton = ({ flowData, position }: FloatingChatButtonProps) => 
     return positions[position as keyof typeof positions] || positions['bottom-right'];
   };
 
+  const addMessage = (text: string, isBot: boolean) => {
+    const newMessage = {
+      id: Date.now().toString(),
+      text,
+      isBot,
+      timestamp: Date.now()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const showNextQuestion = () => {
+    if (currentQuestionIndex >= questions.length) {
+      setShowCompletion(true);
+      addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+      return;
+    }
+
+    const question = questions[currentQuestionIndex];
+    
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      addMessage(question.title, true);
+    }, 1500);
+  };
+
   const handleSendAnswer = (answer: string) => {
     if (!answer.trim()) return;
 
     const currentQuestion = questions[currentQuestionIndex];
     setResponses(prev => ({ ...prev, [currentQuestion.id]: answer }));
     
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
+    // Adicionar resposta do usuário
+    addMessage(answer, false);
+    
+    // Próxima pergunta
+    setCurrentQuestionIndex(prev => prev + 1);
   };
 
+  // Effect para mostrar próxima pergunta quando currentQuestionIndex muda
+  useEffect(() => {
+    if (isOpen && currentQuestionIndex < questions.length) {
+      const timer = setTimeout(() => {
+        showNextQuestion();
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (currentQuestionIndex >= questions.length && !showCompletion) {
+      setShowCompletion(true);
+      addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+    }
+  }, [currentQuestionIndex, isOpen]);
+
   const renderQuestionInput = () => {
-    if (currentQuestionIndex >= questions.length) {
+    if (showCompletion) {
       return (
         <div className="p-4 text-center">
           <p className="text-green-600 font-medium">Obrigado pelas informações!</p>
           {flowData?.whatsapp && (
             <button 
               className="mt-2 w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              style={{ background: '#25d366' }}
+              onClick={() => {
+                let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
+                questions.forEach((q: any) => {
+                  if (responses[q.id]) {
+                    messageText += `${q.title}: ${responses[q.id]}\n`;
+                  }
+                });
+                const whatsappNumber = flowData.whatsapp.replace(/\D/g, '');
+                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
             >
               💬 Continuar no WhatsApp
             </button>
           )}
         </div>
       );
+    }
+
+    if (currentQuestionIndex >= questions.length || isTyping) {
+      return null;
     }
 
     const currentQuestion = questions[currentQuestionIndex];
@@ -155,48 +213,48 @@ const FloatingChatButton = ({ flowData, position }: FloatingChatButtonProps) => 
   };
 
   const renderMessages = () => {
-    const messages = [];
-    
-    for (let i = 0; i <= Math.min(currentQuestionIndex, questions.length - 1); i++) {
-      const question = questions[i];
-      if (!question) continue;
-      
-      // Mensagem do bot
-      messages.push(
-        <div key={`bot-${i}`} className="flex justify-start mb-3">
-          <div 
-            className="max-w-xs px-3 py-2 rounded-lg text-sm"
-            style={{ 
-              backgroundColor: 'white',
-              color: colors.text,
-              border: '1px solid #e5e7eb',
-              borderRadius: '18px 18px 18px 4px'
-            }}
-          >
-            {question.title}
-          </div>
-        </div>
-      );
-      
-      // Resposta do usuário (se existir)
-      if (responses[question.id]) {
-        messages.push(
-          <div key={`user-${i}`} className="flex justify-end mb-3">
+    return (
+      <>
+        {messages.map((message) => (
+          <div key={message.id} className={`flex ${message.isBot ? 'justify-start' : 'justify-end'} mb-3`}>
             <div 
-              className="max-w-xs px-3 py-2 rounded-lg text-sm text-white"
-              style={{ 
+              className="max-w-xs px-3 py-2 rounded-lg text-sm"
+              style={message.isBot ? { 
+                backgroundColor: 'white',
+                color: colors.text,
+                border: '1px solid #e5e7eb',
+                borderRadius: '18px 18px 18px 4px'
+              } : {
                 background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})`,
+                color: 'white',
                 borderRadius: '18px 18px 4px 18px'
               }}
             >
-              {responses[question.id]}
+              {message.text}
             </div>
           </div>
-        );
-      }
-    }
-    
-    return messages;
+        ))}
+        
+        {isTyping && (
+          <div className="flex justify-start mb-3">
+            <div 
+              className="px-3 py-2 rounded-lg text-sm"
+              style={{ 
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '18px 18px 18px 4px'
+              }}
+            >
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
@@ -209,7 +267,12 @@ const FloatingChatButton = ({ flowData, position }: FloatingChatButtonProps) => 
     >
       {/* Botão flutuante */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen && currentQuestionIndex === 0) {
+            setTimeout(() => showNextQuestion(), 500);
+          }
+        }}
         className="w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-transform hover:scale-110"
         style={{ 
           background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
@@ -280,23 +343,6 @@ const FloatingChatButton = ({ flowData, position }: FloatingChatButtonProps) => 
           {/* Mensagens */}
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
             {renderMessages()}
-            
-            {/* Pergunta atual */}
-            {currentQuestionIndex < questions.length && (
-              <div className="flex justify-start mb-3">
-                <div 
-                  className="max-w-xs px-3 py-2 rounded-lg text-sm animate-pulse"
-                  style={{ 
-                    backgroundColor: 'white',
-                    color: colors.text,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '18px 18px 18px 4px'
-                  }}
-                >
-                  {questions[currentQuestionIndex]?.title}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Input */}

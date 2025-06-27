@@ -23,7 +23,6 @@
       `;
       floatingButton.innerHTML = '💬';
 
-      // Hover effects
       floatingButton.addEventListener('mouseenter', () => {
         floatingButton.style.transform = 'scale(1.1)';
         floatingButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
@@ -84,7 +83,6 @@
         animation: chatSlideIn 0.3s ease-out;
       `;
 
-      // Header do chat
       const chatHeader = document.createElement('div');
       chatHeader.style.cssText = `
         background: linear-gradient(45deg, ${colors.primary}, ${colors.secondary});
@@ -102,14 +100,13 @@
             '<div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px;">👤</div>'
           }
           <div>
-            <div style="font-weight: 600; font-size: 14px;">Atendimento</div>
+            <div style="font-weight: 600; font-size: 14px;">${flowData.name || 'Atendimento'}</div>
             <div style="font-size: 12px; opacity: 0.9;">Online</div>
           </div>
         </div>
         <button id="envialead-close-chat" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">×</button>
       `;
 
-      // Área de mensagens
       const chatMessages = document.createElement('div');
       chatMessages.id = 'envialead-chat-messages';
       chatMessages.style.cssText = `
@@ -119,7 +116,6 @@
         background: #f9fafb;
       `;
 
-      // Área de input
       const chatInputArea = document.createElement('div');
       chatInputArea.id = 'envialead-chat-input-area';
       chatInputArea.style.cssText = `
@@ -158,5 +154,6 @@
 
   // Export to global scope
   window.EnviaLeadWidget = EnviaLeadWidget;
+  console.log('[EnviaLead] Módulo EnviaLeadWidget carregado');
 
 })(window);

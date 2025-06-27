@@ -12,7 +12,7 @@ interface IntegrationCodeProps {
 const IntegrationCode = ({ flowId }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
 
-  const integrationCode = `<script src="https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/envialead-chat.js" data-flow-id="${flowId}"></script>`;
+  const integrationCode = `<script src="https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/js/envialead-main.js" data-flow-id="${flowId}"></script>`;
 
   const handleCopy = async () => {
     try {

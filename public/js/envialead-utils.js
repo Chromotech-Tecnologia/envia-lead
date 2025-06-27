@@ -28,20 +28,20 @@
       return positions[position] || positions['bottom-right'];
     },
 
-    // Flow ID extraction utilities - Melhorado
+    // Flow ID extraction utilities
     extractFlowId: function() {
       let flowId = null;
       
       console.log('[EnviaLead] Extraindo Flow ID...');
       
-      // Método 1: Verificar data-flow-id no script atual
+      // Method 1: Check data-flow-id on current script
       const currentScript = document.currentScript;
       if (currentScript) {
         flowId = currentScript.getAttribute('data-flow-id');
         console.log('[EnviaLead] Flow ID do script atual:', flowId);
       }
       
-      // Método 2: Buscar em todos os scripts com data-flow-id
+      // Method 2: Search all scripts with data-flow-id
       if (!flowId) {
         const scripts = document.querySelectorAll('script[data-flow-id]');
         console.log('[EnviaLead] Scripts com data-flow-id encontrados:', scripts.length);
@@ -51,13 +51,13 @@
         }
       }
       
-      // Método 3: Verificar variável global
+      // Method 3: Check global variable
       if (!flowId) {
         flowId = window.enviaLeadId;
         console.log('[EnviaLead] Flow ID da variável global:', flowId);
       }
       
-      // Método 4: Buscar em scripts que contenham envialead
+      // Method 4: Search in scripts containing envialead
       if (!flowId) {
         const allScripts = document.getElementsByTagName('script');
         for (let i = 0; i < allScripts.length; i++) {
@@ -77,7 +77,7 @@
       return flowId;
     },
 
-    // URL validation utilities - Melhorado
+    // URL validation utilities
     isUrlAuthorized: function(currentUrl, currentDomain, authorizedUrls) {
       console.log('[EnviaLead] Verificando autorização de URL...');
       console.log('[EnviaLead] URL atual:', currentUrl);
@@ -89,7 +89,6 @@
         return true;
       }
 
-      // Filtrar URLs vazias
       const validUrls = authorizedUrls.filter(url => url && url.trim() !== '');
       if (validUrls.length === 0) {
         console.log('[EnviaLead] Nenhuma URL válida configurada, permitindo em qualquer domínio');
@@ -104,7 +103,6 @@
           return true;
         }
         
-        // Normalizar URLs para comparação
         const normalizedAuth = authorizedUrl.toLowerCase()
           .replace(/^https?:\/\//, '')
           .replace(/\/$/, '');
@@ -114,19 +112,16 @@
         
         console.log('[EnviaLead] Comparando:', normalizedCurrent, 'com', normalizedAuth);
         
-        // Verificar correspondência exata
         if (normalizedCurrent === normalizedAuth) {
           console.log('[EnviaLead] Correspondência exata encontrada');
           return true;
         }
         
-        // Verificar se a URL atual contém a autorizada
         if (normalizedCurrent.includes(normalizedAuth)) {
           console.log('[EnviaLead] URL atual contém a autorizada');
           return true;
         }
         
-        // Verificar domínio
         const authDomain = normalizedAuth.split('/')[0];
         if (currentDomain.includes(authDomain) || authDomain.includes(currentDomain)) {
           console.log('[EnviaLead] Domínio autorizado:', authDomain);
@@ -135,8 +130,6 @@
       }
 
       console.log('[EnviaLead] URL não autorizada');
-      console.log('[EnviaLead] URL atual:', currentUrl);
-      console.log('[EnviaLead] URLs autorizadas:', validUrls);
       return false;
     },
 
@@ -169,7 +162,6 @@
           to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Estilos específicos do EnviaLead */
         #envialead-chat-container * {
           box-sizing: border-box;
         }

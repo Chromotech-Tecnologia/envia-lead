@@ -70,7 +70,7 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
             Código de Integração
           </CardTitle>
           <CardDescription>
-            Código compacto e único para integração no seu site
+            Código otimizado que verifica automaticamente a URL e exibe o chat apenas onde autorizado
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -104,6 +104,16 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
             </Button>
           </div>
 
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-medium text-green-900 mb-2">✅ Sistema Otimizado:</h4>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li>• Verifica automaticamente se a URL atual está autorizada</li>
+              <li>• Carrega apenas se o fluxo estiver ativo</li>
+              <li>• Exibe o chat exatamente como configurado no fluxo</li>
+              <li>• Sistema unificado em um único arquivo otimizado</li>
+            </ul>
+          </div>
+
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Como usar:</h4>
             <ol className="text-sm text-blue-800 space-y-1">
@@ -126,9 +136,9 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Configurações Ativas</CardTitle>
+          <CardTitle>Configurações do Fluxo</CardTitle>
           <CardDescription>
-            Resumo das configurações do fluxo
+            Resumo das configurações que serão aplicadas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -146,13 +156,13 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
                   </li>
                 ))}
                 {(!flowData.urls || flowData.urls.filter((url: string) => url.trim()).length === 0) && (
-                  <li className="text-gray-500 text-xs">Nenhuma URL configurada</li>
+                  <li className="text-gray-500 text-xs">Todas as URLs (não restrito)</li>
                 )}
               </ul>
             </div>
 
             <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">Notificações</h4>
+              <h4 className="font-medium mb-2">Notificações por Email</h4>
               <p className="text-sm text-gray-600 mb-2">
                 Leads serão enviados para:
               </p>
@@ -162,26 +172,32 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
                     📧 {email}
                   </Badge>
                 ))}
-                {flowData.whatsapp && (
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                    📱 {flowData.whatsapp}
-                  </Badge>
-                )}
-                {(!flowData.emails || flowData.emails.filter((email: string) => email.trim()).length === 0) && !flowData.whatsapp && (
-                  <p className="text-gray-500 text-xs">Nenhum destinatário configurado</p>
+                {(!flowData.emails || flowData.emails.filter((email: string) => email.trim()).length === 0) && (
+                  <p className="text-gray-500 text-xs">Nenhum email configurado</p>
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="p-4 border rounded-lg">
-            <h4 className="font-medium mb-2">Configurações do Lead</h4>
-            <p className="text-sm text-gray-600">
-              <strong>Mínimo de perguntas:</strong> {flowData.minimumQuestion || 1} pergunta(s) respondida(s) para considerar um lead válido
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Total de perguntas:</strong> {flowData.questions?.length || 0} pergunta(s) configurada(s)
-            </p>
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-medium mb-2">WhatsApp</h4>
+              {flowData.whatsapp ? (
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                  📱 {flowData.whatsapp}
+                </Badge>
+              ) : (
+                <p className="text-gray-500 text-xs">WhatsApp não configurado</p>
+              )}
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-medium mb-2">Perguntas</h4>
+              <p className="text-sm text-gray-600">
+                <strong>Total:</strong> {flowData.questions?.length || 0} pergunta(s)
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Mínimo para lead:</strong> {flowData.minimumQuestion || 1} resposta(s)
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

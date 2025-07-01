@@ -1,142 +1,187 @@
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  Edit,
-  Copy,
-  Trash2,
-  Play,
-  Pause,
-  MoreVertical,
-  Globe
-} from 'lucide-react';
-
-interface Flow {
-  id: number;
-  name: string;
-  description: string;
-  status: string;
-  urls: string[];
-  position: string;
-  acessos: number;
-  leads: number;
-  conversao: number;
-  color: string;
-  avatar: string;
-  createdAt: string;
-}
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Eye, Edit, Trash2, Copy, MoreVertical, MessageCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import FloatingChatButton from './FloatingChatButton';
 
 interface FlowCardProps {
-  flow: Flow;
-  onEditFlow: (flow: Flow) => void;
+  flow: any;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
 }
 
-const FlowCard = ({ flow, onEditFlow }: FlowCardProps) => {
+const FlowCard = ({ flow, onEdit, onDelete, onDuplicate }: FlowCardProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const getQuestionCount = () => {
+    return flow.questions?.length || 0;
+  };
+
+  const getUrlCount = () => {
+    return flow.flow_urls?.length || 0;
+  };
+
+  const getEmailCount = () => {
+    return flow.flow_emails?.length || 0;
+  };
+
+  const handlePreviewToggle = () => {
+    setShowPreview(!showPreview);
+  };
+
   return (
-    <Card className="relative group hover:shadow-lg transition-all duration-300">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: flow.color }}
-            >
-              {flow.name.charAt(0)}
+    <>
+      <Card className="hover:shadow-lg transition-shadow duration-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold text-gray-900 mb-2">
+                {flow.name}
+              </CardTitle>
+              <CardDescription className="text-sm text-gray-600 mb-3">
+                {flow.description || 'Sem descrição'}
+              </CardDescription>
+              
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant={flow.is_active ? "default" : "secondary"}>
+                  {flow.is_active ? 'Ativo' : 'Inativo'}
+                </Badge>
+                
+                {flow.primary_color && (
+                  <div 
+                    className="w-4 h-4 rounded-full border border-gray-300"
+                    style={{ backgroundColor: flow.primary_color }}
+                    title="Cor primária"
+                  />
+                )}
+              </div>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white">
+                <DropdownMenuItem onClick={() => onEdit(flow.id)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDuplicate(flow.id)}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDelete(flow.id)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+            <div>
+              <span className="font-medium">{getQuestionCount()}</span>
+              <br />
+              <span className="text-xs">Perguntas</span>
             </div>
             <div>
-              <CardTitle className="text-lg">{flow.name}</CardTitle>
-              <Badge variant={flow.status === 'active' ? 'default' : 'secondary'}>
-                {flow.status === 'active' ? 'Ativo' : 'Pausado'}
-              </Badge>
+              <span className="font-medium">{getUrlCount()}</span>
+              <br />
+              <span className="text-xs">URLs</span>
+            </div>
+            <div>
+              <span className="font-medium">{getEmailCount()}</span>
+              <br />
+              <span className="text-xs">E-mails</span>
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEditFlow(flow)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Copy className="h-4 w-4 mr-2" />
-                Duplicar
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                {flow.status === 'active' ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                {flow.status === 'active' ? 'Pausar' : 'Ativar'}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        <CardDescription>{flow.description}</CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-4">
-          {/* URLs */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">URLs Ativas:</p>
-            <div className="space-y-1">
-              {flow.urls.map((url, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                  <Globe className="h-3 w-3" />
-                  {url}
-                </div>
-              ))}
-            </div>
+          <div className="text-xs text-gray-500 mb-4">
+            Criado em {formatDate(flow.created_at)}
+            {flow.updated_at !== flow.created_at && (
+              <span> • Atualizado em {formatDate(flow.updated_at)}</span>
+            )}
           </div>
           
-          {/* Métricas */}
-          <div className="grid grid-cols-3 gap-3 pt-3 border-t">
-            <div className="text-center">
-              <p className="text-lg font-bold text-blue-600">{flow.acessos.toLocaleString()}</p>
-              <p className="text-xs text-gray-500">Acessos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-green-600">{flow.leads}</p>
-              <p className="text-xs text-gray-500">Leads</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-purple-600">{flow.conversao}%</p>
-              <p className="text-xs text-gray-500">Conversão</p>
-            </div>
-          </div>
-          
-          {/* Ações */}
-          <div className="flex gap-2 pt-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
+          <div className="flex gap-2">
+            <Button
+              onClick={handlePreviewToggle}
+              variant="outline"
+              size="sm"
               className="flex-1"
-              onClick={() => onEditFlow(flow)}
             >
-              <Edit className="h-4 w-4 mr-2" />
+              <Eye className="w-4 h-4 mr-2" />
+              {showPreview ? 'Ocultar Preview' : 'Preview'}
+            </Button>
+            
+            <Button
+              onClick={() => onEdit(flow.id)}
+              size="sm"
+              className="flex-1 envia-lead-gradient hover:opacity-90"
+            >
+              <Edit className="w-4 h-4 mr-2" />
               Editar
             </Button>
-            <Button variant="outline" size="sm">
-              <Copy className="h-4 w-4" />
-            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preview do Chat */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Preview - {flow.name}</h3>
+              <Button
+                onClick={handlePreviewToggle}
+                variant="ghost"
+                size="sm"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="relative bg-gradient-to-b from-blue-50 to-white rounded-lg h-96 overflow-hidden">
+              <div className="p-6 text-center">
+                <h4 className="text-xl font-bold text-gray-800 mb-2">Seu Site</h4>
+                <p className="text-gray-600 text-sm">Preview de como o chat aparecerá</p>
+              </div>
+              
+              <FloatingChatButton
+                flowData={{
+                  ...flow,
+                  questions: flow.questions || [],
+                  colors: {
+                    primary: flow.primary_color || '#FF6B35',
+                    secondary: flow.secondary_color || '#3B82F6',
+                    text: flow.text_color || '#1F2937'
+                  }
+                }}
+                position={flow.button_position || 'bottom-right'}
+                onHidePreview={handlePreviewToggle}
+                isPreview={true}
+              />
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };
 

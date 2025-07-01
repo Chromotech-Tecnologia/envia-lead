@@ -1,14 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Eye, ArrowLeft } from 'lucide-react';
 import FlowEditorHeader from './flow-editor/FlowEditorHeader';
-import BasicSettings from './flow-editor/BasicSettings';
-import UrlSettings from './flow-editor/UrlSettings';
-import EmailSettings from './flow-editor/EmailSettings';
-import QuestionEditor from './flow-editor/QuestionEditor';
-import DesignSettings from './flow-editor/DesignSettings';
-import IntegrationCode from './flow-editor/IntegrationCode';
+import FlowEditorTabs from './flow-editor/FlowEditorTabs';
+import FlowEditorFooter from './flow-editor/FlowEditorFooter';
 import FloatingChatButton from './FloatingChatButton';
 
 interface FlowEditorProps {
@@ -101,32 +95,11 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
             onTogglePreview={handleTogglePreview}
           />
 
-          <Tabs defaultValue="basic" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="basic">Configurações Básicas</TabsTrigger>
-              <TabsTrigger value="questions">Perguntas</TabsTrigger>
-              <TabsTrigger value="design">Design</TabsTrigger>
-              <TabsTrigger value="integration">Integração</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basic" className="space-y-6">
-              <BasicSettings flowData={flowData} setFlowData={setFlowData} />
-              <UrlSettings flowData={flowData} setFlowData={setFlowData} />
-              <EmailSettings flowData={flowData} setFlowData={setFlowData} />
-            </TabsContent>
-
-            <TabsContent value="questions" className="space-y-6">
-              <QuestionEditor flowData={flowData} setFlowData={setFlowData} />
-            </TabsContent>
-
-            <TabsContent value="design" className="space-y-6">
-              <DesignSettings flowData={flowData} setFlowData={setFlowData} />
-            </TabsContent>
-
-            <TabsContent value="integration" className="space-y-6">
-              <IntegrationCode flow={flow} flowData={flowData} />
-            </TabsContent>
-          </Tabs>
+          <FlowEditorTabs 
+            flow={flow}
+            flowData={flowData}
+            setFlowData={setFlowData}
+          />
         </div>
       </div>
 
@@ -139,31 +112,14 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
       )}
 
       {/* Botões fixos no rodapé */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Button variant="outline" onClick={handleGoBack}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
-            </Button>
-            
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={handleTogglePreview}>
-                <Eye className="w-4 h-4 mr-2" />
-                {showPreview ? 'Ocultar Preview' : 'Visualizar'}
-              </Button>
-              <Button onClick={handleSave} variant="outline" disabled={isSaving}>
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Salvando...' : 'Salvar'}
-              </Button>
-              <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90" disabled={isSaving}>
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Salvando...' : 'Salvar e Sair'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FlowEditorFooter
+        showPreview={showPreview}
+        isSaving={isSaving}
+        onGoBack={handleGoBack}
+        onTogglePreview={handleTogglePreview}
+        onSave={handleSave}
+        onSaveAndExit={handleSaveAndExit}
+      />
     </div>
   );
 };

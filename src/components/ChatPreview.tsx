@@ -1,8 +1,8 @@
 
 import ChatBubble from './chat/ChatBubble';
-import ChatWindow from './chat/ChatWindow';
+import ChatPreviewWindow from './chat/ChatPreviewWindow';
 import ChatMessage from './chat/ChatMessage';
-import ChatInput from './chat/ChatInput';
+import ChatPreviewInput from './chat/ChatPreviewInput';
 import ChatPreviewContainer from './chat/ChatPreviewContainer';
 import ChatQuestionsList from './chat/ChatQuestionsList';
 import ChatEndMessage from './chat/ChatEndMessage';
@@ -38,7 +38,7 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
       />
 
       {isOpen && (
-        <ChatWindow device={device} onClose={() => setIsOpen(false)}>
+        <ChatPreviewWindow device={device} onClose={() => setIsOpen(false)}>
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
             <ChatMessage
               message={flowData?.welcomeMessage || "Olá! Sou seu assistente virtual da Envia Lead. Vou te ajudar a encontrar a melhor solução para você! 😊"}
@@ -62,7 +62,7 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
           </div>
 
           {currentStep < defaultQuestions.length && defaultQuestions[currentStep]?.type !== 'single' && (
-            <ChatInput
+            <ChatPreviewInput
               value={inputValue}
               onChange={setInputValue}
               onSend={handleSendText}
@@ -70,7 +70,7 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
               type={defaultQuestions[currentStep]?.type as 'text' | 'email' | 'number'}
             />
           )}
-        </ChatWindow>
+        </ChatPreviewWindow>
       )}
     </ChatPreviewContainer>
   );

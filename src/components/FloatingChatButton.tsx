@@ -1,6 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { X, MessageCircle } from 'lucide-react';
+import ChatButton from './chat/ChatButton';
+import WelcomeBubble from './chat/WelcomeBubble';
+import ChatWindow from './chat/ChatWindow';
+import { useChatLogic } from '@/hooks/useChatLogic';
 
 interface FloatingChatButtonProps {
   flowData: any;
@@ -11,13 +14,7 @@ interface FloatingChatButtonProps {
 
 const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = false }: FloatingChatButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responses, setResponses] = useState<Record<string, string>>({});
-  const [messages, setMessages] = useState<Array<{id: string, text: string, isBot: boolean, timestamp: number}>>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [showCompletion, setShowCompletion] = useState(false);
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
-  const [waitingForInput, setWaitingForInput] = useState(false);
 
   console.log('[FloatingChatButton] FlowData recebido:', flowData);
 
@@ -29,134 +26,21 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     background: '#FFFFFF'
   };
 
-  // Processar perguntas do fluxo
-  const questions = flowData?.questions ? flowData.questions
-    .filter((q: any) => q.type !== 'bot_message')
-    .map((q: any) => ({
-      id: q.id,
-      type: q.type,
-      title: q.title,
-      placeholder: q.placeholder,
-      required: q.required,
-      order: q.order_index || 0,
-      options: q.options || []
-    }))
-    .sort((a: any, b: any) => a.order - b.order) : [];
-
-  console.log('[FloatingChatButton] Perguntas processadas:', questions);
-
-  const getPositionStyles = () => {
-    const positions = {
-      'bottom-right': 'bottom: 120px; right: 20px;', // Aumentado de 30px para 120px
-      'bottom-left': 'bottom: 120px; left: 20px;',   // Aumentado de 30px para 120px
-      'top-right': 'top: 20px; right: 20px;',
-      'top-left': 'top: 20px; left: 20px;',
-      'center-right': 'top: 50%; right: 20px; transform: translateY(-50%);',
-      'center-left': 'top: 50%; left: 20px; transform: translateY(-50%);'
-    };
-    return positions[position as keyof typeof positions] || positions['bottom-right'];
-  };
-
-  const getChatWindowPosition = () => {
-    const positions = {
-      'bottom-right': 'bottom: 190px; right: 20px;', // Ajustado proporcionalmente
-      'bottom-left': 'bottom: 190px; left: 20px;',   // Ajustado proporcionalmente
-      'top-right': 'top: 90px; right: 20px;',
-      'top-left': 'top: 90px; left: 20px;',
-      'center-right': 'top: 50%; right: 90px; transform: translateY(-50%);',
-      'center-left': 'top: 50%; left: 90px; transform: translateY(-50%);'
-    };
-    return positions[position as keyof typeof positions] || positions['bottom-right'];
-  };
-
-  const getWelcomeBubblePosition = () => {
-    if (position.includes('right')) {
-      return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
-    } else if (position.includes('left')) {
-      return 'bottom: 70px; left: 0; right: auto; max-width: 300px; width: max-content;';
-    }
-    return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
-  };
-
-  const addMessage = (text: string, isBot: boolean) => {
-    const newMessage = {
-      id: Date.now().toString(),
-      text,
-      isBot,
-      timestamp: Date.now()
-    };
-    setMessages(prev => [...prev, newMessage]);
-  };
-
-  const showTypingIndicator = () => {
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      if (currentQuestionIndex < questions.length) {
-        const question = questions[currentQuestionIndex];
-        addMessage(question.title, true);
-        setWaitingForInput(true); // Definir que estamos esperando input
-      } else {
-        setShowCompletion(true);
-        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
-        
-        if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
-          setTimeout(() => {
-            // WhatsApp será mostrado no renderQuestionInput
-          }, 2000);
-        }
-      }
-    }, 1500);
-  };
-
-  const handleSendAnswer = (answer: string) => {
-    if (!answer.trim() || !waitingForInput) return;
-
-    const currentQuestion = questions[currentQuestionIndex];
-    if (!currentQuestion) return;
-
-    setResponses(prev => ({ ...prev, [currentQuestion.id]: answer }));
-    
-    // Adicionar resposta do usuário
-    addMessage(answer, false);
-    
-    // Próxima pergunta
-    setCurrentQuestionIndex(prev => prev + 1);
-    setWaitingForInput(false); // Não estamos mais esperando input
-    
-    // Mostrar próxima pergunta após delay
-    if (currentQuestionIndex + 1 < questions.length) {
-      setTimeout(() => {
-        showTypingIndicator();
-      }, 1000);
-    } else {
-      // Finalizar conversa
-      setTimeout(() => {
-        setShowCompletion(true);
-        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
-        
-        if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
-          setTimeout(() => {
-            // WhatsApp será mostrado no renderQuestionInput
-          }, 2000);
-        }
-      }, 1000);
-    }
-  };
+  const {
+    messages,
+    isTyping,
+    showCompletion,
+    waitingForInput,
+    responses,
+    currentQuestion,
+    handleSendAnswer,
+    startConversation
+  } = useChatLogic(flowData);
 
   const handleOpenChat = () => {
     setIsOpen(true);
     setShowWelcomeBubble(false);
-    
-    // Iniciar conversa apenas se não há mensagens ainda
-    if (messages.length === 0 && questions.length > 0) {
-      setTimeout(() => {
-        addMessage(flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?', true);
-        setTimeout(() => {
-          showTypingIndicator();
-        }, 1000);
-      }, 500);
-    }
+    startConversation();
   };
 
   const handleCloseChat = () => {
@@ -166,250 +50,48 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     }
   };
 
-  const renderQuestionInput = () => {
-    if (showCompletion) {
-      return (
-        <div className="p-4 text-center space-y-3">
-          <p className="text-green-600 font-medium">Conversão realizada com sucesso!</p>
-          {flowData?.whatsapp && flowData?.show_whatsapp_button !== false && (
-            <button 
-              className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-              onClick={() => {
-                let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
-                questions.forEach((q: any) => {
-                  if (responses[q.id]) {
-                    messageText += `${q.title}: ${responses[q.id]}\n`;
-                  }
-                });
-                const whatsappNumber = flowData.whatsapp.replace(/\D/g, '');
-                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-            >
-              💬 Continuar no WhatsApp
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    if (!waitingForInput || currentQuestionIndex >= questions.length || isTyping) {
-      return null;
-    }
-
-    const currentQuestion = questions[currentQuestionIndex];
-    
-    if (!currentQuestion) return null;
-
-    return (
-      <div className="p-4 border-t">
-        <div className="space-y-3">
-          {currentQuestion.type === 'select' ? (
-            <select 
-              className="w-full p-2 border rounded-lg"
-              onChange={(e) => handleSendAnswer(e.target.value)}
-              style={{ borderColor: colors.primary }}
-            >
-              <option value="">Selecione uma opção...</option>
-              {currentQuestion.options?.map((option: string, idx: number) => (
-                <option key={idx} value={option}>{option}</option>
-              ))}
-            </select>
-          ) : currentQuestion.type === 'radio' ? (
-            <div className="space-y-2">
-              {currentQuestion.options?.map((option: string, idx: number) => (
-                <label key={idx} className="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
-                  <input 
-                    type="radio" 
-                    name="preview-radio" 
-                    value={option}
-                    onChange={(e) => handleSendAnswer(e.target.value)}
-                    className="mr-2"
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div className="flex space-x-2">
-              <input
-                type={currentQuestion.type}
-                placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
-                className="flex-1 p-2 border rounded-lg"
-                style={{ borderColor: colors.primary }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSendAnswer((e.target as HTMLInputElement).value);
-                    (e.target as HTMLInputElement).value = '';
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  const input = document.querySelector('input') as HTMLInputElement;
-                  if (input) {
-                    handleSendAnswer(input.value);
-                    input.value = '';
-                  }
-                }}
-                className="px-4 py-2 text-white rounded-lg transition-colors"
-                style={{ 
-                  background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
-                }}
-              >
-                Enviar
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderMessages = () => {
-    return (
-      <>
-        {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.isBot ? 'justify-start' : 'justify-end'} mb-3`}>
-            <div 
-              className="max-w-xs px-3 py-2 rounded-lg text-sm"
-              style={message.isBot ? { 
-                backgroundColor: 'white',
-                color: colors.text,
-                border: '1px solid #e5e7eb',
-                borderRadius: '18px 18px 18px 4px'
-              } : {
-                background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})`,
-                color: 'white',
-                borderRadius: '18px 18px 4px 18px'
-              }}
-            >
-              {message.text}
-            </div>
-          </div>
-        ))}
-        
-        {isTyping && (
-          <div className="flex justify-start mb-3">
-            <div 
-              className="px-3 py-2 rounded-lg text-sm flex items-center space-x-1"
-              style={{ 
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '18px 18px 18px 4px'
-              }}
-            >
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  };
-
   return (
     <div 
       className="fixed z-50"
       style={{ 
-        ...Object.fromEntries(getPositionStyles().split('; ').map(s => s.split(': '))),
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}
     >
       {/* Botão flutuante */}
-      <button
+      <ChatButton
+        isOpen={isOpen}
+        colors={colors}
+        flowData={flowData}
+        position={position}
         onClick={() => isOpen ? handleCloseChat() : handleOpenChat()}
-        className="w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-transform hover:scale-110 overflow-hidden"
-        style={{ 
-          background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
-        }}
-      >
-        {isOpen ? (
-          <X size={24} />
-        ) : flowData?.avatar_url ? (
-          <img 
-            src={flowData.avatar_url} 
-            alt="Avatar" 
-            className="w-full h-full object-cover rounded-full"
-          />
-        ) : (
-          <MessageCircle size={24} />
-        )}
-      </button>
+      />
 
       {/* Bolha de boas-vindas */}
-      {!isOpen && showWelcomeBubble && (
-        <div 
-          className="absolute p-4 bg-white border rounded-lg shadow-lg"
-          style={{ 
-            ...Object.fromEntries(getWelcomeBubblePosition().split('; ').map(s => s.split(': '))),
-            borderColor: '#e5e7eb',
-            color: colors.text,
-            wordWrap: 'break-word'
-          }}
-        >
-          <button 
-            onClick={() => setShowWelcomeBubble(false)}
-            className="absolute -top-2 -right-2 w-5 h-5 bg-gray-200 rounded-full text-xs flex items-center justify-center hover:bg-gray-300"
-          >
-            ×
-          </button>
-          <p className="text-sm m-0 pr-4">
-            {flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?'}
-          </p>
-        </div>
+      {!isOpen && (
+        <WelcomeBubble
+          showWelcomeBubble={showWelcomeBubble}
+          position={position}
+          colors={colors}
+          flowData={flowData}
+          onClose={() => setShowWelcomeBubble(false)}
+        />
       )}
 
       {/* Janela do chat */}
       {isOpen && (
-        <div
-          className="absolute w-80 h-96 bg-white rounded-lg shadow-xl flex flex-col overflow-hidden"
-          style={{ 
-            ...Object.fromEntries(getChatWindowPosition().split('; ').map(s => s.split(': ')))
-          }}
-        >
-          {/* Header */}
-          <div 
-            className="p-4 text-white flex items-center justify-between"
-            style={{ 
-              background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              {flowData?.avatar_url ? (
-                <img src={flowData.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-sm">
-                  👤
-                </div>
-              )}
-              <div>
-                <div className="font-semibold text-sm">{flowData?.name || 'Atendimento'}</div>
-                <div className="text-xs opacity-90 flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  Online agora
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={handleCloseChat}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Mensagens */}
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-            {renderMessages()}
-          </div>
-
-          {/* Input */}
-          {renderQuestionInput()}
-        </div>
+        <ChatWindow
+          position={position}
+          colors={colors}
+          flowData={flowData}
+          messages={messages}
+          isTyping={isTyping}
+          currentQuestion={currentQuestion}
+          showCompletion={showCompletion}
+          waitingForInput={waitingForInput}
+          responses={responses}
+          onClose={handleCloseChat}
+          onSendAnswer={handleSendAnswer}
+        />
       )}
     </div>
   );

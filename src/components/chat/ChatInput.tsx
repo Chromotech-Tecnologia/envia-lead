@@ -1,49 +1,115 @@
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Send } from 'lucide-react';
-
 interface ChatInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSend: () => void;
-  placeholder: string;
-  type?: 'text' | 'email' | 'number';
+  currentQuestion: any;
+  colors: any;
+  flowData: any;
+  showCompletion: boolean;
+  waitingForInput: boolean;
+  isTyping: boolean;
+  responses: Record<string, string>;
+  onSendAnswer: (answer: string) => void;
 }
 
-const ChatInput = ({ value, onChange, onSend, placeholder, type = 'text' }: ChatInputProps) => {
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onSend();
-    }
-  };
+const ChatInput = ({ 
+  currentQuestion, 
+  colors, 
+  flowData, 
+  showCompletion, 
+  waitingForInput, 
+  isTyping, 
+  responses, 
+  onSendAnswer 
+}: ChatInputProps) => {
+  if (showCompletion) {
+    return (
+      <div className="p-4 text-center space-y-3">
+        <p className="text-green-600 font-medium">Conversão realizada com sucesso!</p>
+        {flowData?.whatsapp && flowData?.show_whatsapp_button !== false && (
+          <button 
+            className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+            onClick={() => {
+              let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
+              Object.keys(responses).forEach((questionId) => {
+                if (responses[questionId]) {
+                  messageText += `${questionId}: ${responses[questionId]}\n`;
+                }
+              });
+              const whatsappNumber = flowData.whatsapp.replace(/\D/g, '');
+              const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
+              window.open(whatsappUrl, '_blank');
+            }}
+          >
+            💬 Continuar no WhatsApp
+          </button>
+        )}
+      </div>
+    );
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (type === 'number') {
-      const numericValue = e.target.value.replace(/\D/g, '');
-      onChange(numericValue);
-    } else {
-      onChange(e.target.value);
-    }
-  };
+  if (!waitingForInput || !currentQuestion || isTyping) {
+    return null;
+  }
 
   return (
-    <div className="p-4 border-t bg-white">
-      <div className="flex gap-2">
-        <Input
-          value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          onKeyPress={handleKeyPress}
-          className="rounded-full"
-        />
-        <Button 
-          onClick={onSend} 
-          size="sm"
-          className="rounded-full envia-lead-gradient hover:opacity-90"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+    <div className="p-4 border-t">
+      <div className="space-y-3">
+        {currentQuestion.type === 'select' ? (
+          <select 
+            className="w-full p-2 border rounded-lg"
+            onChange={(e) => onSendAnswer(e.target.value)}
+            style={{ borderColor: colors.primary }}
+          >
+            <option value="">Selecione uma opção...</option>
+            {currentQuestion.options?.map((option: string, idx: number) => (
+              <option key={idx} value={option}>{option}</option>
+            ))}
+          </select>
+        ) : currentQuestion.type === 'radio' ? (
+          <div className="space-y-2">
+            {currentQuestion.options?.map((option: string, idx: number) => (
+              <label key={idx} className="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
+                <input 
+                  type="radio" 
+                  name="preview-radio" 
+                  value={option}
+                  onChange={(e) => onSendAnswer(e.target.value)}
+                  className="mr-2"
+                />
+                {option}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="flex space-x-2">
+            <input
+              type={currentQuestion.type}
+              placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
+              className="flex-1 p-2 border rounded-lg"
+              style={{ borderColor: colors.primary }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  onSendAnswer((e.target as HTMLInputElement).value);
+                  (e.target as HTMLInputElement).value = '';
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                const input = document.querySelector('input') as HTMLInputElement;
+                if (input) {
+                  onSendAnswer(input.value);
+                  input.value = '';
+                }
+              }}
+              className="px-4 py-2 text-white rounded-lg transition-colors"
+              style={{ 
+                background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
+              }}
+            >
+              Enviar
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

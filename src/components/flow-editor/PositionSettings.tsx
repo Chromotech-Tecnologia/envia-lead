@@ -14,20 +14,45 @@ interface PositionSettingsProps {
 const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const buttonPositions = [
-    { value: 'bottom-right', label: 'Inferior Direito', icon: '↘️' },
-    { value: 'bottom-left', label: 'Inferior Esquerdo', icon: '↙️' },
-    { value: 'top-right', label: 'Superior Direito', icon: '↗️' },
-    { value: 'top-left', label: 'Superior Esquerdo', icon: '↖️' },
-    { value: 'center-right', label: 'Centro Direito', icon: '➡️' },
-    { value: 'center-left', label: 'Centro Esquerdo', icon: '⬅️' }
+  const positionOptions = [
+    { value: 'top-left', label: 'Superior Esquerdo', gridPos: 'row-start-1 col-start-1' },
+    { value: 'top-center', label: 'Superior Centro', gridPos: 'row-start-1 col-start-2' },
+    { value: 'top-right', label: 'Superior Direito', gridPos: 'row-start-1 col-start-3' },
+    { value: 'center-left', label: 'Centro Esquerdo', gridPos: 'row-start-2 col-start-1' },
+    { value: 'center-center', label: 'Centro', gridPos: 'row-start-2 col-start-2' },
+    { value: 'center-right', label: 'Centro Direito', gridPos: 'row-start-2 col-start-3' },
+    { value: 'bottom-left', label: 'Inferior Esquerdo', gridPos: 'row-start-3 col-start-1' },
+    { value: 'bottom-center', label: 'Inferior Centro', gridPos: 'row-start-3 col-start-2' },
+    { value: 'bottom-right', label: 'Inferior Direito', gridPos: 'row-start-3 col-start-3' },
   ];
 
-  const chatPositions = [
-    { value: 'bottom-right', label: 'Inferior Direito', icon: '↘️' },
-    { value: 'bottom-left', label: 'Inferior Esquerdo', icon: '↙️' },
-    { value: 'center', label: 'Centro', icon: '🎯' }
-  ];
+  const PositionGrid = ({ currentValue, onSelect, title }: { currentValue: string; onSelect: (value: string) => void; title: string }) => (
+    <div className="space-y-3">
+      <Label className="text-base font-medium">{title}</Label>
+      <div className="grid grid-cols-3 grid-rows-3 gap-2 p-4 bg-gray-50 rounded-lg">
+        {positionOptions.map(position => (
+          <Button
+            key={position.value}
+            variant={currentValue === position.value ? "default" : "outline"}
+            onClick={() => onSelect(position.value)}
+            className={`h-12 text-xs ${position.gridPos} relative`}
+            size="sm"
+          >
+            <div className="text-center">
+              <div className="text-lg mb-1">
+                {position.value.includes('top') && '⬆️'}
+                {position.value.includes('center') && position.value.includes('left') && '⬅️'}
+                {position.value.includes('center') && position.value.includes('right') && '➡️'}
+                {position.value.includes('center') && position.value.includes('center') && '🎯'}
+                {position.value.includes('bottom') && '⬇️'}
+              </div>
+              <div className="text-xs leading-tight">{position.label}</div>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -37,48 +62,34 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
             <div>
               <CardTitle>Posicionamento</CardTitle>
               <CardDescription>
-                Configure onde o botão e a janela do chat aparecerão
+                Configure onde o botão e a janela do chat aparecerão independentemente
               </CardDescription>
             </div>
             <Button onClick={() => setIsPreviewOpen(true)} variant="outline">
               <Eye className="w-4 h-4 mr-2" />
-              Personalizar Visual
+              Visualizar Posições
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <Label className="text-base font-medium">Posição do Botão Flutuante</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
-              {buttonPositions.map(position => (
-                <Button
-                  key={position.value}
-                  variant={flowData.buttonPosition === position.value ? "default" : "outline"}
-                  onClick={() => setFlowData(prev => ({...prev, buttonPosition: position.value}))}
-                  className="h-auto p-3 flex flex-col items-center gap-2"
-                >
-                  <span className="text-lg">{position.icon}</span>
-                  <span className="text-xs text-center">{position.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-base font-medium">Posição da Janela do Chat</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
-              {chatPositions.map(position => (
-                <Button
-                  key={position.value}
-                  variant={flowData.chatPosition === position.value ? "default" : "outline"}
-                  onClick={() => setFlowData(prev => ({...prev, chatPosition: position.value}))}
-                  className="h-auto p-3 flex flex-col items-center gap-2"
-                >
-                  <span className="text-lg">{position.icon}</span>
-                  <span className="text-xs text-center">{position.label}</span>
-                </Button>
-              ))}
-            </div>
+        <CardContent className="space-y-8">
+          <PositionGrid
+            currentValue={flowData.buttonPosition || 'bottom-right'}
+            onSelect={(value) => setFlowData(prev => ({...prev, buttonPosition: value}))}
+            title="Posição do Botão Flutuante"
+          />
+          
+          <PositionGrid
+            currentValue={flowData.chatPosition || 'bottom-right'}
+            onSelect={(value) => setFlowData(prev => ({...prev, chatPosition: value}))}
+            title="Posição da Janela do Chat"
+          />
+          
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-semibold text-blue-900 mb-2">💡 Dica de Posicionamento:</h4>
+            <p className="text-sm text-blue-800">
+              Quando o botão estiver nas bordas da tela, o chat abrirá automaticamente no lado oposto 
+              para garantir total visibilidade e evitar cortes de conteúdo.
+            </p>
           </div>
         </CardContent>
       </Card>

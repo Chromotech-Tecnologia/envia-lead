@@ -17,6 +17,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
 
   console.log('[FloatingChatButton] FlowData recebido:', flowData);
+  console.log('[FloatingChatButton] Position:', position);
 
   // Usar as cores do fluxo ou padrão
   const colors = flowData?.colors || {
@@ -38,15 +39,26 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
   } = useChatLogic(flowData);
 
   const handleOpenChat = () => {
+    console.log('[FloatingChatButton] Abrindo chat...');
     setIsOpen(true);
     setShowWelcomeBubble(false);
     startConversation();
   };
 
   const handleCloseChat = () => {
+    console.log('[FloatingChatButton] Fechando chat...');
     setIsOpen(false);
     if (isPreview && onHidePreview) {
       onHidePreview();
+    }
+  };
+
+  const handleButtonClick = () => {
+    console.log('[FloatingChatButton] Botão clicado, isOpen:', isOpen);
+    if (isOpen) {
+      handleCloseChat();
+    } else {
+      handleOpenChat();
     }
   };
 
@@ -63,7 +75,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
         colors={colors}
         flowData={flowData}
         position={position}
-        onClick={() => isOpen ? handleCloseChat() : handleOpenChat()}
+        onClick={handleButtonClick}
       />
 
       {/* Bolha de boas-vindas */}
@@ -80,7 +92,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       {/* Janela do chat */}
       {isOpen && (
         <ChatWindow
-          position={position}
+          position={flowData.chatPosition || position}
           colors={colors}
           flowData={flowData}
           messages={messages}

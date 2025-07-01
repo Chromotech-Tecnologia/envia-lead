@@ -38,23 +38,25 @@ const ChatWindow = ({
   onSendAnswer 
 }: ChatWindowProps) => {
   const getChatWindowPosition = () => {
+    // Lógica para abrir o chat no lado oposto ao botão
     const positions = {
-      'bottom-right': 'bottom: 190px; right: 20px;',
-      'bottom-left': 'bottom: 190px; left: 20px;',
-      'top-right': 'top: 90px; right: 20px;',
-      'top-left': 'top: 90px; left: 20px;',
-      'center-right': 'top: 50%; right: 90px; transform: translateY(-50%);',
-      'center-left': 'top: 50%; left: 90px; transform: translateY(-50%);'
+      'bottom-right': { bottom: '100px', right: '20px' },
+      'bottom-left': { bottom: '100px', left: '20px' },
+      'bottom-center': { bottom: '100px', left: '50%', transform: 'translateX(-50%)' },
+      'top-right': { top: '90px', right: '20px' },
+      'top-left': { top: '90px', left: '20px' },
+      'top-center': { top: '90px', left: '50%', transform: 'translateX(-50%)' },
+      'center-right': { top: '50%', right: '100px', transform: 'translateY(-50%)' },
+      'center-left': { top: '50%', left: '100px', transform: 'translateY(-50%)' },
+      'center-center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     };
     return positions[position as keyof typeof positions] || positions['bottom-right'];
   };
 
   return (
     <div
-      className="absolute w-80 h-96 bg-white rounded-lg shadow-xl flex flex-col overflow-hidden"
-      style={{ 
-        ...Object.fromEntries(getChatWindowPosition().split('; ').map(s => s.split(': ')))
-      }}
+      className="fixed w-80 h-96 bg-white rounded-lg shadow-xl flex flex-col overflow-hidden z-40"
+      style={getChatWindowPosition()}
     >
       {/* Header */}
       <div 

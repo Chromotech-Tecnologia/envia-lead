@@ -12,12 +12,15 @@ interface ChatButtonProps {
 const ChatButton = ({ isOpen, colors, flowData, position, onClick }: ChatButtonProps) => {
   const getPositionStyles = () => {
     const positions = {
-      'bottom-right': { bottom: '20px', right: '20px' },
-      'bottom-left': { bottom: '20px', left: '20px' },
+      'bottom-right': { bottom: '30px', right: '20px' },
+      'bottom-left': { bottom: '30px', left: '20px' },
+      'bottom-center': { bottom: '30px', left: '50%', transform: 'translateX(-50%)' },
       'top-right': { top: '20px', right: '20px' },
       'top-left': { top: '20px', left: '20px' },
+      'top-center': { top: '20px', left: '50%', transform: 'translateX(-50%)' },
       'center-right': { top: '50%', right: '20px', transform: 'translateY(-50%)' },
-      'center-left': { top: '50%', left: '20px', transform: 'translateY(-50%)' }
+      'center-left': { top: '50%', left: '20px', transform: 'translateY(-50%)' },
+      'center-center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     };
     return positions[position as keyof typeof positions] || positions['bottom-right'];
   };

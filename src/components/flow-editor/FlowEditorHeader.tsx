@@ -62,8 +62,9 @@ const FlowEditorHeader = ({
         <Button
           onClick={onSave}
           disabled={isSaving}
-          className="envia-lead-gradient hover:opacity-90"
+          className="envia-lead-gradient hover:opacity-90 flex items-center gap-2"
         >
+          <Save className="w-4 h-4" />
           {isSaving ? 'Salvando...' : 'Salvar'}
         </Button>
       </div>

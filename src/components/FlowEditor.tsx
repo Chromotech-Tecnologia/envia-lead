@@ -24,6 +24,7 @@ interface FlowEditorProps {
 
 const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onExit, onPreview }: FlowEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Inicializar dados do fluxo quando um fluxo for selecionado para edição
   useEffect(() => {
@@ -62,19 +63,29 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
   }, [flow, isEditing, setFlowData]);
 
   const handleSave = async () => {
-    await onSave();
+    setIsSaving(true);
+    try {
+      await onSave();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveAndExit = async () => {
-    await onSaveAndExit();
+    setIsSaving(true);
+    try {
+      await onSaveAndExit();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleGoBack = () => {
     onExit();
   };
 
-  const handlePreview = () => {
-    setShowPreview(true);
+  const handleTogglePreview = () => {
+    setShowPreview(!showPreview);
   };
 
   return (
@@ -82,7 +93,13 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
       {/* Conteúdo principal com padding bottom para os botões fixos */}
       <div className="pb-20">
         <div className="container mx-auto px-4 py-6 space-y-6">
-          <FlowEditorHeader isEditing={isEditing} />
+          <FlowEditorHeader 
+            flowName={flowData.name || 'Novo Fluxo'}
+            onSave={handleSave}
+            isSaving={isSaving}
+            showPreview={showPreview}
+            onTogglePreview={handleTogglePreview}
+          />
 
           <Tabs defaultValue="basic" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
@@ -131,17 +148,17 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
             </Button>
             
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handlePreview}>
+              <Button variant="outline" onClick={handleTogglePreview}>
                 <Eye className="w-4 h-4 mr-2" />
                 {showPreview ? 'Ocultar Preview' : 'Visualizar'}
               </Button>
-              <Button onClick={handleSave} variant="outline">
+              <Button onClick={handleSave} variant="outline" disabled={isSaving}>
                 <Save className="w-4 h-4 mr-2" />
-                Salvar
+                {isSaving ? 'Salvando...' : 'Salvar'}
               </Button>
-              <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90">
+              <Button onClick={handleSaveAndExit} className="envia-lead-gradient hover:opacity-90" disabled={isSaving}>
                 <Save className="w-4 h-4 mr-2" />
-                Salvar e Sair
+                {isSaving ? 'Salvando...' : 'Salvar e Sair'}
               </Button>
             </div>
           </div>

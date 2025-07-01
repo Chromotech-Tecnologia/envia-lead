@@ -17,6 +17,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
   const [isTyping, setIsTyping] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
+  const [waitingForInput, setWaitingForInput] = useState(false);
 
   console.log('[FloatingChatButton] FlowData recebido:', flowData);
 
@@ -30,7 +31,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
 
   // Processar perguntas do fluxo
   const questions = flowData?.questions ? flowData.questions
-    .filter((q: any) => q.type !== 'bot_message') // Filtrar mensagens do bot para evitar duplicação
+    .filter((q: any) => q.type !== 'bot_message')
     .map((q: any) => ({
       id: q.id,
       type: q.type,
@@ -46,8 +47,8 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
 
   const getPositionStyles = () => {
     const positions = {
-      'bottom-right': 'bottom: 30px; right: 20px;',
-      'bottom-left': 'bottom: 30px; left: 20px;',
+      'bottom-right': 'bottom: 120px; right: 20px;', // Aumentado de 30px para 120px
+      'bottom-left': 'bottom: 120px; left: 20px;',   // Aumentado de 30px para 120px
       'top-right': 'top: 20px; right: 20px;',
       'top-left': 'top: 20px; left: 20px;',
       'center-right': 'top: 50%; right: 20px; transform: translateY(-50%);',
@@ -58,8 +59,8 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
 
   const getChatWindowPosition = () => {
     const positions = {
-      'bottom-right': 'bottom: 100px; right: 20px;',
-      'bottom-left': 'bottom: 100px; left: 20px;',
+      'bottom-right': 'bottom: 190px; right: 20px;', // Ajustado proporcionalmente
+      'bottom-left': 'bottom: 190px; left: 20px;',   // Ajustado proporcionalmente
       'top-right': 'top: 90px; right: 20px;',
       'top-left': 'top: 90px; left: 20px;',
       'center-right': 'top: 50%; right: 90px; transform: translateY(-50%);',
@@ -69,13 +70,12 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
   };
 
   const getWelcomeBubblePosition = () => {
-    // Posicionar a bolha no lado oposto ao botão
     if (position.includes('right')) {
-      return 'bottom: 70px; right: 0; left: auto;';
+      return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
     } else if (position.includes('left')) {
-      return 'bottom: 70px; left: 0; right: auto;';
+      return 'bottom: 70px; left: 0; right: auto; max-width: 300px; width: max-content;';
     }
-    return 'bottom: 70px; right: 0; left: auto;';
+    return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
   };
 
   const addMessage = (text: string, isBot: boolean) => {
@@ -92,32 +92,29 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      showNextQuestion();
+      if (currentQuestionIndex < questions.length) {
+        const question = questions[currentQuestionIndex];
+        addMessage(question.title, true);
+        setWaitingForInput(true); // Definir que estamos esperando input
+      } else {
+        setShowCompletion(true);
+        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+        
+        if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
+          setTimeout(() => {
+            // WhatsApp será mostrado no renderQuestionInput
+          }, 2000);
+        }
+      }
     }, 1500);
   };
 
-  const showNextQuestion = () => {
-    if (currentQuestionIndex >= questions.length) {
-      setShowCompletion(true);
-      addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
-      
-      // Mostrar WhatsApp se configurado
-      if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
-        setTimeout(() => {
-          // WhatsApp será mostrado no renderQuestionInput
-        }, 2000);
-      }
-      return;
-    }
-
-    const question = questions[currentQuestionIndex];
-    addMessage(question.title, true);
-  };
-
   const handleSendAnswer = (answer: string) => {
-    if (!answer.trim()) return;
+    if (!answer.trim() || !waitingForInput) return;
 
     const currentQuestion = questions[currentQuestionIndex];
+    if (!currentQuestion) return;
+
     setResponses(prev => ({ ...prev, [currentQuestion.id]: answer }));
     
     // Adicionar resposta do usuário
@@ -125,24 +122,34 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     
     // Próxima pergunta
     setCurrentQuestionIndex(prev => prev + 1);
-  };
-
-  // Effect para mostrar próxima pergunta quando currentQuestionIndex muda
-  useEffect(() => {
-    if (isOpen && currentQuestionIndex < questions.length && messages.length > 0) {
-      const timer = setTimeout(() => {
+    setWaitingForInput(false); // Não estamos mais esperando input
+    
+    // Mostrar próxima pergunta após delay
+    if (currentQuestionIndex + 1 < questions.length) {
+      setTimeout(() => {
         showTypingIndicator();
       }, 1000);
-      return () => clearTimeout(timer);
+    } else {
+      // Finalizar conversa
+      setTimeout(() => {
+        setShowCompletion(true);
+        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+        
+        if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
+          setTimeout(() => {
+            // WhatsApp será mostrado no renderQuestionInput
+          }, 2000);
+        }
+      }, 1000);
     }
-  }, [currentQuestionIndex, isOpen, messages.length]);
+  };
 
   const handleOpenChat = () => {
     setIsOpen(true);
     setShowWelcomeBubble(false);
     
-    // Iniciar conversa com primeira pergunta
-    if (currentQuestionIndex === 0 && questions.length > 0) {
+    // Iniciar conversa apenas se não há mensagens ainda
+    if (messages.length === 0 && questions.length > 0) {
       setTimeout(() => {
         addMessage(flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?', true);
         setTimeout(() => {
@@ -186,7 +193,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       );
     }
 
-    if (currentQuestionIndex >= questions.length || isTyping) {
+    if (!waitingForInput || currentQuestionIndex >= questions.length || isTyping) {
       return null;
     }
 
@@ -336,7 +343,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       {/* Bolha de boas-vindas */}
       {!isOpen && showWelcomeBubble && (
         <div 
-          className="absolute p-4 bg-white border rounded-lg shadow-lg min-w-60 max-w-80"
+          className="absolute p-4 bg-white border rounded-lg shadow-lg"
           style={{ 
             ...Object.fromEntries(getWelcomeBubblePosition().split('; ').map(s => s.split(': '))),
             borderColor: '#e5e7eb',

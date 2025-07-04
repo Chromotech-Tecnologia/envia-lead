@@ -1,15 +1,16 @@
-
-// EnviaLead Chat Widget - Sistema Completo v9.0
-// Script principal otimizado com monitoramento de conexões
+// EnviaLead Chat Widget - Sistema Completo v10.0 - TESTE OTIMIZADO
+// Script principal com logs detalhados e correções
 
 (function() {
   'use strict';
 
-  console.log('[EnviaLead] Iniciando sistema v9.0...');
+  console.log('[EnviaLead] 🚀 Iniciando sistema v10.0 - TESTE...');
+  console.log('[EnviaLead] URL atual:', window.location.href);
+  console.log('[EnviaLead] Domain:', window.location.hostname);
 
   // Prevent double loading
   if (window.enviaLeadLoaded) {
-    console.log('[EnviaLead] Sistema já carregado');
+    console.log('[EnviaLead] ⚠️ Sistema já carregado');
     return;
   }
   window.enviaLeadLoaded = true;
@@ -25,62 +26,67 @@
     extractFlowId: function() {
       let flowId = null;
       
-      console.log('[EnviaLead] Extraindo Flow ID...');
+      console.log('[EnviaLead] 🔍 Extraindo Flow ID...');
       
       // Method 1: Check data-flow-id on current script
       const currentScript = document.currentScript;
       if (currentScript) {
         flowId = currentScript.getAttribute('data-flow-id');
-        console.log('[EnviaLead] Flow ID do script atual:', flowId);
+        console.log('[EnviaLead] ✅ Flow ID do script atual:', flowId);
       }
       
       // Method 2: Search all scripts with data-flow-id
       if (!flowId) {
         const scripts = document.querySelectorAll('script[data-flow-id]');
-        console.log('[EnviaLead] Scripts com data-flow-id encontrados:', scripts.length);
+        console.log('[EnviaLead] 🔍 Scripts com data-flow-id encontrados:', scripts.length);
         if (scripts.length > 0) {
           flowId = scripts[scripts.length - 1].getAttribute('data-flow-id');
-          console.log('[EnviaLead] Flow ID dos scripts:', flowId);
+          console.log('[EnviaLead] ✅ Flow ID dos scripts:', flowId);
         }
       }
       
       // Method 3: Check global variable
       if (!flowId) {
         flowId = window.enviaLeadId;
-        console.log('[EnviaLead] Flow ID da variável global:', flowId);
+        console.log('[EnviaLead] 🔍 Flow ID da variável global:', flowId);
       }
       
-      // Method 4: Check for EnviaLead code format (EL_XXXXXXXX)
+      // Method 4: Look in script content for flow ID
       if (!flowId) {
         const allScripts = document.querySelectorAll('script');
         for (const script of allScripts) {
-          const src = script.src;
-          if (src && src.includes('envialead')) {
-            const match = src.match(/data-flow-id[="]([^"&]+)/);
+          const scriptContent = script.textContent || script.innerHTML;
+          if (scriptContent && scriptContent.includes('envialead')) {
+            const match = scriptContent.match(/["']EL_[A-F0-9]{16}["']/);
             if (match) {
-              flowId = match[1];
+              flowId = match[0].replace(/["']/g, '');
+              console.log('[EnviaLead] ✅ Flow ID encontrado no script:', flowId);
               break;
             }
           }
         }
       }
       
-      console.log('[EnviaLead] Flow ID final extraído:', flowId);
+      console.log('[EnviaLead] 🎯 Flow ID final extraído:', flowId);
       return flowId;
     },
 
     convertFlowId: async function(flowId) {
-      console.log('[EnviaLead] Convertendo Flow ID:', flowId);
+      console.log('[EnviaLead] 🔄 Convertendo Flow ID:', flowId);
       
-      if (!flowId) return null;
+      if (!flowId) {
+        console.error('[EnviaLead] ❌ Flow ID não fornecido');
+        return null;
+      }
       
       // Se não começar com EL_, é provavelmente um UUID direto
       if (!flowId.startsWith('EL_')) {
-        console.log('[EnviaLead] Flow ID já no formato UUID');
+        console.log('[EnviaLead] ✅ Flow ID já no formato UUID');
         return flowId;
       }
 
       try {
+        console.log('[EnviaLead] 📡 Buscando todos os fluxos...');
         const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flows?select=*`, {
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
@@ -91,20 +97,23 @@
 
         if (response.ok) {
           const allFlows = await response.json();
-          console.log('[EnviaLead] Total de fluxos encontrados:', allFlows.length);
+          console.log('[EnviaLead] 📊 Total de fluxos encontrados:', allFlows.length);
           
           for (const flow of allFlows) {
             const code = `EL_${flow.id.replace(/-/g, '').substring(0, 16).toUpperCase()}`;
+            console.log('[EnviaLead] 🔍 Comparando:', code, 'com', flowId);
             if (code === flowId) {
-              console.log('[EnviaLead] Flow ID convertido:', flowId, '->', flow.id);
+              console.log('[EnviaLead] ✅ Flow ID convertido:', flowId, '->', flow.id);
               return flow.id;
             }
           }
           
-          console.error('[EnviaLead] Flow ID não encontrado:', flowId);
+          console.error('[EnviaLead] ❌ Flow ID não encontrado:', flowId);
+        } else {
+          console.error('[EnviaLead] ❌ Erro na resposta da API:', response.status);
         }
       } catch (error) {
-        console.error('[EnviaLead] Erro aoConverter Flow ID:', error);
+        console.error('[EnviaLead] ❌ Erro ao converter Flow ID:', error);
       }
 
       return null;
@@ -112,14 +121,15 @@
 
     fetchFlowData: async function(flowId) {
       try {
-        console.log('[EnviaLead] Buscando dados do fluxo:', flowId);
+        console.log('[EnviaLead] 📡 Buscando dados do fluxo:', flowId);
         
         const actualFlowId = await this.convertFlowId(flowId);
         if (!actualFlowId) {
-          console.error('[EnviaLead] Flow ID inválido');
+          console.error('[EnviaLead] ❌ Flow ID inválido após conversão');
           return null;
         }
 
+        console.log('[EnviaLead] 📡 Fazendo requisição para fluxo:', actualFlowId);
         const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flows?id=eq.${actualFlowId}&select=*,questions(*),flow_urls(*),flow_emails(*)`, {
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
@@ -129,24 +139,28 @@
         });
 
         if (!response.ok) {
+          console.error('[EnviaLead] ❌ Erro HTTP:', response.status);
           throw new Error(`HTTP ${response.status}`);
         }
 
         const flows = await response.json();
+        console.log('[EnviaLead] 📊 Resposta da API:', flows);
+        
         if (!flows || flows.length === 0) {
-          console.error('[EnviaLead] Fluxo não encontrado');
+          console.error('[EnviaLead] ❌ Fluxo não encontrado na resposta');
           return null;
         }
 
         const flow = flows[0];
-        console.log('[EnviaLead] Fluxo encontrado:', flow.name);
+        console.log('[EnviaLead] ✅ Fluxo encontrado:', flow.name);
+        console.log('[EnviaLead] 📋 URLs autorizadas:', flow.flow_urls?.map(u => u.url));
         
         // Registrar conexão
-        this.registerConnection(actualFlowId);
+        await this.registerConnection(actualFlowId);
         
         return flow;
       } catch (error) {
-        console.error('[EnviaLead] Erro ao buscar fluxo:', error);
+        console.error('[EnviaLead] ❌ Erro ao buscar fluxo:', error);
         return null;
       }
     },
@@ -160,9 +174,9 @@
           last_ping: new Date().toISOString()
         };
 
-        console.log('[EnviaLead] Registrando conexão:', connectionData);
+        console.log('[EnviaLead] 📝 Registrando conexão:', connectionData);
 
-        await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flow_connections`, {
+        const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flow_connections`, {
           method: 'POST',
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
@@ -172,19 +186,25 @@
           body: JSON.stringify(connectionData)
         });
 
+        if (response.ok) {
+          console.log('[EnviaLead] ✅ Conexão registrada com sucesso');
+        } else {
+          console.error('[EnviaLead] ❌ Erro ao registrar conexão:', response.status);
+        }
+
         // Ping periódico para manter conexão ativa
         setInterval(() => {
           this.pingConnection(flowId);
         }, 60000); // A cada minuto
 
       } catch (error) {
-        console.error('[EnviaLead] Erro ao registrar conexão:', error);
+        console.error('[EnviaLead] ❌ Erro ao registrar conexão:', error);
       }
     },
 
     pingConnection: async function(flowId) {
       try {
-        await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flow_connections?flow_id=eq.${flowId}&url=eq.${encodeURIComponent(window.location.href)}`, {
+        const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flow_connections?flow_id=eq.${flowId}&url=eq.${encodeURIComponent(window.location.href)}`, {
           method: 'PATCH',
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
@@ -196,43 +216,54 @@
             is_active: true
           })
         });
+        
+        if (response.ok) {
+          console.log('[EnviaLead] 💓 Ping enviado com sucesso');
+        }
       } catch (error) {
-        console.error('[EnviaLead] Erro no ping:', error);
+        console.error('[EnviaLead] ❌ Erro no ping:', error);
       }
     },
 
     isUrlAuthorized: function(currentUrl, currentDomain, authorizedUrls) {
-      console.log('[EnviaLead] Verificando autorização...');
-      console.log('[EnviaLead] URL atual:', currentUrl);
-      console.log('[EnviaLead] URLs autorizadas:', authorizedUrls);
+      console.log('[EnviaLead] 🔒 Verificando autorização...');
+      console.log('[EnviaLead] 🌐 URL atual:', currentUrl);
+      console.log('[EnviaLead] 🌐 Domain atual:', currentDomain);
+      console.log('[EnviaLead] 📋 URLs autorizadas:', authorizedUrls);
       
       if (!authorizedUrls || authorizedUrls.length === 0) {
-        console.log('[EnviaLead] Sem restrições de URL');
+        console.log('[EnviaLead] ✅ Sem restrições de URL');
         return true;
       }
 
       const validUrls = authorizedUrls.filter(url => url && url.trim() !== '');
       if (validUrls.length === 0) {
+        console.log('[EnviaLead] ✅ Lista de URLs vazia - autorizado');
         return true;
       }
 
       for (const authorizedUrl of validUrls) {
+        console.log('[EnviaLead] 🔍 Verificando URL:', authorizedUrl);
+        
         if (authorizedUrl === '*') {
+          console.log('[EnviaLead] ✅ Wildcard encontrado - autorizado');
           return true;
         }
         
         const normalizedAuth = authorizedUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
         const normalizedCurrent = currentUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
         
+        console.log('[EnviaLead] 🔍 Comparando:', normalizedCurrent, 'com', normalizedAuth);
+        
         if (normalizedCurrent === normalizedAuth || 
             normalizedCurrent.includes(normalizedAuth) || 
             currentDomain.includes(normalizedAuth.split('/')[0])) {
-          console.log('[EnviaLead] URL autorizada');
+          console.log('[EnviaLead] ✅ URL autorizada!');
           return true;
         }
       }
 
-      console.log('[EnviaLead] URL não autorizada');
+      console.log('[EnviaLead] ❌ URL não autorizada');
       return false;
     }
   };
@@ -240,6 +271,8 @@
   // Widget creation functions
   const EnviaLeadWidget = {
     createFloatingButton: function(colors, buttonPosition, avatarUrl) {
+      console.log('[EnviaLead] 🎨 Criando botão flutuante...');
+      
       const floatingButton = document.createElement('div');
       floatingButton.id = 'envialead-floating-button';
       floatingButton.style.cssText = `
@@ -279,6 +312,8 @@
     },
 
     createWelcomeBubble: function(welcomeMessage, colors, buttonPosition) {
+      console.log('[EnviaLead] 💬 Criando bolha de boas-vindas...');
+      
       const welcomeBubble = document.createElement('div');
       welcomeBubble.id = 'envialead-welcome-bubble';
       
@@ -432,324 +467,49 @@
     }
   };
 
-  // Chat functionality
+  // Chat functionality - simplificado para teste
   const EnviaLeadChat = {
     init: function(flowData, colors) {
+      console.log('[EnviaLead] 🎮 Inicializando chat...');
       this.flowData = flowData;
       this.colors = colors;
-      this.questions = this.processQuestions(flowData.questions);
-      this.currentQuestionIndex = 0;
-      this.responses = {};
       this.isOpen = false;
-      this.isTyping = false;
-    },
-
-    processQuestions: function(questions) {
-      return questions ? questions
-        .map(q => ({
-          id: q.id,
-          type: q.type,
-          title: q.title,
-          placeholder: q.placeholder,
-          required: q.required,
-          order: q.order_index || 0,
-          options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : []
-        }))
-        .sort((a, b) => a.order - b.order) : [];
     },
 
     toggleChat: function() {
       this.isOpen = !this.isOpen;
-      console.log('[EnviaLead] Toggle chat:', this.isOpen);
+      console.log('[EnviaLead] 🔄 Toggle chat:', this.isOpen);
       
-      const chatWindow = document.getElementById('envialead-chat-window');
-      const welcomeBubble = document.getElementById('envialead-welcome-bubble');
-      
+      // Por enquanto, apenas mostrar um alert para confirmar que está funcionando
       if (this.isOpen) {
-        chatWindow.style.display = 'flex';
-        if (welcomeBubble) welcomeBubble.style.display = 'none';
-        if (this.currentQuestionIndex === 0 && this.questions.length > 0) {
-          setTimeout(() => this.showWelcomeMessage(), 1000);
-        }
-      } else {
-        chatWindow.style.display = 'none';
-      }
-    },
-
-    showWelcomeMessage: function() {
-      const welcomeMsg = this.flowData.welcome_message || 'Olá! Como posso ajudá-lo hoje?';
-      this.addMessage(welcomeMsg, true);
-      setTimeout(() => this.showNextQuestion(), 2000);
-    },
-
-    addMessage: function(text, isBot = true) {
-      const chatMessages = document.getElementById('envialead-chat-messages');
-      const messageDiv = document.createElement('div');
-      messageDiv.style.cssText = `
-        display: flex;
-        ${isBot ? 'justify-content: flex-start' : 'justify-content: flex-end'};
-        animation: messageSlideIn 0.3s ease-out;
-      `;
-      
-      const messageBubble = document.createElement('div');
-      messageBubble.style.cssText = `
-        max-width: 80%;
-        padding: 10px 14px;
-        border-radius: 16px;
-        font-size: 14px;
-        line-height: 1.4;
-        word-wrap: break-word;
-        ${isBot ? 
-          `background: white; color: ${this.colors.text}; border: 1px solid #e5e7eb; border-radius: 16px 16px 16px 4px;` : 
-          `background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border-radius: 16px 16px 4px 16px;`
-        }
-      `;
-      messageBubble.textContent = text;
-      
-      messageDiv.appendChild(messageBubble);
-      chatMessages.appendChild(messageDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    },
-
-    showTypingIndicator: function() {
-      const chatMessages = document.getElementById('envialead-chat-messages');
-      const typingDiv = document.createElement('div');
-      typingDiv.id = 'typing-indicator';
-      typingDiv.style.cssText = `
-        display: flex;
-        justify-content: flex-start;
-        margin-bottom: 8px;
-      `;
-      
-      typingDiv.innerHTML = `
-        <div style="background: white; border: 1px solid #e5e7eb; padding: 12px 16px; border-radius: 16px 16px 16px 4px; display: flex; gap: 4px; align-items: center;">
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; animation: typing 1.4s infinite;"></div>
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; animation: typing 1.4s infinite 0.2s;"></div>
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; animation: typing 1.4s infinite 0.4s;"></div>
-        </div>
-      `;
-      
-      chatMessages.appendChild(typingDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      this.isTyping = true;
-      
-      return typingDiv;
-    },
-
-    removeTypingIndicator: function() {
-      const typing = document.getElementById('typing-indicator');
-      if (typing) {
-        typing.remove();
-      }
-      this.isTyping = false;
-    },
-
-    showNextQuestion: function() {
-      if (this.currentQuestionIndex >= this.questions.length) {
-        this.showCompletion();
-        return;
-      }
-
-      const question = this.questions[this.currentQuestionIndex];
-      console.log('[EnviaLead] Showing question:', question.title);
-      
-      // Show typing indicator
-      const typing = this.showTypingIndicator();
-      
-      setTimeout(() => {
-        this.removeTypingIndicator();
-        this.addMessage(question.title, true);
-        this.showQuestionInput(question);
-      }, 1500);
-    },
-
-    showQuestionInput: function(question) {
-      const inputArea = document.getElementById('envialead-chat-input-area');
-      
-      let inputHTML = '';
-      
-      switch (question.type) {
-        case 'text':
-        case 'email':
-        case 'phone':
-          inputHTML = `
-            <input type="${question.type === 'email' ? 'email' : question.type === 'phone' ? 'tel' : 'text'}" 
-                   id="question-input" 
-                   placeholder="${question.placeholder || 'Digite sua resposta...'}" 
-                   style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; margin-bottom: 8px;"
-                   onfocus="this.style.borderColor='${this.colors.primary}'"
-                   onblur="this.style.borderColor='#e5e7eb'"
-                   ${question.required ? 'required' : ''}>
-            <button id="send-answer" style="width: 100%; padding: 12px; background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Enviar</button>
-          `;
-          break;
-          
-        case 'select':
-          const options = question.options || [];
-          inputHTML = `
-            <select id="question-input" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; background: white; margin-bottom: 8px;" ${question.required ? 'required' : ''}>
-              <option value="">Selecione uma opção...</option>
-              ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-            </select>
-            <button id="send-answer" style="width: 100%; padding: 12px; background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">Enviar</button>
-          `;
-          break;
-          
-        case 'radio':
-          const radioOptions = question.options || [];
-          inputHTML = `
-            <div style="margin-bottom: 12px; max-height: 200px; overflow-y: auto;">
-              ${radioOptions.map((opt, idx) => `
-                <label style="display: block; margin-bottom: 8px; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; background: white;" 
-                       onmouseover="this.style.borderColor='${this.colors.primary}'; this.style.backgroundColor='#f8fafc';" 
-                       onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';"
-                       onclick="this.querySelector('input').checked=true; this.style.borderColor='${this.colors.primary}'; this.style.backgroundColor='#f0f9ff';">
-                  <input type="radio" name="question-radio" value="${opt}" style="margin-right: 10px;" ${question.required ? 'required' : ''}>
-                  ${opt}
-                </label>
-              `).join('')}
-            </div>
-            <button id="send-answer" style="width: 100%; padding: 12px; background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">Enviar</button>
-          `;
-          break;
-      }
-      
-      inputArea.innerHTML = inputHTML;
-      
-      // Event listeners
-      const sendBtn = document.getElementById('send-answer');
-      const input = document.getElementById('question-input');
-      
-      const sendAnswer = () => {
-        let answer = '';
-        
-        if (question.type === 'radio') {
-          const selected = document.querySelector('input[name="question-radio"]:checked');
-          answer = selected ? selected.value : '';
-        } else {
-          answer = input ? input.value.trim() : '';
-        }
-        
-        if (question.required && !answer) {
-          alert('Por favor, responda esta pergunta.');
-          return;
-        }
-        
-        // Save response
-        this.responses[question.id] = answer;
-        
-        // Show user response
-        this.addMessage(answer, false);
-        
-        // Next question
-        this.currentQuestionIndex++;
-        
-        // Clear input area
-        inputArea.innerHTML = '';
-        
-        // Show next question
-        setTimeout(() => this.showNextQuestion(), 1000);
-      };
-      
-      if (sendBtn) {
-        sendBtn.addEventListener('click', sendAnswer);
-      }
-      
-      if (input) {
-        input.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            sendAnswer();
-          }
-        });
-        input.focus();
-      }
-    },
-
-    showCompletion: function() {
-      this.addMessage('Obrigado! Suas informações foram recebidas. Em breve entraremos em contato.', true);
-      
-      // Save lead
-      this.saveLead();
-      
-      // Show WhatsApp button if configured
-      if (this.flowData.whatsapp) {
-        setTimeout(() => this.showWhatsAppButton(), 2000);
-      }
-    },
-
-    showWhatsAppButton: function() {
-      const inputArea = document.getElementById('envialead-chat-input-area');
-      
-      // Prepare message text with responses
-      let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
-      
-      this.questions.forEach(q => {
-        if (this.responses[q.id]) {
-          messageText += `${q.title}: ${this.responses[q.id]}\n`;
-        }
-      });
-      
-      const whatsappNumber = this.flowData.whatsapp.replace(/\D/g, '');
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
-      
-      inputArea.innerHTML = `
-        <a href="${whatsappUrl}" target="_blank" style="display: block; width: 100%; padding: 12px; background: #25d366; color: white; text-decoration: none; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#25d366'">
-          💬 Continuar no WhatsApp
-        </a>
-      `;
-    },
-
-    saveLead: async function() {
-      try {
-        const leadData = {
-          flow_id: this.flowData.id,
-          responses: this.responses,
-          ip_address: null, // Could be retrieved via external service
-          user_agent: navigator.userAgent,
-          completed: true,
-          company_id: this.flowData.company_id
-        };
-
-        console.log('[EnviaLead] Salvando lead:', leadData);
-
-        await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/leads`, {
-          method: 'POST',
-          headers: {
-            'apikey': window.EnviaLeadConfig.API_KEY,
-            'Authorization': `Bearer ${window.EnviaLeadConfig.API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(leadData)
-        });
-
-        console.log('[EnviaLead] Lead salvo com sucesso');
-      } catch (error) {
-        console.error('[EnviaLead] Erro ao salvar lead:', error);
+        alert('🎉 Chat EnviaLead funcionando!\n\nFluxo: ' + this.flowData.name + '\nURL autorizada: ' + window.location.href);
       }
     }
   };
 
   // Main initialization
   async function initializeEnviaLead() {
-    console.log('[EnviaLead] Iniciando inicialização...');
+    console.log('[EnviaLead] 🚀 Iniciando inicialização principal...');
     
     const flowId = EnviaLeadUtils.extractFlowId();
     if (!flowId) {
-      console.error('[EnviaLead] Flow ID não encontrado');
+      console.error('[EnviaLead] ❌ Flow ID não encontrado');
+      console.log('[EnviaLead] 📋 Verifique se o script contém data-flow-id');
       return;
     }
 
-    console.log('[EnviaLead] Flow ID extraído:', flowId);
+    console.log('[EnviaLead] ✅ Flow ID extraído:', flowId);
 
     const flowData = await EnviaLeadUtils.fetchFlowData(flowId);
     if (!flowData) {
-      console.error('[EnviaLead] Dados do fluxo não encontrados');
+      console.error('[EnviaLead] ❌ Dados do fluxo não encontrados');
       return;
     }
 
+    console.log('[EnviaLead] ✅ Dados do fluxo carregados:', flowData.name);
+
     if (!flowData.is_active) {
-      console.log('[EnviaLead] Fluxo inativo');
+      console.log('[EnviaLead] ⚠️ Fluxo inativo');
       return;
     }
 
@@ -758,15 +518,17 @@
     const authorizedUrls = flowData.flow_urls ? flowData.flow_urls.map(u => u.url) : [];
 
     if (!EnviaLeadUtils.isUrlAuthorized(currentUrl, currentDomain, authorizedUrls)) {
-      console.log('[EnviaLead] URL não autorizada para este fluxo');
+      console.log('[EnviaLead] ❌ URL não autorizada para este fluxo');
       return;
     }
 
-    console.log('[EnviaLead] Criando widget...');
+    console.log('[EnviaLead] 🎨 Criando widget...');
     createWidget(flowData);
   }
 
   function createWidget(flowData) {
+    console.log('[EnviaLead] 🎨 Função createWidget chamada');
+    
     const colors = {
       primary: flowData.colors?.primary || '#FF6B35',
       secondary: flowData.colors?.secondary || '#3B82F6',
@@ -799,12 +561,8 @@
       buttonPosition
     );
 
-    // Create chat window
-    const chatWindow = EnviaLeadWidget.createChatWindow(colors, flowData, buttonPosition);
-
     chatContainer.appendChild(floatingButton);
     chatContainer.appendChild(welcomeBubble);
-    chatContainer.appendChild(chatWindow);
     document.body.appendChild(chatContainer);
 
     // Initialize chat logic
@@ -812,16 +570,9 @@
 
     // Add event listeners
     floatingButton.addEventListener('click', () => {
-      console.log('[EnviaLead] Botão clicado - toggle chat');
+      console.log('[EnviaLead] 🖱️ Botão clicado - toggle chat');
       EnviaLeadChat.toggleChat();
     });
-
-    const closeChat = document.getElementById('envialead-close-chat');
-    if (closeChat) {
-      closeChat.addEventListener('click', () => {
-        EnviaLeadChat.toggleChat();
-      });
-    }
 
     const closeWelcome = document.getElementById('envialead-close-welcome');
     if (closeWelcome) {
@@ -830,7 +581,7 @@
       });
     }
 
-    console.log('[EnviaLead] Widget criado com sucesso!');
+    console.log('[EnviaLead] ✅ Widget criado com sucesso!');
   }
 
   // Add CSS animations
@@ -844,18 +595,6 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes messageSlideIn {
-        from { opacity: 0; transform: translateX(-10px); }
-        to { opacity: 1; transform: translateX(0); }
-      }
-      @keyframes typing {
-        0%, 60%, 100% { transform: translateY(0); }
-        30% { transform: translateY(-10px); }
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
       #envialead-chat-container * {
         box-sizing: border-box;
       }
@@ -866,10 +605,12 @@
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('[EnviaLead] 📋 DOM carregado - injetando estilos e inicializando');
       injectStyles();
       initializeEnviaLead();
     });
   } else {
+    console.log('[EnviaLead] 📋 DOM já pronto - injetando estilos e inicializando');
     injectStyles();
     initializeEnviaLead();
   }

@@ -14,21 +14,39 @@ const Auth = () => {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+    const setupAuth = async () => {
+      try {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (!mounted) return;
+            
+            if (session && mounted) {
+              navigate('/');
+            }
+          }
+        );
         
-        console.log('Auth state changed:', event, session);
-        if (session && mounted) {
-          navigate('/');
+        if (mounted) {
+          authSubscription = subscription;
         }
+      } catch (error) {
+        // Silently handle auth setup errors
       }
-    );
+    };
+
+    setupAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscription) {
+        try {
+          authSubscription.unsubscribe();
+        } catch (error) {
+          // Silently handle cleanup errors
+        }
+      }
     };
   }, [navigate]);
 

@@ -13,16 +13,23 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, session);
-        if (session) {
+        if (session && mounted) {
           navigate('/');
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleForgotPassword = () => {

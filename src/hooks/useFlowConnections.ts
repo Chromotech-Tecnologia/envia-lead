@@ -9,7 +9,7 @@ interface FlowConnection {
   url: string;
   last_ping: string;
   user_agent: string | null;
-  ip_address: string | null;
+  ip_address: unknown | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

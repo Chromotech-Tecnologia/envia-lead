@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Code, Globe } from 'lucide-react';
+import { Copy, Check, Code, Globe, Wifi, WifiOff, Clock, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useFlowConnections } from "@/hooks/useFlowConnections";
 
 interface IntegrationCodeProps {
   flow?: any;
@@ -14,12 +14,15 @@ interface IntegrationCodeProps {
 const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  
+  // Monitor connections for this flow
+  const { connectionStatus, activeConnections, loading: connectionsLoading } = useFlowConnections(flow?.id);
 
-  // Gerar um código único para o fluxo baseado no ID
+  // Generate a unique code for the flow based on ID
   const generateFlowCode = () => {
     if (!flow?.id) return 'FLOW_ID_NOT_FOUND';
     
-    // Criar um código mais amigável baseado no ID do fluxo
+    // Create a more friendly code based on flow ID
     const flowId = flow.id.replace(/-/g, '').substring(0, 16);
     return `EL_${flowId.toUpperCase()}`;
   };
@@ -61,8 +64,113 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
     }
   };
 
+  const formatLastConnection = (lastConnection: string | null) => {
+    if (!lastConnection) return 'Nunca';
+    
+    const date = new Date(lastConnection);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    
+    if (minutes < 1) return 'Agora mesmo';
+    if (minutes < 60) return `${minutes} min atrás`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)}h atrás`;
+    return date.toLocaleDateString('pt-BR');
+  };
+
   return (
     <div className="space-y-6">
+      {/* Connection Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {connectionStatus.isConnected ? (
+              <Wifi className="w-5 h-5 text-green-500" />
+            ) : (
+              <WifiOff className="w-5 h-5 text-gray-400" />
+            )}
+            Status da Conexão
+          </CardTitle>
+          <CardDescription>
+            Monitoramento em tempo real das conexões ativas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant={connectionStatus.isConnected ? "default" : "secondary"}
+                className={connectionStatus.isConnected ? "bg-green-500" : ""}
+              >
+                {connectionStatus.isConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3 mr-1" />
+                    Conectado
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3 mr-1" />
+                    Desconectado
+                  </>
+                )}
+              </Badge>
+              
+              {connectionStatus.totalConnections > 0 && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {connectionStatus.totalConnections} {connectionStatus.totalConnections === 1 ? 'site' : 'sites'}
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock className="w-4 h-4" />
+              Última conexão: {formatLastConnection(connectionStatus.lastConnection)}
+            </div>
+          </div>
+
+          {connectionStatus.isConnected && activeConnections.length > 0 && (
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-medium text-green-900 mb-2">✅ Sites Conectados:</h4>
+              <div className="space-y-2">
+                {activeConnections.slice(0, 3).map((connection, index) => (
+                  <div key={connection.id} className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <code className="bg-green-100 px-2 py-1 rounded text-xs">
+                      {new URL(connection.url).hostname}
+                    </code>
+                    <span className="text-green-700 text-xs">
+                      {formatLastConnection(connection.last_ping)}
+                    </span>
+                  </div>
+                ))}
+                {activeConnections.length > 3 && (
+                  <div className="text-sm text-green-700">
+                    +{activeConnections.length - 3} outros sites
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!connectionStatus.isConnected && (
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h4 className="font-medium text-yellow-900 mb-2">⚠️ Nenhuma conexão detectada</h4>
+              <p className="text-yellow-800 text-sm">
+                O script ainda não foi instalado ou o fluxo não está ativo em nenhum site.
+                Certifique-se de que:
+              </p>
+              <ul className="list-disc list-inside text-yellow-800 text-sm mt-2 space-y-1">
+                <li>O código foi copiado e colado corretamente no site</li>
+                <li>O fluxo está ativo</li>
+                <li>A URL do site está autorizada nas configurações</li>
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Integration Code Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -104,16 +212,6 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
             </Button>
           </div>
 
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h4 className="font-medium text-green-900 mb-2">✅ Sistema Otimizado:</h4>
-            <ul className="text-sm text-green-800 space-y-1">
-              <li>• Verifica automaticamente se a URL atual está autorizada</li>
-              <li>• Carrega apenas se o fluxo estiver ativo</li>
-              <li>• Exibe o chat exatamente como configurado no fluxo</li>
-              <li>• Sistema unificado em um único arquivo otimizado</li>
-            </ul>
-          </div>
-
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Como usar:</h4>
             <ol className="text-sm text-blue-800 space-y-1">
@@ -121,6 +219,7 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
               <li>2. Copie o código de integração acima</li>
               <li>3. Cole o código antes da tag &lt;/body&gt; do seu site</li>
               <li>4. O chat aparecerá automaticamente nas URLs configuradas</li>
+              <li>5. Acompanhe o status da conexão nesta tela</li>
             </ol>
           </div>
 
@@ -134,6 +233,7 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
         </CardContent>
       </Card>
 
+      {/* Flow Configuration Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Configurações do Fluxo</CardTitle>

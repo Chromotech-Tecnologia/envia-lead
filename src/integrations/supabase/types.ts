@@ -42,6 +42,50 @@ export type Database = {
         }
         Relationships: []
       }
+      flow_connections: {
+        Row: {
+          created_at: string
+          flow_id: string
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_ping: string
+          updated_at: string
+          url: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          flow_id: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_ping?: string
+          updated_at?: string
+          url: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          flow_id?: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_ping?: string
+          updated_at?: string
+          url?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_connections_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flow_emails: {
         Row: {
           created_at: string | null

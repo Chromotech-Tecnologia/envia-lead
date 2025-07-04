@@ -22,7 +22,7 @@ const Auth = () => {
       }
     );
 
-    return () => subscription.unsubscription();
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleForgotPassword = () => {

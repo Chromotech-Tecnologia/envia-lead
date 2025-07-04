@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -5,7 +6,7 @@ import {
   MessageSquare, 
   Users, 
   Settings, 
-  TestTube, // Adicionado
+  TestTube,
   ChevronLeft, 
   Menu 
 } from 'lucide-react';
@@ -18,7 +19,12 @@ interface MenuItem {
   path: string;
 }
 
-const Sidebar = () => {
+interface SidebarProps {
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
+}
+
+const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -26,7 +32,7 @@ const Sidebar = () => {
     { icon: BarChart3, label: 'Dashboard', path: '/' },
     { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
     { icon: Users, label: 'Leads', path: '/leads' },
-    { icon: TestTube, label: 'Teste', path: '/test' }, // Novo item de menu
+    { icon: TestTube, label: 'Teste', path: '/test' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ];
 

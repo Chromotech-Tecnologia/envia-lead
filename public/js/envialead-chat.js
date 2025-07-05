@@ -635,42 +635,51 @@
     init: async function() {
       console.log('[EnviaLead] 🎬 Iniciando sistema principal...');
       
-      const flowId = EnviaLeadUtils.extractFlowId();
-      if (!flowId) {
-        console.error('[EnviaLead] ❌ Flow ID não encontrado');
-        return;
+      try {
+        const flowId = EnviaLeadUtils.extractFlowId();
+        if (!flowId) {
+          console.error('[EnviaLead] ❌ Flow ID não encontrado');
+          return;
+        }
+
+        console.log('[EnviaLead] 🎯 Flow ID detectado:', flowId);
+
+        console.log('[EnviaLead] 📡 Buscando dados do fluxo...');
+        const flowData = await EnviaLeadUtils.fetchFlowData(flowId);
+        if (!flowData) {
+          console.error('[EnviaLead] ❌ Dados do fluxo não encontrados');
+          return;
+        }
+
+        console.log('[EnviaLead] ✅ Dados do fluxo carregados:', flowData.name);
+
+        // Verificar autorização de URL (temporariamente desabilitado para teste)
+        const currentUrl = window.location.href;
+        const currentDomain = window.location.hostname;
+        const authorizedUrls = flowData.flow_urls?.map(u => u.url) || [];
+        
+        // FORÇAR AUTORIZAÇÃO PARA TESTE
+        console.log('[EnviaLead] ✅ URL autorizada (modo teste), criando widget...');
+
+        console.log('[EnviaLead] 🎨 Chamando createWidget...');
+        // Criar interface
+        this.createWidget(flowData);
+        
+        console.log('[EnviaLead] ✅ Widget criado com sucesso!');
+      } catch (error) {
+        console.error('[EnviaLead] ❌ Erro fatal durante inicialização:', error);
+        console.error('[EnviaLead] Stack trace:', error.stack);
       }
-
-      console.log('[EnviaLead] 🎯 Flow ID detectado:', flowId);
-
-      const flowData = await EnviaLeadUtils.fetchFlowData(flowId);
-      if (!flowData) {
-        console.error('[EnviaLead] ❌ Dados do fluxo não encontrados');
-        return;
-      }
-
-      console.log('[EnviaLead] ✅ Dados do fluxo carregados:', flowData.name);
-
-      // Verificar autorização de URL (temporariamente desabilitado para teste)
-      const currentUrl = window.location.href;
-      const currentDomain = window.location.hostname;
-      const authorizedUrls = flowData.flow_urls?.map(u => u.url) || [];
-      
-      // FORÇAR AUTORIZAÇÃO PARA TESTE
-      console.log('[EnviaLead] ✅ URL autorizada (modo teste), criando widget...');
-
-      console.log('[EnviaLead] ✅ URL autorizada, criando widget...');
-
-      // Criar interface
-      this.createWidget(flowData);
     },
 
     createWidget: function(flowData) {
       console.log('[EnviaLead] 🎨 Criando widget...');
+      console.log('[EnviaLead] 🎨 Dados do fluxo para widget:', flowData);
       
       // Remove existing widget
       const existing = document.getElementById('envialead-chat-container');
       if (existing) {
+        console.log('[EnviaLead] 🧹 Removendo widget existente');
         existing.remove();
       }
 
@@ -680,10 +689,13 @@
         text: '#1F2937',
         background: '#FFFFFF'
       };
+      console.log('[EnviaLead] 🎨 Cores do widget:', colors);
 
       const position = flowData.position || 'bottom-right';
+      console.log('[EnviaLead] 📍 Posição do widget:', position);
 
       // Create main container
+      console.log('[EnviaLead] 🏗️ Criando container principal...');
       const container = document.createElement('div');
       container.id = 'envialead-chat-container';
       container.style.cssText = `
@@ -694,38 +706,55 @@
       `;
 
       // Create floating button
+      console.log('[EnviaLead] 🔘 Criando botão flutuante...');
       const floatingButton = EnviaLeadWidget.createFloatingButton(colors, position, flowData.avatar_url);
       
       // Create welcome bubble
+      console.log('[EnviaLead] 💬 Criando bolha de boas-vindas...');
       const welcomeMessage = 'Olá! Como posso ajudá-lo hoje?';
       const welcomeBubble = EnviaLeadWidget.createWelcomeBubble(welcomeMessage, colors, position);
       
       // Create chat window
+      console.log('[EnviaLead] 🪟 Criando janela de chat...');
       const chatWindow = EnviaLeadWidget.createChatWindow(colors, flowData, position);
 
       // Add to container
+      console.log('[EnviaLead] 📋 Adicionando elementos ao container...');
       container.appendChild(welcomeBubble);
       container.appendChild(floatingButton);
+      
+      console.log('[EnviaLead] 🏗️ Adicionando ao DOM...');
       document.body.appendChild(container);
       document.body.appendChild(chatWindow);
 
       // Initialize chat
+      console.log('[EnviaLead] 💬 Inicializando chat...');
       EnviaLeadChat.init(flowData, colors);
 
       // Add event listeners
+      console.log('[EnviaLead] 👆 Adicionando event listeners...');
       floatingButton.addEventListener('click', () => {
+        console.log('[EnviaLead] 🖱️ Botão clicado!');
         EnviaLeadChat.toggleChat();
       });
 
       document.getElementById('envialead-close-welcome')?.addEventListener('click', () => {
+        console.log('[EnviaLead] ❌ Fechando bolha de boas-vindas');
         welcomeBubble.style.display = 'none';
       });
 
       document.getElementById('envialead-close-chat')?.addEventListener('click', () => {
+        console.log('[EnviaLead] ❌ Fechando chat');
         EnviaLeadChat.toggleChat();
       });
 
       console.log('[EnviaLead] ✅ Widget criado com sucesso!');
+      console.log('[EnviaLead] 🔍 Elementos criados:', {
+        container: container.id,
+        floatingButton: floatingButton.id,
+        welcomeBubble: welcomeBubble.id,
+        chatWindow: chatWindow.id
+      });
     }
   };
 

@@ -1,10 +1,10 @@
-// EnviaLead Chat Widget - Sistema Completo v10.0 - TESTE OTIMIZADO
-// Script principal com logs detalhados e correções
+// EnviaLead Chat Widget - Sistema Completo v11.0 - CORREÇÃO FINAL
+// Script principal com logs detalhados e correções para conexão
 
 (function() {
   'use strict';
 
-  console.log('[EnviaLead] 🚀 Iniciando sistema v10.0 - TESTE...');
+  console.log('[EnviaLead] 🚀 Iniciando sistema v11.0 - CORREÇÃO FINAL...');
   console.log('[EnviaLead] URL atual:', window.location.href);
   console.log('[EnviaLead] Domain:', window.location.hostname);
 
@@ -171,7 +171,8 @@
           flow_id: flowId,
           url: window.location.href,
           user_agent: navigator.userAgent,
-          last_ping: new Date().toISOString()
+          last_ping: new Date().toISOString(),
+          is_active: true
         };
 
         console.log('[EnviaLead] 📝 Registrando conexão:', connectionData);
@@ -181,21 +182,24 @@
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
             'Authorization': `Bearer ${window.EnviaLeadConfig.API_KEY}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
           },
           body: JSON.stringify(connectionData)
         });
 
         if (response.ok) {
           console.log('[EnviaLead] ✅ Conexão registrada com sucesso');
+          
+          // Ping periódico para manter conexão ativa
+          setInterval(() => {
+            this.pingConnection(flowId);
+          }, 30000); // A cada 30 segundos
+          
         } else {
-          console.error('[EnviaLead] ❌ Erro ao registrar conexão:', response.status);
+          const errorText = await response.text();
+          console.error('[EnviaLead] ❌ Erro ao registrar conexão:', response.status, errorText);
         }
-
-        // Ping periódico para manter conexão ativa
-        setInterval(() => {
-          this.pingConnection(flowId);
-        }, 60000); // A cada minuto
 
       } catch (error) {
         console.error('[EnviaLead] ❌ Erro ao registrar conexão:', error);
@@ -204,21 +208,29 @@
 
     pingConnection: async function(flowId) {
       try {
+        const updateData = {
+          last_ping: new Date().toISOString(),
+          is_active: true
+        };
+
+        console.log('[EnviaLead] 💓 Enviando ping para fluxo:', flowId);
+
         const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/flow_connections?flow_id=eq.${flowId}&url=eq.${encodeURIComponent(window.location.href)}`, {
           method: 'PATCH',
           headers: {
             'apikey': window.EnviaLeadConfig.API_KEY,
             'Authorization': `Bearer ${window.EnviaLeadConfig.API_KEY}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
           },
-          body: JSON.stringify({
-            last_ping: new Date().toISOString(),
-            is_active: true
-          })
+          body: JSON.stringify(updateData)
         });
         
         if (response.ok) {
           console.log('[EnviaLead] 💓 Ping enviado com sucesso');
+        } else {
+          const errorText = await response.text();
+          console.error('[EnviaLead] ❌ Erro no ping:', response.status, errorText);
         }
       } catch (error) {
         console.error('[EnviaLead] ❌ Erro no ping:', error);
@@ -357,6 +369,8 @@
     },
 
     createChatWindow: function(colors, flowData, buttonPosition) {
+      console.log('[EnviaLead] 🎪 Criando janela de chat...');
+      
       const chatWindow = document.createElement('div');
       chatWindow.id = 'envialead-chat-window';
       
@@ -452,9 +466,9 @@
 
     getPositionStyles: function(position) {
       const positions = {
-        'bottom-right': 'bottom: 80px; right: 20px;',
-        'bottom-left': 'bottom: 80px; left: 20px;',
-        'bottom-center': 'bottom: 80px; left: 50%; transform: translateX(-50%);',
+        'bottom-right': 'bottom: 30px; right: 20px;',
+        'bottom-left': 'bottom: 30px; left: 20px;',
+        'bottom-center': 'bottom: 30px; left: 50%; transform: translateX(-50%);',
         'top-right': 'top: 20px; right: 20px;',
         'top-left': 'top: 20px; left: 20px;',
         'top-center': 'top: 20px; left: 50%; transform: translateX(-50%);',
@@ -470,149 +484,274 @@
   // Chat functionality - simplificado para teste
   const EnviaLeadChat = {
     init: function(flowData, colors) {
-      console.log('[EnviaLead] 🎮 Inicializando chat...');
       this.flowData = flowData;
       this.colors = colors;
+      this.questions = flowData.questions ? flowData.questions.sort((a, b) => a.order_index - b.order_index) : [];
+      this.currentQuestionIndex = 0;
+      this.responses = {};
       this.isOpen = false;
+      console.log('[EnviaLead] ✅ Chat inicializado com', this.questions.length, 'perguntas');
     },
 
     toggleChat: function() {
       this.isOpen = !this.isOpen;
       console.log('[EnviaLead] 🔄 Toggle chat:', this.isOpen);
       
-      // Por enquanto, apenas mostrar um alert para confirmar que está funcionando
+      const chatWindow = document.getElementById('envialead-chat-window');
+      const welcomeBubble = document.getElementById('envialead-welcome-bubble');
+      
       if (this.isOpen) {
-        alert('🎉 Chat EnviaLead funcionando!\n\nFluxo: ' + this.flowData.name + '\nURL autorizada: ' + window.location.href);
+        chatWindow.style.display = 'flex';
+        if (welcomeBubble) welcomeBubble.style.display = 'none';
+        if (this.currentQuestionIndex === 0 && this.questions.length > 0) {
+          setTimeout(() => this.showNextQuestion(), 500);
+        }
+      } else {
+        chatWindow.style.display = 'none';
+      }
+    },
+
+    addMessage: function(text, isBot = true) {
+      const chatMessages = document.getElementById('envialead-chat-messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.style.cssText = `
+        margin-bottom: 12px;
+        display: flex;
+        ${isBot ? 'justify-content: flex-start' : 'justify-content: flex-end'};
+      `;
+      
+      const messageBubble = document.createElement('div');
+      messageBubble.style.cssText = `
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+        ${isBot ? 
+          `background: white; color: ${this.colors.text}; border: 1px solid #e5e7eb; border-radius: 18px 18px 18px 4px;` : 
+          `background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border-radius: 18px 18px 4px 18px;`
+        }
+      `;
+      messageBubble.textContent = text;
+      
+      messageDiv.appendChild(messageBubble);
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    },
+
+    showNextQuestion: function() {
+      if (this.currentQuestionIndex >= this.questions.length) {
+        this.showCompletion();
+        return;
+      }
+
+      const question = this.questions[this.currentQuestionIndex];
+      console.log('[EnviaLead] 📝 Mostrando pergunta:', question.title);
+      
+      setTimeout(() => {
+        this.addMessage(question.title, true);
+        this.showQuestionInput(question);
+      }, 500);
+    },
+
+    showQuestionInput: function(question) {
+      const inputArea = document.getElementById('envialead-chat-input-area');
+      
+      let inputHTML = `
+        <input type="text" 
+               id="question-input" 
+               placeholder="${question.placeholder || 'Digite sua resposta...'}" 
+               style="width: calc(100% - 20px); padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none;"
+               ${question.required ? 'required' : ''}>
+        <button id="send-answer" style="margin-top: 8px; width: 100%; padding: 12px; background: linear-gradient(45deg, ${this.colors.primary}, ${this.colors.secondary}); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">Enviar</button>
+      `;
+      
+      inputArea.innerHTML = inputHTML;
+      
+      const sendBtn = document.getElementById('send-answer');
+      const input = document.getElementById('question-input');
+      
+      const sendAnswer = () => {
+        const answer = input.value.trim();
+        if (answer) {
+          this.responses[question.id] = answer;
+          this.addMessage(answer, false);
+          this.currentQuestionIndex++;
+          inputArea.innerHTML = '';
+          setTimeout(() => this.showNextQuestion(), 1000);
+        }
+      };
+      
+      sendBtn.addEventListener('click', sendAnswer);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendAnswer();
+        }
+      });
+    },
+
+    showCompletion: function() {
+      console.log('[EnviaLead] ✅ Chat finalizado:', this.responses);
+      this.addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+      
+      // Enviar respostas para a API
+      this.saveResponses();
+    },
+
+    saveResponses: async function() {
+      try {
+        const leadData = {
+          flow_id: this.flowData.id,
+          responses: this.responses,
+          completed: true,
+          company_id: this.flowData.company_id
+        };
+
+        console.log('[EnviaLead] 💾 Salvando lead:', leadData);
+
+        const response = await fetch(`${window.EnviaLeadConfig.API_BASE}/rest/v1/leads`, {
+          method: 'POST',
+          headers: {
+            'apikey': window.EnviaLeadConfig.API_KEY,
+            'Authorization': `Bearer ${window.EnviaLeadConfig.API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(leadData)
+        });
+
+        if (response.ok) {
+          console.log('[EnviaLead] ✅ Lead salvo com sucesso');
+        } else {
+          console.error('[EnviaLead] ❌ Erro ao salvar lead:', response.status);
+        }
+      } catch (error) {
+        console.error('[EnviaLead] ❌ Erro ao salvar lead:', error);
       }
     }
   };
 
   // Main initialization
-  async function initializeEnviaLead() {
-    console.log('[EnviaLead] 🚀 Iniciando inicialização principal...');
-    
-    const flowId = EnviaLeadUtils.extractFlowId();
-    if (!flowId) {
-      console.error('[EnviaLead] ❌ Flow ID não encontrado');
-      console.log('[EnviaLead] 📋 Verifique se o script contém data-flow-id');
-      return;
-    }
+  const EnviaLeadMain = {
+    init: async function() {
+      console.log('[EnviaLead] 🎬 Iniciando sistema principal...');
+      
+      const flowId = EnviaLeadUtils.extractFlowId();
+      if (!flowId) {
+        console.error('[EnviaLead] ❌ Flow ID não encontrado');
+        return;
+      }
 
-    console.log('[EnviaLead] ✅ Flow ID extraído:', flowId);
+      console.log('[EnviaLead] 🎯 Flow ID detectado:', flowId);
 
-    const flowData = await EnviaLeadUtils.fetchFlowData(flowId);
-    if (!flowData) {
-      console.error('[EnviaLead] ❌ Dados do fluxo não encontrados');
-      return;
-    }
+      const flowData = await EnviaLeadUtils.fetchFlowData(flowId);
+      if (!flowData) {
+        console.error('[EnviaLead] ❌ Dados do fluxo não encontrados');
+        return;
+      }
 
-    console.log('[EnviaLead] ✅ Dados do fluxo carregados:', flowData.name);
+      console.log('[EnviaLead] ✅ Dados do fluxo carregados:', flowData.name);
 
-    if (!flowData.is_active) {
-      console.log('[EnviaLead] ⚠️ Fluxo inativo');
-      return;
-    }
+      // Verificar autorização de URL
+      const currentUrl = window.location.href;
+      const currentDomain = window.location.hostname;
+      const authorizedUrls = flowData.flow_urls?.map(u => u.url) || [];
+      
+      if (!EnviaLeadUtils.isUrlAuthorized(currentUrl, currentDomain, authorizedUrls)) {
+        console.warn('[EnviaLead] ⚠️ URL não autorizada para este fluxo');
+        return;
+      }
 
-    const currentUrl = window.location.href;
-    const currentDomain = window.location.hostname;
-    const authorizedUrls = flowData.flow_urls ? flowData.flow_urls.map(u => u.url) : [];
+      console.log('[EnviaLead] ✅ URL autorizada, criando widget...');
 
-    if (!EnviaLeadUtils.isUrlAuthorized(currentUrl, currentDomain, authorizedUrls)) {
-      console.log('[EnviaLead] ❌ URL não autorizada para este fluxo');
-      return;
-    }
+      // Criar interface
+      this.createWidget(flowData);
+    },
 
-    console.log('[EnviaLead] 🎨 Criando widget...');
-    createWidget(flowData);
-  }
+    createWidget: function(flowData) {
+      console.log('[EnviaLead] 🎨 Criando widget...');
+      
+      // Remove existing widget
+      const existing = document.getElementById('envialead-chat-container');
+      if (existing) {
+        existing.remove();
+      }
 
-  function createWidget(flowData) {
-    console.log('[EnviaLead] 🎨 Função createWidget chamada');
-    
-    const colors = {
-      primary: flowData.colors?.primary || '#FF6B35',
-      secondary: flowData.colors?.secondary || '#3B82F6',
-      text: flowData.colors?.text || '#1F2937'
-    };
+      const colors = flowData.colors || {
+        primary: '#FF6B35',
+        secondary: '#3B82F6',
+        text: '#1F2937',
+        background: '#FFFFFF'
+      };
 
-    const buttonPosition = flowData.position || 'bottom-right';
-    
-    // Remove existing widget
-    const existing = document.getElementById('envialead-chat-container');
-    if (existing) existing.remove();
+      const position = flowData.position || 'bottom-right';
 
-    // Create main container
-    const chatContainer = document.createElement('div');
-    chatContainer.id = 'envialead-chat-container';
-    chatContainer.style.cssText = `
-      position: fixed;
-      z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ${EnviaLeadWidget.getPositionStyles(buttonPosition)}
-    `;
+      // Create main container
+      const container = document.createElement('div');
+      container.id = 'envialead-chat-container';
+      container.style.cssText = `
+        position: fixed;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        ${EnviaLeadWidget.getPositionStyles(position)}
+      `;
 
-    // Create floating button
-    const floatingButton = EnviaLeadWidget.createFloatingButton(colors, buttonPosition, flowData.avatar_url);
-    
-    // Create welcome bubble
-    const welcomeBubble = EnviaLeadWidget.createWelcomeBubble(
-      flowData.welcome_message || 'Olá! Como posso ajudá-lo hoje?', 
-      colors,
-      buttonPosition
-    );
+      // Create floating button
+      const floatingButton = EnviaLeadWidget.createFloatingButton(colors, position, flowData.avatar_url);
+      
+      // Create welcome bubble
+      const welcomeMessage = 'Olá! Como posso ajudá-lo hoje?';
+      const welcomeBubble = EnviaLeadWidget.createWelcomeBubble(welcomeMessage, colors, position);
+      
+      // Create chat window
+      const chatWindow = EnviaLeadWidget.createChatWindow(colors, flowData, position);
 
-    chatContainer.appendChild(floatingButton);
-    chatContainer.appendChild(welcomeBubble);
-    document.body.appendChild(chatContainer);
+      // Add to container
+      container.appendChild(welcomeBubble);
+      container.appendChild(floatingButton);
+      document.body.appendChild(container);
+      document.body.appendChild(chatWindow);
 
-    // Initialize chat logic
-    EnviaLeadChat.init(flowData, colors);
+      // Initialize chat
+      EnviaLeadChat.init(flowData, colors);
 
-    // Add event listeners
-    floatingButton.addEventListener('click', () => {
-      console.log('[EnviaLead] 🖱️ Botão clicado - toggle chat');
-      EnviaLeadChat.toggleChat();
-    });
+      // Add event listeners
+      floatingButton.addEventListener('click', () => {
+        EnviaLeadChat.toggleChat();
+      });
 
-    const closeWelcome = document.getElementById('envialead-close-welcome');
-    if (closeWelcome) {
-      closeWelcome.addEventListener('click', () => {
+      document.getElementById('envialead-close-welcome')?.addEventListener('click', () => {
         welcomeBubble.style.display = 'none';
       });
+
+      document.getElementById('envialead-close-chat')?.addEventListener('click', () => {
+        EnviaLeadChat.toggleChat();
+      });
+
+      console.log('[EnviaLead] ✅ Widget criado com sucesso!');
     }
+  };
 
-    console.log('[EnviaLead] ✅ Widget criado com sucesso!');
-  }
-
-  // Add CSS animations
-  function injectStyles() {
-    if (document.getElementById('envialead-styles')) return;
-    
-    const style = document.createElement('style');
-    style.id = 'envialead-styles';
-    style.textContent = `
-      @keyframes slideIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      #envialead-chat-container * {
-        box-sizing: border-box;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Initialize when DOM is ready
+  // Auto-initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('[EnviaLead] 📋 DOM carregado - injetando estilos e inicializando');
-      injectStyles();
-      initializeEnviaLead();
+      setTimeout(() => EnviaLeadMain.init(), 100);
     });
   } else {
-    console.log('[EnviaLead] 📋 DOM já pronto - injetando estilos e inicializando');
-    injectStyles();
-    initializeEnviaLead();
+    setTimeout(() => EnviaLeadMain.init(), 100);
   }
+
+  // Add required CSS animations
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  `;
+  document.head.appendChild(style);
 
 })();

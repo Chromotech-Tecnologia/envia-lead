@@ -140,7 +140,7 @@ const TestMenu = () => {
     }
   };
 
-  const generateTestCode = () => {
+    const generateTestCode = () => {
     if (!testFlow) return '';
     
     const flowCode = `EL_${testFlow.id.replace(/-/g, '').substring(0, 16).toUpperCase()}`;
@@ -156,30 +156,61 @@ const TestMenu = () => {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 100px;
+            padding: 20px;
         }
         h1 { color: #333; }
         p { color: #777; }
+        .debug { 
+            background: #f0f0f0; 
+            padding: 10px; 
+            margin: 20px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            font-size: 12px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
-    <h1>Bem-vindo ao Site de Teste!</h1>
-    <p>Se tudo estiver certo, o pop-up do Envialead vai aparecer nesta página.</p>
+    <h1>Bem-vindo ao Site de Teste - Envialead!</h1>
+    <p>Se tudo estiver certo, o chat do Envialead vai aparecer nesta página.</p>
     
-<script>
-(function(a,b,c,d){
-  try {
-    var e=b.head||b.getElementsByTagName("head")[0];
-    var f=b.createElement("script");
-    f.setAttribute("src",c);
-    f.setAttribute("data-flow-id",d);
-    f.setAttribute("charset","UTF-8");
-    f.defer=true;
-    a.enviaLeadId=d;
-    e.appendChild(f);
-    console.log('[EnviaLead] Script carregado com Flow ID:', d);
-  } catch(g){console.error('[EnviaLead] Erro ao carregar script:',g);}
-})(window,document,"https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/js/envialead-chat.js","${flowCode}")
-</script>
+    <div class="debug">
+        <strong>Debug Info:</strong><br>
+        Flow ID: ${flowCode}<br>
+        URL: https://teste.envialead.com.br/<br>
+        Status: Carregando...<br>
+        <div id="debug-log"></div>
+    </div>
+    
+    <script>
+    // Override console.log to show in page
+    const debugLog = document.getElementById('debug-log');
+    const originalLog = console.log;
+    console.log = function(...args) {
+        originalLog.apply(console, args);
+        if (args[0] && args[0].includes && args[0].includes('[EnviaLead]')) {
+            debugLog.innerHTML += args.join(' ') + '<br>';
+        }
+    };
+    
+    // Load EnviaLead script
+    (function(a,b,c,d){
+      try {
+        var e=b.head||b.getElementsByTagName("head")[0];
+        var f=b.createElement("script");
+        f.setAttribute("src",c);
+        f.setAttribute("data-flow-id",d);
+        f.setAttribute("charset","UTF-8");
+        f.defer=true;
+        a.enviaLeadId=d;
+        e.appendChild(f);
+        console.log('[EnviaLead] Script carregado com Flow ID:', d);
+      } catch(g){
+        console.error('[EnviaLead] Erro ao carregar script:',g);
+      }
+    })(window,document,"https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/js/envialead-chat.js","${flowCode}")
+    </script>
 
 </body>
 </html>`;

@@ -209,7 +209,7 @@ const TestMenu = () => {
       } catch(g){
         console.error('[EnviaLead] Erro ao carregar script:',g);
       }
-    })(window,document,"https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/js/envialead-chat.js","${flowCode}")
+    })(window,document,"https://envia-lead.lovable.app/js/envialead-chat.js","${flowCode}")
     </script>
 
 </body>

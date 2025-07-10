@@ -1,26 +1,23 @@
-// EnviaLead Chat Widget - Versão Ultra Simples
+// EnviaLead Chat Widget - Padrão Simples como Flut
 (function() {
-  console.log('[EnviaLead] Iniciando versão simples...');
+  console.log('[EnviaLead] Iniciando widget...');
   
-  // Extrair Flow ID
-  const scripts = document.getElementsByTagName('script');
+  // Pegar Flow ID da URL do script (padrão Flut)
   let flowId = null;
+  const scripts = document.getElementsByTagName('script');
   
   for (let script of scripts) {
-    const content = script.innerHTML || script.textContent || '';
-    if (content.includes('EL_')) {
-      const match = content.match(/EL_[A-F0-9]{16}/);
-      if (match) {
-        flowId = match[0];
-        break;
-      }
+    if (script.src && script.src.includes('envialead-chat.js')) {
+      const url = new URL(script.src);
+      flowId = url.searchParams.get('flow');
+      break;
     }
   }
   
-  console.log('[EnviaLead] Flow ID encontrado:', flowId);
+  console.log('[EnviaLead] Flow ID da URL:', flowId);
   
   if (!flowId) {
-    console.log('[EnviaLead] Nenhum Flow ID encontrado');
+    console.log('[EnviaLead] Nenhum Flow ID encontrado na URL');
     return;
   }
   
@@ -50,5 +47,5 @@
   };
   
   document.body.appendChild(button);
-  console.log('[EnviaLead] Botão criado!');
+  console.log('[EnviaLead] Botão criado com Flow ID:', flowId);
 })();

@@ -30,11 +30,10 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
 
   const menuItems: MenuItem[] = [
     { icon: BarChart3, label: 'Dashboard', path: '/' },
+    { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
+    { icon: Users, label: 'Leads', path: '/leads' },
+    { icon: Settings, label: 'Configurações', path: '/settings' },
     { icon: TestTube, label: 'Teste', path: '/test' },
-    // Removidos temporariamente para evitar 404s - serão reativados quando as páginas existirem
-    // { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
-    // { icon: Users, label: 'Leads', path: '/leads' },
-    // { icon: Settings, label: 'Configurações', path: '/settings' },
   ];
 
   const toggleCollapse = () => {

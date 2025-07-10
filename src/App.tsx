@@ -11,6 +11,9 @@ import NotFound from "@/pages/NotFound";
 import Layout from "@/components/Layout";
 import AuthWrapper from "@/components/AuthWrapper";
 import Test from "@/pages/Test";
+import FlowManager from "@/components/FlowManager";
+import LeadsTable from "@/components/LeadsTable";
+import Settings from "@/pages/Settings";
 
 function App() {
   return (
@@ -21,6 +24,9 @@ function App() {
           <Route path="/404" element={<NotFound />} />
           <Route element={<AuthWrapper><Layout /></AuthWrapper>}>
             <Route path="/" element={<Index />} />
+            <Route path="/flows" element={<FlowManager />} />
+            <Route path="/leads" element={<LeadsTable />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/test" element={<Test />} />
           </Route>
           <Route path="*" element={<Navigate to="/404" replace />} />

@@ -38,7 +38,12 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
       />
 
       {isOpen && (
-        <ChatPreviewWindow device={device} onClose={() => setIsOpen(false)}>
+        <ChatPreviewWindow 
+          device={device} 
+          onClose={() => setIsOpen(false)}
+          flowData={flowData}
+          position={flowData?.position}
+        >
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
             <ChatMessage
               message={flowData?.welcomeMessage || "Olá! Sou seu assistente virtual da Envia Lead. Vou te ajudar a encontrar a melhor solução para você! 😊"}

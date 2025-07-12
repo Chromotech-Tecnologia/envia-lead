@@ -139,7 +139,7 @@ export const useFlowPersistence = (flowId: string) => {
         name: flowData.name || 'Novo Fluxo',
         description: flowData.description || null,
         whatsapp: flowData.whatsapp || null,
-        avatar_url: flowData.avatar || null,
+        avatar_url: flowData.avatar_url || flowData.avatar || null,
         position: flowData.position || 'bottom-right',
         colors: flowData.colors || {
           primary: '#FF6B35',

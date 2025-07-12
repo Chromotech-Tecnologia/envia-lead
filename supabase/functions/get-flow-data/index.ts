@@ -154,6 +154,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Formatar as perguntas corretamente
+    const formattedQuestions = (questions || []).map(q => ({
+      id: q.id,
+      type: q.type,
+      title: q.title,
+      placeholder: q.placeholder,
+      options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : null,
+      required: q.required || false,
+      order: q.order_index
+    }));
+
     // Retornar dados do fluxo
     const flowData = {
       id: flow.id,
@@ -169,7 +180,9 @@ Deno.serve(async (req) => {
       whatsapp: flow.whatsapp,
       avatar_url: flow.avatar_url,
       minimum_question: flow.minimum_question || 1,
-      questions: questions || []
+      questions: formattedQuestions,
+      welcomeMessage: flow.welcome_message || 'Olá! Como posso ajudá-lo?',
+      showWhatsappButton: flow.show_whatsapp_button !== false
     };
 
     return new Response(

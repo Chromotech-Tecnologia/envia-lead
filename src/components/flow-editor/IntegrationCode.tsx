@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Code, Globe, Wifi, WifiOff, Clock, Users } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Copy, Check, Code, Globe, Wifi, WifiOff, Clock, Users, Power } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useFlowConnections } from "@/hooks/useFlowConnections";
+import { useFlowPersistence } from "@/hooks/useFlowPersistence";
 
 interface IntegrationCodeProps {
   flow?: any;
@@ -14,6 +16,7 @@ interface IntegrationCodeProps {
 const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { updateFlow } = useFlowPersistence(flow?.id || '');
   
   // Monitor connections for this flow
   const { connectionStatus, activeConnections, loading: connectionsLoading } = useFlowConnections(flow?.id);
@@ -28,9 +31,10 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   };
 
   const generateIntegrationCode = () => {
-    const flowCode = generateFlowCode();
+    // Usar o ID real do fluxo diretamente
+    const realFlowId = flow?.id;
     
-    return `<script src='https://envia-lead.lovable.app/js/envialead-widget.js?flow=${flowCode}'></script>`;
+    return `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-widget?flow=${realFlowId}'></script>`;
   };
 
   const handleCopyCode = async () => {
@@ -65,8 +69,85 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
     return date.toLocaleDateString('pt-BR');
   };
 
+  const handleActiveToggle = async (checked: boolean) => {
+    if (!flow?.id) return;
+
+    try {
+      await updateFlow(flow.id, { is_active: checked });
+      toast({
+        title: checked ? "Fluxo ativado!" : "Fluxo desativado!",
+        description: checked ? 
+          "O fluxo agora aparecerá nos sites onde foi instalado." :
+          "O fluxo foi desativado e não aparecerá mais nos sites.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível alterar o status do fluxo.",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Flow Control Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Power className="w-5 h-5" />
+            Controle do Fluxo
+          </CardTitle>
+          <CardDescription>
+            Ative ou desative o fluxo nos sites onde foi instalado
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-1">
+              <div className="font-medium">Status do Fluxo</div>
+              <div className="text-sm text-gray-600">
+                {flow?.is_active ? 
+                  "O fluxo está ativo e aparecerá nos sites onde foi instalado" :
+                  "O fluxo está inativo e não aparecerá nos sites"
+                }
+              </div>
+            </div>
+            <Switch
+              checked={flow?.is_active || false}
+              onCheckedChange={handleActiveToggle}
+              disabled={!flow?.id}
+            />
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <Badge 
+              variant={flow?.is_active ? "default" : "secondary"}
+              className={flow?.is_active ? "bg-green-500" : ""}
+            >
+              {flow?.is_active ? "Ativo" : "Inativo"}
+            </Badge>
+            
+            <Badge 
+              variant={connectionStatus.isConnected ? "default" : "secondary"}
+              className={connectionStatus.isConnected ? "bg-blue-500" : ""}
+            >
+              {connectionStatus.isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3 mr-1" />
+                  Conectado
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 mr-1" />
+                  Desconectado
+                </>
+              )}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Connection Status Card */}
       <Card>
         <CardHeader>

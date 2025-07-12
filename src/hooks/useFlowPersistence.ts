@@ -201,10 +201,29 @@ export const useFlowPersistence = (flowId: string) => {
     }
   };
 
+  const updateFlow = async (flowId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('flows')
+        .update(updates)
+        .eq('id', flowId);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar fluxo:', error);
+      throw error;
+    }
+  };
+
   return {
     saveCompleteFlow,
     saveFlowUrls,
     saveFlowEmails,
-    saveFlowQuestions
+    saveFlowQuestions,
+    updateFlow
   };
 };

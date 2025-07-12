@@ -31,25 +31,11 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Buscar dados do fluxo - aceitar tanto UUID quanto código transformado
+    // Aceitar diretamente o ID do fluxo (UUID)
+    // O widget deve passar o ID real do fluxo, não mais códigos transformados
     let actualFlowId = flowId;
     
-    // Se for um código transformado (EL_XXXXXX), tentar encontrar o fluxo correspondente
-    if (flowId.startsWith('EL_')) {
-      console.log('[get-flow-data] Código transformado detectado:', flowId);
-      // Para compatibilidade, buscar por qualquer fluxo ativo
-      // Idealmente deveria mapear o código para o ID real
-      const { data: flows, error: searchError } = await supabase
-        .from('flows')
-        .select('id')
-        .eq('is_active', true)
-        .limit(1);
-      
-      if (flows && flows.length > 0) {
-        actualFlowId = flows[0].id;
-        console.log('[get-flow-data] Usando primeiro fluxo ativo encontrado:', actualFlowId);
-      }
-    }
+    console.log('[get-flow-data] Buscando fluxo com ID:', actualFlowId);
 
     // Buscar dados do fluxo
     const { data: flow, error: flowError } = await supabase

@@ -1,9 +1,14 @@
+import { Wifi, WifiOff } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { useFlowConnections } from "@/hooks/useFlowConnections";
 
 interface FlowCardStatsProps {
   flow: any;
 }
 
 const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
+  const { connectionStatus } = useFlowConnections(flow?.id);
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
@@ -23,6 +28,33 @@ const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
 
   return (
     <>
+      {/* Status de Conexão */}
+      <div className="flex items-center justify-between mb-4">
+        <Badge 
+          variant={connectionStatus.isConnected ? "default" : "secondary"}
+          className={`flex items-center gap-1 ${connectionStatus.isConnected ? "bg-green-500" : ""}`}
+        >
+          {connectionStatus.isConnected ? (
+            <>
+              <Wifi className="w-3 h-3" />
+              Conectado
+            </>
+          ) : (
+            <>
+              <WifiOff className="w-3 h-3" />
+              Desconectado
+            </>
+          )}
+        </Badge>
+        
+        <Badge 
+          variant={flow.is_active ? "default" : "secondary"}
+          className={flow.is_active ? "bg-blue-500" : ""}
+        >
+          {flow.is_active ? "Ativo" : "Inativo"}
+        </Badge>
+      </div>
+      
       <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
         <div>
           <span className="font-medium">{getQuestionCount()}</span>

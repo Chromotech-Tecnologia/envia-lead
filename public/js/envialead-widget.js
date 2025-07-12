@@ -1,14 +1,13 @@
-
-// EnviaLead Chat Widget - Integração com Sistema
+// EnviaLead Chat Widget - Design Idêntico ao Sistema
 (function() {
   console.log('[EnviaLead] Iniciando widget integrado...');
   
-  // Pegar Flow ID da URL do script (padrão Flut)
+  // Pegar Flow ID da URL do script
   let flowId = null;
   const scripts = document.getElementsByTagName('script');
   
   for (let script of scripts) {
-    if (script.src && script.src.includes('envialead-widget.js')) {
+    if (script.src && script.src.includes('envialead-widget')) {
       const url = new URL(script.src);
       flowId = url.searchParams.get('flow');
       break;
@@ -29,15 +28,7 @@
   function loadFlowData(flowId) {
     console.log('[EnviaLead] Buscando dados do fluxo:', flowId);
     
-    // Verificar se é um Flow ID real (UUID) ou código transformado
-    let actualFlowId = flowId;
-    if (flowId.startsWith('EL_')) {
-      console.log('[EnviaLead] Flow ID em formato antigo detectado:', flowId);
-      // Para compatibilidade com códigos antigos, manter como está por enquanto
-      // mas idealmente deveria usar o ID real
-    }
-    
-    const apiUrl = 'https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/get-flow-data?flow_id=' + actualFlowId;
+    const apiUrl = 'https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/get-flow-data?flow_id=' + flowId;
     
     fetch(apiUrl, {
       method: 'GET',
@@ -53,24 +44,12 @@
         createChatWidget(result.data);
       } else {
         console.error('[EnviaLead] Erro ao carregar fluxo:', result.error);
-        // Criar widget com dados padrão se houver erro
-        createChatWidget({
-          id: flowId,
-          name: 'Chat EnviaLead',
-          colors: { primary: '#FF6B35' },
-          position: 'bottom-right'
-        });
+        // Não criar widget se não conseguir carregar dados
       }
     })
     .catch(error => {
       console.error('[EnviaLead] Erro na requisição:', error);
-      // Criar widget com dados padrão se houver erro
-      createChatWidget({
-        id: flowId,
-        name: 'Chat EnviaLead',
-        colors: { primary: '#FF6B35' },
-        position: 'bottom-right'
-      });
+      // Não criar widget se houver erro
     });
   }
   
@@ -78,10 +57,15 @@
   function createChatWidget(flowData) {
     console.log('[EnviaLead] Criando widget com dados:', flowData);
     
-    // Determinar posição
-    const position = flowData.position || 'bottom-right';
-    const isLeft = position.includes('left');
-    const isTop = position.includes('top');
+    // Determinar posição do botão
+    const buttonPosition = flowData.button_position || 'bottom-right';
+    const buttonOffsetX = flowData.button_offset_x || 0;
+    const buttonOffsetY = flowData.button_offset_y || 0;
+    const buttonSize = flowData.button_size || 60;
+    
+    const isButtonLeft = buttonPosition.includes('left');
+    const isButtonTop = buttonPosition.includes('top');
+    const isButtonCenter = buttonPosition.includes('center');
     
     // Criar botão do chat
     const button = document.createElement('div');
@@ -100,18 +84,17 @@
       button.innerHTML = '💬';
     }
     
-    button.style.cssText = `
+    // Calcular posição do botão
+    let buttonCSS = `
       position: fixed;
-      ${isTop ? 'top' : 'bottom'}: 20px;
-      ${isLeft ? 'left' : 'right'}: 20px;
-      width: 60px;
-      height: 60px;
+      width: ${buttonSize}px;
+      height: ${buttonSize}px;
       background: ${flowData.colors?.primary || '#FF6B35'};
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: ${buttonSize * 0.4}px;
       color: white;
       cursor: pointer;
       z-index: 999999;
@@ -120,13 +103,32 @@
       overflow: hidden;
     `;
     
+    // Adicionar posicionamento
+    if (isButtonTop) {
+      buttonCSS += `top: ${20 + buttonOffsetY}px;`;
+    } else {
+      buttonCSS += `bottom: ${20 + buttonOffsetY}px;`;
+    }
+    
+    if (isButtonLeft) {
+      buttonCSS += `left: ${20 + buttonOffsetX}px;`;
+    } else if (isButtonCenter && buttonPosition.includes('center')) {
+      buttonCSS += `left: 50%; transform: translateX(-50%);`;
+    } else {
+      buttonCSS += `right: ${20 + buttonOffsetX}px;`;
+    }
+    
+    button.style.cssText = buttonCSS;
+    
     // Efeito hover
     button.onmouseenter = function() {
-      button.style.transform = 'scale(1.1)';
+      button.style.transform = button.style.transform.includes('translateX') ? 
+        'translateX(-50%) scale(1.1)' : 'scale(1.1)';
     };
     
     button.onmouseleave = function() {
-      button.style.transform = 'scale(1)';
+      button.style.transform = button.style.transform.includes('translateX') ? 
+        'translateX(-50%) scale(1)' : 'scale(1)';
     };
     
     // Ação do clique
@@ -144,7 +146,8 @@
     isOpen: false,
     currentQuestionIndex: 0,
     responses: {},
-    isTyping: false
+    isTyping: false,
+    messages: []
   };
 
   // Função para abrir o modal de chat
@@ -171,14 +174,25 @@
 
   // Função para criar o modal de chat completo
   function createChatModal(flowData) {
+    // Determinar posição do chat
+    const chatPosition = flowData.chat_position || 'bottom-right';
+    const chatOffsetX = flowData.chat_offset_x || 0;
+    const chatOffsetY = flowData.chat_offset_y || 0;
+    const chatWidth = flowData.chat_width || 400;
+    const chatHeight = flowData.chat_height || 500;
+    
+    const isChatLeft = chatPosition.includes('left');
+    const isChatTop = chatPosition.includes('top');
+    const isChatCenter = chatPosition.includes('center');
+    
     const modal = document.createElement('div');
     modal.id = 'envialead-chat-modal';
-    modal.style.cssText = `
+    
+    // Calcular posição do modal
+    let modalCSS = `
       position: fixed;
-      bottom: 100px;
-      right: 20px;
-      width: 350px;
-      height: 500px;
+      width: ${chatWidth}px;
+      height: ${chatHeight}px;
       background: white;
       border-radius: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -188,11 +202,28 @@
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
+    
+    // Adicionar posicionamento do chat
+    if (isChatTop) {
+      modalCSS += `top: ${20 + chatOffsetY}px;`;
+    } else {
+      modalCSS += `bottom: ${100 + chatOffsetY}px;`;
+    }
+    
+    if (isChatLeft) {
+      modalCSS += `left: ${20 + chatOffsetX}px;`;
+    } else if (isChatCenter && chatPosition.includes('center')) {
+      modalCSS += `left: 50%; transform: translateX(-50%);`;
+    } else {
+      modalCSS += `right: ${20 + chatOffsetX}px;`;
+    }
+    
+    modal.style.cssText = modalCSS;
 
-    // Header do chat
+    // Header do chat - Estilo idêntico ao ChatPreviewWindow
     const header = document.createElement('div');
     header.style.cssText = `
-      background: ${flowData.colors?.primary || '#FF6B35'};
+      background: linear-gradient(45deg, ${flowData.colors?.primary || '#FF6B35'}, ${flowData.colors?.secondary || '#3B82F6'});
       color: white;
       padding: 15px;
       display: flex;
@@ -201,40 +232,40 @@
     `;
     
     const headerInfo = document.createElement('div');
-    headerInfo.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+    headerInfo.style.cssText = 'display: flex; align-items: center; gap: 12px;';
     
     const avatar = document.createElement('div');
     avatar.style.cssText = `
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: rgba(255,255,255,0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 16px;
       overflow: hidden;
     `;
     
     // Usar o mesmo avatar do botão
     if (flowData.avatar_url) {
       if (flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:')) {
-        avatar.innerHTML = `<img src="${flowData.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">`;
+        avatar.innerHTML = `<img src="${flowData.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
       } else {
         avatar.textContent = flowData.avatar_url;
       }
     } else {
-      avatar.textContent = '🤖';
+      avatar.textContent = '👤';
     }
     
     const titleDiv = document.createElement('div');
     const title = document.createElement('div');
-    title.textContent = flowData.name || 'Chat';
-    title.style.cssText = 'font-weight: bold; font-size: 16px;';
+    title.textContent = 'Atendimento';
+    title.style.cssText = 'font-weight: 600; font-size: 14px;';
     
     const status = document.createElement('div');
-    status.textContent = 'Online';
-    status.style.cssText = 'font-size: 12px; opacity: 0.9;';
+    status.style.cssText = 'font-size: 12px; opacity: 90%; display: flex; align-items: center; gap: 4px;';
+    status.innerHTML = '<div style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite;"></div>Online agora';
     
     titleDiv.appendChild(title);
     titleDiv.appendChild(status);
@@ -244,39 +275,47 @@
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '×';
     closeBtn.style.cssText = `
-      background: none;
+      background: rgba(255,255,255,0.2);
       border: none;
       color: white;
-      font-size: 24px;
+      font-size: 18px;
       cursor: pointer;
       padding: 0;
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.2s;
     `;
+    closeBtn.onmouseenter = function() {
+      this.style.background = 'rgba(255,255,255,0.3)';
+    };
+    closeBtn.onmouseleave = function() {
+      this.style.background = 'rgba(255,255,255,0.2)';
+    };
     closeBtn.onclick = closeChatModal;
     
     header.appendChild(headerInfo);
     header.appendChild(closeBtn);
 
-    // Container das mensagens
+    // Container das mensagens - Fundo igual ao sistema
     const messagesContainer = document.createElement('div');
     messagesContainer.id = 'chat-messages';
     messagesContainer.style.cssText = `
       flex: 1;
-      padding: 20px;
+      padding: 16px;
       overflow-y: auto;
-      background: #f8f9fa;
+      background: #f8fafc;
     `;
 
     // Container do input
     const inputContainer = document.createElement('div');
     inputContainer.id = 'chat-input-container';
     inputContainer.style.cssText = `
-      padding: 15px;
-      border-top: 1px solid #e0e0e0;
+      padding: 16px;
+      border-top: 1px solid #e2e8f0;
       background: white;
     `;
 
@@ -289,30 +328,119 @@
     startConversation(flowData);
   }
 
-  // Função para iniciar a conversa
-  function startConversation(flowData) {
+  // Função para adicionar mensagem ao chat
+  function addMessage(text, isBot = false, flowData) {
     const messagesContainer = document.getElementById('chat-messages');
     
-    // Mensagem de boas-vindas
-    const welcomeMsg = document.createElement('div');
-    welcomeMsg.style.cssText = `
-      background: #e3f2fd;
-      padding: 15px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-      border: 1px solid #bbdefb;
-    `;
-    welcomeMsg.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 5px;">Olá! 👋</div>
-      <div>${flowData.description || 'Bem-vindo ao nosso chat! Vou fazer algumas perguntas para te ajudar melhor.'}</div>
-    `;
-    messagesContainer.appendChild(welcomeMsg);
-
-    // Mostrar primeira pergunta
-    if (flowData.questions && flowData.questions.length > 0) {
-      setTimeout(() => showNextQuestion(flowData), 1000);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isBot ? 'justify-start' : 'justify-end'} mb-3`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'max-w-xs px-3 py-2 text-sm';
+    bubble.textContent = text;
+    
+    if (isBot) {
+      // Estilo da mensagem do bot - idêntico ao ChatMessages.tsx
+      bubble.style.cssText = `
+        background-color: white;
+        color: ${flowData.colors?.text || '#1F2937'};
+        border: 1px solid #e5e7eb;
+        border-radius: 18px 18px 18px 4px;
+        max-width: 240px;
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.4;
+      `;
     } else {
-      showNoQuestionsMessage();
+      // Estilo da mensagem do usuário - idêntico ao ChatMessages.tsx
+      bubble.style.cssText = `
+        background: linear-gradient(45deg, ${flowData.colors?.primary || '#FF6B35'}, ${flowData.colors?.secondary || '#3B82F6'});
+        color: white;
+        border-radius: 18px 18px 4px 18px;
+        max-width: 240px;
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.4;
+      `;
+    }
+    
+    messageDiv.appendChild(bubble);
+    messagesContainer.appendChild(messageDiv);
+    
+    // Scroll para baixo
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Função para mostrar indicador de digitação
+  function showTypingIndicator(flowData) {
+    const messagesContainer = document.getElementById('chat-messages');
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'flex justify-start mb-3';
+    
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `
+      background-color: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px 18px 18px 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    `;
+    
+    // Três pontos animados - idêntico ao ChatMessages.tsx
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.style.cssText = `
+        width: 8px;
+        height: 8px;
+        background: #9ca3af;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out;
+        animation-delay: ${i * 0.16}s;
+      `;
+      bubble.appendChild(dot);
+    }
+    
+    typingDiv.appendChild(bubble);
+    messagesContainer.appendChild(typingDiv);
+    
+    // Scroll para baixo
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Função para remover indicador de digitação
+  function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+      indicator.remove();
+    }
+  }
+
+  // Função para iniciar a conversa
+  function startConversation(flowData) {
+    // Mensagem de boas-vindas
+    addMessage(flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?', true, flowData);
+    
+    // Mostrar primeira pergunta após delay
+    if (flowData.questions && flowData.questions.length > 0) {
+      setTimeout(() => {
+        showTypingIndicator(flowData);
+        setTimeout(() => {
+          hideTypingIndicator();
+          showNextQuestion(flowData);
+        }, 1500);
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        showTypingIndicator(flowData);
+        setTimeout(() => {
+          hideTypingIndicator();
+          showNoQuestionsMessage(flowData);
+        }, 1500);
+      }, 1000);
     }
   }
 
@@ -324,25 +452,10 @@
       return;
     }
 
-    const messagesContainer = document.getElementById('chat-messages');
     const inputContainer = document.getElementById('chat-input-container');
 
-    // Mensagem da pergunta
-    const questionMsg = document.createElement('div');
-    questionMsg.style.cssText = `
-      background: white;
-      padding: 15px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    `;
-    questionMsg.innerHTML = `
-      <div style="font-weight: bold; color: ${flowData.colors?.primary || '#FF6B35'}; margin-bottom: 8px;">
-        Pergunta ${chatState.currentQuestionIndex + 1}:
-      </div>
-      <div>${question.title}</div>
-    `;
-    messagesContainer.appendChild(questionMsg);
+    // Adicionar mensagem da pergunta
+    addMessage(question.title, true, flowData);
 
     // Criar input baseado no tipo de pergunta
     inputContainer.innerHTML = '';
@@ -356,14 +469,16 @@
         optionBtn.style.cssText = `
           display: block;
           width: 100%;
-          padding: 12px;
+          padding: 12px 16px;
           margin-bottom: 8px;
-          background: #f5f5f5;
-          border: 2px solid #ddd;
-          border-radius: 25px;
+          background: #f1f5f9;
+          border: 2px solid #e2e8f0;
+          border-radius: 24px;
           cursor: pointer;
           transition: all 0.2s;
           font-size: 14px;
+          color: #334155;
+          text-align: left;
         `;
         
         optionBtn.onmouseover = function() {
@@ -373,9 +488,9 @@
         };
         
         optionBtn.onmouseout = function() {
-          this.style.background = '#f5f5f5';
-          this.style.color = 'black';
-          this.style.borderColor = '#ddd';
+          this.style.background = '#f1f5f9';
+          this.style.color = '#334155';
+          this.style.borderColor = '#e2e8f0';
         };
         
         optionBtn.onclick = function() {
@@ -387,31 +502,57 @@
     } else {
       // Input de texto
       const inputGroup = document.createElement('div');
-      inputGroup.style.cssText = 'display: flex; gap: 10px;';
+      inputGroup.style.cssText = 'display: flex; gap: 8px; align-items: center;';
       
       const textInput = document.createElement('input');
       textInput.type = 'text';
       textInput.placeholder = question.placeholder || 'Digite sua resposta...';
       textInput.style.cssText = `
         flex: 1;
-        padding: 12px;
-        border: 2px solid #ddd;
-        border-radius: 25px;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 24px;
         outline: none;
         font-size: 14px;
+        background: #f8fafc;
       `;
       
+      textInput.onfocus = function() {
+        this.style.borderColor = flowData.colors?.primary || '#FF6B35';
+        this.style.background = 'white';
+      };
+      
+      textInput.onblur = function() {
+        this.style.borderColor = '#e2e8f0';
+        this.style.background = '#f8fafc';
+      };
+      
       const sendBtn = document.createElement('button');
-      sendBtn.innerHTML = '📤';
+      sendBtn.innerHTML = '→';
       sendBtn.style.cssText = `
-        padding: 12px 16px;
+        padding: 12px;
+        width: 44px;
+        height: 44px;
         background: ${flowData.colors?.primary || '#FF6B35'};
         color: white;
         border: none;
         border-radius: 50%;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
       `;
+      
+      sendBtn.onmouseenter = function() {
+        this.style.transform = 'scale(1.05)';
+      };
+      
+      sendBtn.onmouseleave = function() {
+        this.style.transform = 'scale(1)';
+      };
       
       const handleSend = () => {
         const value = textInput.value.trim();
@@ -433,9 +574,6 @@
       
       textInput.focus();
     }
-
-    // Scroll para baixo
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
   // Função para lidar com a resposta
@@ -443,23 +581,22 @@
     chatState.responses[questionId] = answer;
     
     // Mostrar resposta do usuário
-    const messagesContainer = document.getElementById('chat-messages');
-    const userMsg = document.createElement('div');
-    userMsg.style.cssText = `
-      background: ${flowData.colors?.primary || '#FF6B35'};
-      color: white;
-      padding: 12px 18px;
-      border-radius: 18px;
-      margin-bottom: 15px;
-      margin-left: 50px;
-      text-align: right;
-    `;
-    userMsg.textContent = answer;
-    messagesContainer.appendChild(userMsg);
-
-    // Próxima pergunta
+    addMessage(answer, false, flowData);
+    
+    // Limpar input
+    const inputContainer = document.getElementById('chat-input-container');
+    inputContainer.innerHTML = '';
+    
+    // Próxima pergunta com indicador de digitação
     chatState.currentQuestionIndex++;
-    setTimeout(() => showNextQuestion(flowData), 800);
+    
+    setTimeout(() => {
+      showTypingIndicator(flowData);
+      setTimeout(() => {
+        hideTypingIndicator();
+        showNextQuestion(flowData);
+      }, 1200);
+    }, 500);
     
     // Salvar lead parcial no banco
     saveLead(flowData, false);
@@ -467,105 +604,118 @@
 
   // Função para mostrar mensagem de conclusão
   function showCompletionMessage(flowData) {
-    const messagesContainer = document.getElementById('chat-messages');
     const inputContainer = document.getElementById('chat-input-container');
 
     // Salvar lead completo no banco
     saveLead(flowData, true);
 
-    const completionMsg = document.createElement('div');
-    completionMsg.style.cssText = `
-      background: #e8f5e8;
-      padding: 15px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-      border: 1px solid #4caf50;
-      text-align: center;
-    `;
-    completionMsg.innerHTML = `
-      <div style="font-weight: bold; color: #2e7d32; margin-bottom: 8px;">✅ Obrigado!</div>
-      <div>Suas respostas foram registradas com sucesso.</div>
-    `;
-    messagesContainer.appendChild(completionMsg);
+    // Mensagem de agradecimento
+    addMessage('✅ Obrigado! Suas respostas foram registradas com sucesso.', true, flowData);
 
     // Botão do WhatsApp se configurado
     inputContainer.innerHTML = '';
-    if (flowData.whatsapp) {
-      const whatsappBtn = document.createElement('button');
-      whatsappBtn.innerHTML = '💬 Continuar no WhatsApp';
-      whatsappBtn.style.cssText = `
-        width: 100%;
-        padding: 15px;
-        background: #25d366;
-        color: white;
-        border: none;
-        border-radius: 25px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 16px;
-      `;
-      
-      whatsappBtn.onclick = function() {
-        const responses = Object.values(chatState.responses).join('\n');
-        const message = `Olá! Vim através do chat do site.\n\nMinhas respostas:\n${responses}`;
-        const whatsappUrl = `https://wa.me/${flowData.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-      };
-      
-      inputContainer.appendChild(whatsappBtn);
+    if (flowData.whatsapp && flowData.showWhatsappButton) {
+      setTimeout(() => {
+        const whatsappBtn = document.createElement('button');
+        whatsappBtn.innerHTML = '💬 Continuar no WhatsApp';
+        whatsappBtn.style.cssText = `
+          width: 100%;
+          padding: 16px;
+          background: #25d366;
+          color: white;
+          border: none;
+          border-radius: 24px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 600;
+          transition: all 0.2s;
+        `;
+        
+        whatsappBtn.onmouseenter = function() {
+          this.style.background = '#128c7e';
+          this.style.transform = 'translateY(-1px)';
+        };
+        
+        whatsappBtn.onmouseleave = function() {
+          this.style.background = '#25d366';
+          this.style.transform = 'translateY(0)';
+        };
+        
+        whatsappBtn.onclick = function() {
+          const message = 'Olá! Acabei de preencher o formulário no site e gostaria de continuar a conversa.';
+          const whatsappUrl = `https://wa.me/${flowData.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+          window.open(whatsappUrl, '_blank');
+        };
+        
+        inputContainer.appendChild(whatsappBtn);
+      }, 1000);
     }
-
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  // Função para quando não há perguntas
-  function showNoQuestionsMessage() {
-    const messagesContainer = document.getElementById('chat-messages');
-    const noQuestionsMsg = document.createElement('div');
-    noQuestionsMsg.style.cssText = `
-      background: #fff3cd;
-      padding: 15px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-      border: 1px solid #ffeaa7;
-      text-align: center;
-    `;
-    noQuestionsMsg.innerHTML = `
-      <div>Este chat ainda não possui perguntas configuradas.</div>
-      <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Entre em contato conosco para mais informações.</div>
-    `;
-    messagesContainer.appendChild(noQuestionsMsg);
+  // Função para mostrar mensagem quando não há perguntas
+  function showNoQuestionsMessage(flowData) {
+    addMessage('Obrigado pelo contato! Em breve entraremos em contato.', true, flowData);
+    
+    const inputContainer = document.getElementById('chat-input-container');
+    inputContainer.innerHTML = '';
+    
+    // Salvar lead vazio
+    saveLead(flowData, true);
   }
 
-  // Função para salvar lead no banco
+  // Função para salvar lead
   function saveLead(flowData, completed) {
+    console.log('[EnviaLead] Salvando lead:', { flowData: flowData.id, responses: chatState.responses, completed });
+    
     const leadData = {
       flow_id: flowData.id,
       responses: chatState.responses,
       completed: completed,
-      user_agent: navigator.userAgent,
-      timestamp: new Date().toISOString()
+      url: window.location.href,
+      user_agent: navigator.userAgent
     };
 
     fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/save-lead', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Referer': window.location.href
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(leadData)
     })
     .then(response => response.json())
     .then(result => {
       if (result.success) {
-        console.log('[EnviaLead] Lead salvo com sucesso:', result);
+        console.log('[EnviaLead] Lead salvo com sucesso:', result.data);
       } else {
         console.error('[EnviaLead] Erro ao salvar lead:', result.error);
       }
     })
     .catch(error => {
-      console.error('[EnviaLead] Erro na requisição de save lead:', error);
+      console.error('[EnviaLead] Erro na requisição de salvamento:', error);
     });
   }
-  
+
+  // Adicionar estilos de animação
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
 })();

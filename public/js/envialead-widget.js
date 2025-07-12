@@ -1,7 +1,7 @@
 
-// EnviaLead Chat Widget - Produção Simples
+// EnviaLead Chat Widget - Integração com Sistema
 (function() {
-  console.log('[EnviaLead] Iniciando widget de produção...');
+  console.log('[EnviaLead] Iniciando widget integrado...');
   
   // Pegar Flow ID da URL do script (padrão Flut)
   let flowId = null;
@@ -22,74 +22,108 @@
     return;
   }
   
-  // Criar botão do chat
-  const button = document.createElement('div');
-  button.innerHTML = '💬';
-  button.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background: #FF6B35;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: white;
-    cursor: pointer;
-    z-index: 999999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: transform 0.2s ease;
-  `;
+  // Buscar dados do fluxo no servidor
+  loadFlowData(flowId);
   
-  // Efeito hover
-  button.onmouseenter = function() {
-    button.style.transform = 'scale(1.1)';
-  };
-  
-  button.onmouseleave = function() {
-    button.style.transform = 'scale(1)';
-  };
-  
-  // Ação do clique - aqui vamos abrir o chat real
-  button.onclick = function() {
-    openChatWidget(flowId);
-  };
-  
-  // Função para abrir o widget de chat
-  function openChatWidget(flowId) {
-    // Por enquanto um alert, depois será o chat real
-    alert('Chat EnviaLead será aberto aqui! Flow ID: ' + flowId);
+  // Função para buscar dados do fluxo
+  function loadFlowData(flowId) {
+    console.log('[EnviaLead] Buscando dados do fluxo:', flowId);
     
-    // TODO: Implementar abertura do chat modal/popup
-    // createChatModal(flowId);
+    const apiUrl = 'https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/get-flow-data?flow_id=' + flowId;
+    
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success && result.data) {
+        console.log('[EnviaLead] Dados do fluxo carregados:', result.data);
+        createChatWidget(result.data);
+      } else {
+        console.error('[EnviaLead] Erro ao carregar fluxo:', result.error);
+        // Criar widget com dados padrão se houver erro
+        createChatWidget({
+          id: flowId,
+          name: 'Chat EnviaLead',
+          colors: { primary: '#FF6B35' },
+          position: 'bottom-right'
+        });
+      }
+    })
+    .catch(error => {
+      console.error('[EnviaLead] Erro na requisição:', error);
+      // Criar widget com dados padrão se houver erro
+      createChatWidget({
+        id: flowId,
+        name: 'Chat EnviaLead',
+        colors: { primary: '#FF6B35' },
+        position: 'bottom-right'
+      });
+    });
   }
   
-  // Adicionar botão à página
-  document.body.appendChild(button);
-  console.log('[EnviaLead] Widget criado com Flow ID:', flowId);
+  // Função para criar o widget de chat
+  function createChatWidget(flowData) {
+    console.log('[EnviaLead] Criando widget com dados:', flowData);
+    
+    // Determinar posição
+    const position = flowData.position || 'bottom-right';
+    const isLeft = position.includes('left');
+    const isTop = position.includes('top');
+    
+    // Criar botão do chat
+    const button = document.createElement('div');
+    button.innerHTML = '💬';
+    button.style.cssText = `
+      position: fixed;
+      ${isTop ? 'top' : 'bottom'}: 20px;
+      ${isLeft ? 'left' : 'right'}: 20px;
+      width: 60px;
+      height: 60px;
+      background: ${flowData.colors?.primary || '#FF6B35'};
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+      z-index: 999999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
+    `;
+    
+    // Efeito hover
+    button.onmouseenter = function() {
+      button.style.transform = 'scale(1.1)';
+    };
+    
+    button.onmouseleave = function() {
+      button.style.transform = 'scale(1)';
+    };
+    
+    // Ação do clique
+    button.onclick = function() {
+      openChatModal(flowData);
+    };
+    
+    // Adicionar botão à página
+    document.body.appendChild(button);
+    console.log('[EnviaLead] Widget criado para fluxo:', flowData.name);
+  }
   
-  // Registrar conexão (enviar ping para o servidor)
-  registerConnection(flowId);
-  
-  // Função para registrar conexão
-  function registerConnection(flowId) {
-    try {
-      const data = {
-        flow_id: flowId,
-        url: window.location.href,
-        user_agent: navigator.userAgent,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Enviar para API (implementar depois)
-      console.log('[EnviaLead] Registrando conexão:', data);
-      
-    } catch (error) {
-      console.log('[EnviaLead] Erro ao registrar conexão:', error);
-    }
+  // Função para abrir o modal de chat
+  function openChatModal(flowData) {
+    console.log('[EnviaLead] Abrindo chat para fluxo:', flowData.name);
+    
+    // Por enquanto um alert com dados do fluxo
+    alert(`Chat ${flowData.name} funcionando!\n\nFlow ID: ${flowData.id}\nCores: ${JSON.stringify(flowData.colors)}\nPosição: ${flowData.position}`);
+    
+    // TODO: Implementar modal de chat completo
+    // createChatModal(flowData);
   }
   
 })();

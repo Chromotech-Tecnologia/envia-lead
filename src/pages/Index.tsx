@@ -47,15 +47,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto">
-          <div className="p-6">
-            {renderContent()}
-          </div>
-        </div>
-      </main>
+    <div className="space-y-6">
+      {renderContent()}
     </div>
   );
 };

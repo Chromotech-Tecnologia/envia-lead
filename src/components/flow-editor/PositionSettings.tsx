@@ -73,15 +73,9 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
         </CardHeader>
         <CardContent className="space-y-8">
           <PositionGrid
-            currentValue={flowData.buttonPosition || 'bottom-right'}
-            onSelect={(value) => setFlowData(prev => ({...prev, buttonPosition: value}))}
+            currentValue={flowData.position || 'bottom-right'}
+            onSelect={(value) => setFlowData(prev => ({...prev, position: value}))}
             title="Posição do Botão Flutuante"
-          />
-          
-          <PositionGrid
-            currentValue={flowData.chatPosition || 'bottom-right'}
-            onSelect={(value) => setFlowData(prev => ({...prev, chatPosition: value}))}
-            title="Posição da Janela do Chat"
           />
           
           <div className="bg-blue-50 p-4 rounded-lg">

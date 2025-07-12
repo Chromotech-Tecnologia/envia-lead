@@ -77,7 +77,21 @@
     
     // Criar botão do chat
     const button = document.createElement('div');
-    button.innerHTML = '💬';
+    
+    // Determinar o conteúdo do botão baseado no avatar
+    if (flowData.avatar_url) {
+      if (flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:')) {
+        // É uma imagem
+        button.innerHTML = `<img src="${flowData.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      } else {
+        // É um emoji
+        button.innerHTML = flowData.avatar_url;
+      }
+    } else {
+      // Usar ícone padrão
+      button.innerHTML = '💬';
+    }
+    
     button.style.cssText = `
       position: fixed;
       ${isTop ? 'top' : 'bottom'}: 20px;
@@ -95,6 +109,7 @@
       z-index: 999999;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       transition: transform 0.2s ease;
+      overflow: hidden;
     `;
     
     // Efeito hover
@@ -190,8 +205,19 @@
       align-items: center;
       justify-content: center;
       font-size: 20px;
+      overflow: hidden;
     `;
-    avatar.textContent = '🤖';
+    
+    // Usar o mesmo avatar do botão
+    if (flowData.avatar_url) {
+      if (flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:')) {
+        avatar.innerHTML = `<img src="${flowData.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        avatar.textContent = flowData.avatar_url;
+      }
+    } else {
+      avatar.textContent = '🤖';
+    }
     
     const titleDiv = document.createElement('div');
     const title = document.createElement('div');

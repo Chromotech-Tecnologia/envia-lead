@@ -15,6 +15,7 @@ const ChatPreviewWindow = ({ device, onClose, children }: ChatPreviewWindowProps
       <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-sm">
+            {/* Avatar será adicionado posteriormente com props */}
             👤
           </div>
           <div>

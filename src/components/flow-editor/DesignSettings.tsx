@@ -18,8 +18,16 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
     if (file) {
       // Por enquanto, usar URL temporária. Futuramente implementar upload real
       const tempUrl = URL.createObjectURL(file);
-      setFlowData(prev => ({...prev, avatar: tempUrl}));
+      setFlowData(prev => ({...prev, avatar_url: tempUrl}));
     }
+  };
+
+  const predefinedAvatars = [
+    '👤', '🤖', '👨‍💼', '👩‍💼', '🧑‍💻', '👩‍💻', '👨‍🔧', '👩‍🔧', '👨‍⚕️', '👩‍⚕️'
+  ];
+
+  const selectPredefinedAvatar = (avatar: string) => {
+    setFlowData(prev => ({...prev, avatar_url: avatar}));
   };
 
   return (
@@ -92,12 +100,18 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              {flowData.avatar && (
-                <img 
-                  src={flowData.avatar} 
-                  alt="Avatar" 
-                  className="w-16 h-16 rounded-full object-cover"
-                />
+              {flowData.avatar_url && (
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:') ? (
+                    <img 
+                      src={flowData.avatar_url} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl">{flowData.avatar_url}</span>
+                  )}
+                </div>
               )}
               <div className="flex-1">
                 <Label htmlFor="avatar-upload" className="cursor-pointer">
@@ -115,6 +129,22 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Ou escolha um avatar padrão:</Label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {predefinedAvatars.map((avatar, index) => (
+                  <Button
+                    key={index}
+                    variant={flowData.avatar_url === avatar ? "default" : "outline"}
+                    onClick={() => selectPredefinedAvatar(avatar)}
+                    className="w-12 h-12 text-xl p-0"
+                  >
+                    {avatar}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>

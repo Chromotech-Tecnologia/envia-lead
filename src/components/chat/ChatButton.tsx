@@ -37,11 +37,15 @@ const ChatButton = ({ isOpen, colors, flowData, position, onClick }: ChatButtonP
       {isOpen ? (
         <X size={24} />
       ) : flowData?.avatar_url ? (
-        <img 
-          src={flowData.avatar_url} 
-          alt="Avatar" 
-          className="w-full h-full object-cover rounded-full"
-        />
+        flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:') ? (
+          <img 
+            src={flowData.avatar_url} 
+            alt="Avatar" 
+            className="w-full h-full object-cover rounded-full"
+          />
+        ) : (
+          <span className="text-2xl">{flowData.avatar_url}</span>
+        )
       ) : (
         <MessageCircle size={24} />
       )}

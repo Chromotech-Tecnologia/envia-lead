@@ -66,7 +66,8 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     <div 
       className="fixed z-50"
       style={{ 
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        zIndex: 9999
       }}
     >
       {/* Botão flutuante */}
@@ -92,7 +93,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       {/* Janela do chat */}
       {isOpen && (
         <ChatWindow
-          position={flowData.chatPosition || position}
+          position={position}
           colors={colors}
           flowData={flowData}
           messages={messages}

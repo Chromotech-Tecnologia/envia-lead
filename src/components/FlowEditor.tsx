@@ -28,10 +28,8 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
         description: flow.description || '',
         emails: flow.emails || [''],
         whatsapp: flow.whatsapp || '',
-        avatar: flow.avatar_url || '',
+        avatar_url: flow.avatar_url || '',
         position: flow.position || 'bottom-right',
-        buttonPosition: flow.position || 'bottom-right',
-        chatPosition: flow.position || 'bottom-right',
         urls: flow.urls || [''],
         colors: flow.colors || {
           primary: '#FF6B35',
@@ -105,10 +103,12 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
 
       {/* Preview do botão flutuante */}
       {showPreview && (
-        <FloatingChatButton 
-          flowData={flowData} 
-          position={flowData.buttonPosition || 'bottom-right'}
-        />
+        <div style={{ zIndex: 1000 }}>
+          <FloatingChatButton 
+            flowData={flowData} 
+            position={flowData.position || 'bottom-right'}
+          />
+        </div>
       )}
 
       {/* Botões fixos no rodapé */}

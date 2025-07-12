@@ -88,18 +88,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Registrar conexão
+    // Registrar ou atualizar conexão
     if (currentUrl) {
-      await supabase
+      // Primeiro tentar atualizar conexão existente
+      const { data: existingConnection } = await supabase
         .from('flow_connections')
-        .insert({
-          flow_id: flowId,
-          url: currentUrl,
-          user_agent: req.headers.get('user-agent'),
-          ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 
-                     req.headers.get('x-real-ip') || 
-                     '0.0.0.0'
-        });
+        .select('id')
+        .eq('flow_id', flowId)
+        .eq('url', currentUrl)
+        .single();
+
+      if (existingConnection) {
+        // Atualizar conexão existente
+        await supabase
+          .from('flow_connections')
+          .update({
+            last_ping: new Date().toISOString(),
+            is_active: true,
+            user_agent: req.headers.get('user-agent'),
+            ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                       req.headers.get('x-real-ip') || 
+                       '0.0.0.0'
+          })
+          .eq('id', existingConnection.id);
+      } else {
+        // Criar nova conexão
+        await supabase
+          .from('flow_connections')
+          .insert({
+            flow_id: flowId,
+            url: currentUrl,
+            user_agent: req.headers.get('user-agent'),
+            ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                       req.headers.get('x-real-ip') || 
+                       '0.0.0.0',
+            last_ping: new Date().toISOString(),
+            is_active: true
+          });
+      }
     }
 
     // Retornar dados do fluxo

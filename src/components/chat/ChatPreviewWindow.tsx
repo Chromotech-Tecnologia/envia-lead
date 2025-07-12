@@ -11,30 +11,8 @@ interface ChatPreviewWindowProps {
 }
 
 const ChatPreviewWindow = ({ device, onClose, children, flowData, position = 'bottom-right' }: ChatPreviewWindowProps) => {
-  // Determinar posição para o chat baseado na posição do botão
-  const getPositionClasses = () => {
-    const isBottom = position.includes('bottom');
-    const isRight = position.includes('right');
-    
-    let classes = 'fixed ';
-    
-    if (isBottom) {
-      classes += 'bottom-24 ';
-    } else {
-      classes += 'top-24 ';
-    }
-    
-    if (isRight) {
-      classes += 'right-6 ';
-    } else {
-      classes += 'left-6 ';
-    }
-    
-    return classes;
-  };
-
   return (
-    <div className={`${getPositionClasses()} bg-white rounded-lg shadow-xl border flex flex-col overflow-hidden z-50 ${
+    <div className={`bg-white rounded-lg shadow-xl border flex flex-col overflow-hidden ${
       device === 'mobile' ? 'w-80 h-96' : 'w-96 h-[500px]'
     }`}>
       <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white">

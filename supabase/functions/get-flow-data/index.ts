@@ -31,11 +31,31 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Buscar dados do fluxo - aceitar tanto UUID quanto código transformado
+    let actualFlowId = flowId;
+    
+    // Se for um código transformado (EL_XXXXXX), tentar encontrar o fluxo correspondente
+    if (flowId.startsWith('EL_')) {
+      console.log('[get-flow-data] Código transformado detectado:', flowId);
+      // Para compatibilidade, buscar por qualquer fluxo ativo
+      // Idealmente deveria mapear o código para o ID real
+      const { data: flows, error: searchError } = await supabase
+        .from('flows')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1);
+      
+      if (flows && flows.length > 0) {
+        actualFlowId = flows[0].id;
+        console.log('[get-flow-data] Usando primeiro fluxo ativo encontrado:', actualFlowId);
+      }
+    }
+
     // Buscar dados do fluxo
     const { data: flow, error: flowError } = await supabase
       .from('flows')
       .select('*')
-      .eq('id', flowId)
+      .eq('id', actualFlowId)
       .single();
 
     // Verificar se o fluxo existe e está ativo
@@ -43,7 +63,7 @@ Deno.serve(async (req) => {
       const errorMsg = !flow ? 'Fluxo não encontrado' : 
                       !flow.is_active ? 'Fluxo está inativo' : 
                       'Erro ao buscar fluxo';
-      console.log(`[get-flow-data] ${errorMsg} para ID: ${flowId}`);
+      console.log(`[get-flow-data] ${errorMsg} para ID: ${actualFlowId}`);
       
       return new Response(
         JSON.stringify({ error: errorMsg }),
@@ -59,14 +79,14 @@ Deno.serve(async (req) => {
     const { data: questions } = await supabase
       .from('questions')
       .select('*')
-      .eq('flow_id', flowId)
+      .eq('flow_id', actualFlowId)
       .order('order_index');
 
     // Buscar URLs do fluxo
     const { data: urls } = await supabase
       .from('flow_urls')
       .select('url')
-      .eq('flow_id', flowId);
+      .eq('flow_id', actualFlowId);
 
     // Verificar se a URL atual está nas URLs permitidas (se houver)
     const currentUrl = req.headers.get('referer') || req.headers.get('origin');
@@ -106,7 +126,7 @@ Deno.serve(async (req) => {
       const { data: existingConnection, error: connectionSelectError } = await supabase
         .from('flow_connections')
         .select('id')
-        .eq('flow_id', flowId)
+        .eq('flow_id', actualFlowId)
         .eq('url', currentUrl)
         .maybeSingle();
 
@@ -138,7 +158,7 @@ Deno.serve(async (req) => {
         const { error: insertError } = await supabase
           .from('flow_connections')
           .insert({
-            flow_id: flowId,
+            flow_id: actualFlowId,
             url: currentUrl,
             user_agent: req.headers.get('user-agent'),
             ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 

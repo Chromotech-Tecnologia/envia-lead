@@ -12,8 +12,8 @@ interface IntegrationCodeProps {
 const IntegrationCode = ({ flowId }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
 
-  const flowCode = `EL_${flowId.replace(/-/g, '').substring(0, 16).toUpperCase()}`;
-  const integrationCode = `<script src='https://envia-lead.lovable.app/js/envialead-widget.js?flow=${flowCode}'></script>`;
+  // Usar o ID real do fluxo ao invés do código transformado
+  const integrationCode = `<script src='https://envia-lead.lovable.app/js/envialead-widget.js?flow=${flowId}'></script>`;
 
   const handleCopy = async () => {
     try {

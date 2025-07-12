@@ -22,14 +22,22 @@
     return;
   }
   
-  // Buscar dados do fluxo no servidor
+  // Buscar dados do fluxo no servidor - usar ID real do fluxo
   loadFlowData(flowId);
   
   // Função para buscar dados do fluxo
   function loadFlowData(flowId) {
     console.log('[EnviaLead] Buscando dados do fluxo:', flowId);
     
-    const apiUrl = 'https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/get-flow-data?flow_id=' + flowId;
+    // Verificar se é um Flow ID real (UUID) ou código transformado
+    let actualFlowId = flowId;
+    if (flowId.startsWith('EL_')) {
+      console.log('[EnviaLead] Flow ID em formato antigo detectado:', flowId);
+      // Para compatibilidade com códigos antigos, manter como está por enquanto
+      // mas idealmente deveria usar o ID real
+    }
+    
+    const apiUrl = 'https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/get-flow-data?flow_id=' + actualFlowId;
     
     fetch(apiUrl, {
       method: 'GET',

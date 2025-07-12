@@ -161,7 +161,9 @@ export type Database = {
           minimum_question: number | null
           name: string
           position: string | null
+          show_whatsapp_button: boolean | null
           updated_at: string | null
+          welcome_message: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -175,7 +177,9 @@ export type Database = {
           minimum_question?: number | null
           name: string
           position?: string | null
+          show_whatsapp_button?: boolean | null
           updated_at?: string | null
+          welcome_message?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -189,7 +193,9 @@ export type Database = {
           minimum_question?: number | null
           name?: string
           position?: string | null
+          show_whatsapp_button?: boolean | null
           updated_at?: string | null
+          welcome_message?: string | null
           whatsapp?: string | null
         }
         Relationships: [

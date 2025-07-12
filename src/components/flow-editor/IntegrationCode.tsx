@@ -30,20 +30,7 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   const generateIntegrationCode = () => {
     const flowCode = generateFlowCode();
     
-    return `<script>
-(function(a,b,c,d){
-  try {
-    var e=b.head||b.getElementsByTagName("head")[0];
-    var f=b.createElement("script");
-    f.setAttribute("src",c);
-    f.setAttribute("data-flow-id",d);
-    f.setAttribute("charset","UTF-8");
-    f.defer=true;
-    a.enviaLeadId=d;
-    e.appendChild(f);
-  } catch(g){console.error('[EnviaLead] Erro ao carregar script:',g);}
-})(window,document,"https://fuzkdrkhvmaimpgzvimq.supabase.co/storage/v1/object/public/chat-widget/envialead-chat.js","${flowCode}")
-</script>`;
+    return `<script src='https://envia-lead.lovable.app/js/envialead-widget.js?flow=${flowCode}'></script>`;
   };
 
   const handleCopyCode = async () => {

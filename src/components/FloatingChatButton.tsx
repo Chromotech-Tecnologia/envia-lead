@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import ChatButton from './chat/ChatButton';
 import WelcomeBubble from './chat/WelcomeBubble';
@@ -75,7 +74,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
         isOpen={isOpen}
         colors={colors}
         flowData={flowData}
-        position={position}
+        position={flowData.button_position || position}
         onClick={handleButtonClick}
       />
 
@@ -83,7 +82,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       {!isOpen && (
         <WelcomeBubble
           showWelcomeBubble={showWelcomeBubble}
-          position={position}
+          position={flowData.button_position || position}
           colors={colors}
           flowData={flowData}
           onClose={() => setShowWelcomeBubble(false)}
@@ -93,7 +92,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
       {/* Janela do chat */}
       {isOpen && (
         <ChatWindow
-          position={position}
+          position={flowData.chat_position || position}
           colors={colors}
           flowData={flowData}
           messages={messages}

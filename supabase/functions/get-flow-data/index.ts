@@ -54,7 +54,18 @@ Deno.serve(async (req) => {
     // Buscar dados do fluxo
     const { data: flow, error: flowError } = await supabase
       .from('flows')
-      .select('*')
+      .select(`
+        *,
+        button_position,
+        chat_position,
+        button_offset_x,
+        button_offset_y,
+        chat_offset_x,
+        chat_offset_y,
+        chat_width,
+        chat_height,
+        button_size
+      `)
       .eq('id', actualFlowId)
       .single();
 
@@ -197,6 +208,15 @@ Deno.serve(async (req) => {
         background: '#FFFFFF'
       },
       position: flow.position || 'bottom-right',
+      button_position: flow.button_position || 'bottom-right',
+      chat_position: flow.chat_position || 'bottom-right',
+      button_offset_x: flow.button_offset_x || 0,
+      button_offset_y: flow.button_offset_y || 0,
+      chat_offset_x: flow.chat_offset_x || 0,
+      chat_offset_y: flow.chat_offset_y || 0,
+      chat_width: flow.chat_width || 400,
+      chat_height: flow.chat_height || 500,
+      button_size: flow.button_size || 60,
       whatsapp: flow.whatsapp,
       avatar_url: flow.avatar_url,
       minimum_question: flow.minimum_question || 1,

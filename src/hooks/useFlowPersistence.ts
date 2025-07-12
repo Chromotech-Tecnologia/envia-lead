@@ -141,6 +141,15 @@ export const useFlowPersistence = (flowId: string) => {
         whatsapp: flowData.whatsapp || null,
         avatar_url: flowData.avatar_url || flowData.avatar || null,
         position: flowData.position || 'bottom-right',
+        button_position: flowData.button_position || 'bottom-right',
+        chat_position: flowData.chat_position || 'bottom-right',
+        button_offset_x: flowData.button_offset_x || 0,
+        button_offset_y: flowData.button_offset_y || 0,
+        chat_offset_x: flowData.chat_offset_x || 0,
+        chat_offset_y: flowData.chat_offset_y || 0,
+        chat_width: flowData.chat_width || 400,
+        chat_height: flowData.chat_height || 500,
+        button_size: flowData.button_size || 60,
         colors: flowData.colors || {
           primary: '#FF6B35',
           secondary: '#3B82F6',
@@ -148,6 +157,8 @@ export const useFlowPersistence = (flowId: string) => {
           background: '#FFFFFF'
         },
         minimum_question: flowData.minimumQuestion || 1,
+        welcome_message: flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?',
+        show_whatsapp_button: flowData.showWhatsappButton !== false,
       };
 
       console.log('Atualizando dados principais do fluxo:', flowUpdateData);

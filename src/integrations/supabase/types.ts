@@ -152,6 +152,15 @@ export type Database = {
       flows: {
         Row: {
           avatar_url: string | null
+          button_offset_x: number | null
+          button_offset_y: number | null
+          button_position: string | null
+          button_size: number | null
+          chat_height: number | null
+          chat_offset_x: number | null
+          chat_offset_y: number | null
+          chat_position: string | null
+          chat_width: number | null
           colors: Json | null
           company_id: string | null
           created_at: string | null
@@ -168,6 +177,15 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          button_offset_x?: number | null
+          button_offset_y?: number | null
+          button_position?: string | null
+          button_size?: number | null
+          chat_height?: number | null
+          chat_offset_x?: number | null
+          chat_offset_y?: number | null
+          chat_position?: string | null
+          chat_width?: number | null
           colors?: Json | null
           company_id?: string | null
           created_at?: string | null
@@ -184,6 +202,15 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          button_offset_x?: number | null
+          button_offset_y?: number | null
+          button_position?: string | null
+          button_size?: number | null
+          chat_height?: number | null
+          chat_offset_x?: number | null
+          chat_offset_y?: number | null
+          chat_position?: string | null
+          chat_width?: number | null
           colors?: Json | null
           company_id?: string | null
           created_at?: string | null

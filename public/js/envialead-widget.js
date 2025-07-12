@@ -313,7 +313,7 @@
     // Criar input baseado no tipo de pergunta
     inputContainer.innerHTML = '';
     
-    if (question.type === 'select' || question.type === 'radio') {
+    if (question.type === 'single' || question.type === 'multiple' || question.type === 'select' || question.type === 'radio') {
       // Opções de múltipla escolha
       const options = question.options || [];
       options.forEach((option, index) => {
@@ -426,12 +426,18 @@
     // Próxima pergunta
     chatState.currentQuestionIndex++;
     setTimeout(() => showNextQuestion(flowData), 800);
+    
+    // Salvar lead parcial no banco
+    saveLead(flowData, false);
   }
 
   // Função para mostrar mensagem de conclusão
   function showCompletionMessage(flowData) {
     const messagesContainer = document.getElementById('chat-messages');
     const inputContainer = document.getElementById('chat-input-container');
+
+    // Salvar lead completo no banco
+    saveLead(flowData, true);
 
     const completionMsg = document.createElement('div');
     completionMsg.style.cssText = `
@@ -495,6 +501,37 @@
       <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Entre em contato conosco para mais informações.</div>
     `;
     messagesContainer.appendChild(noQuestionsMsg);
+  }
+
+  // Função para salvar lead no banco
+  function saveLead(flowData, completed) {
+    const leadData = {
+      flow_id: flowData.id,
+      responses: chatState.responses,
+      completed: completed,
+      user_agent: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    };
+
+    fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/save-lead', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Referer': window.location.href
+      },
+      body: JSON.stringify(leadData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        console.log('[EnviaLead] Lead salvo com sucesso:', result);
+      } else {
+        console.error('[EnviaLead] Erro ao salvar lead:', result.error);
+      }
+    })
+    .catch(error => {
+      console.error('[EnviaLead] Erro na requisição de save lead:', error);
+    });
   }
   
 })();

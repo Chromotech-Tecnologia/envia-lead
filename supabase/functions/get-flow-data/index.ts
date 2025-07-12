@@ -36,18 +36,24 @@ Deno.serve(async (req) => {
       .from('flows')
       .select('*')
       .eq('id', flowId)
-      .eq('is_active', true)
       .single();
 
-    if (flowError || !flow) {
+    // Verificar se o fluxo existe e está ativo
+    if (flowError || !flow || !flow.is_active) {
+      const errorMsg = !flow ? 'Fluxo não encontrado' : 
+                      !flow.is_active ? 'Fluxo está inativo' : 
+                      'Erro ao buscar fluxo';
+      console.log(`[get-flow-data] ${errorMsg} para ID: ${flowId}`);
+      
       return new Response(
-        JSON.stringify({ error: 'Fluxo não encontrado ou inativo' }),
+        JSON.stringify({ error: errorMsg }),
         { 
-          status: 404,
+          status: flow && !flow.is_active ? 403 : 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
+
 
     // Buscar perguntas do fluxo
     const { data: questions } = await supabase
@@ -66,11 +72,14 @@ Deno.serve(async (req) => {
     const currentUrl = req.headers.get('referer') || req.headers.get('origin');
     const allowedUrls = urls?.map(u => u.url) || [];
     
+    console.log(`[get-flow-data] URL atual: ${currentUrl}, URLs permitidas:`, allowedUrls);
+    
     if (allowedUrls.length > 0 && currentUrl) {
       const isAllowed = allowedUrls.some(allowedUrl => {
         try {
           const allowed = new URL(allowedUrl);
           const current = new URL(currentUrl);
+          console.log(`[get-flow-data] Verificando: ${allowed.hostname} vs ${current.hostname}`);
           return allowed.hostname === current.hostname;
         } catch {
           return false;
@@ -78,6 +87,7 @@ Deno.serve(async (req) => {
       });
 
       if (!isAllowed) {
+        console.log(`[get-flow-data] URL não autorizada: ${currentUrl}`);
         return new Response(
           JSON.stringify({ error: 'URL não autorizada para este fluxo' }),
           { 
@@ -90,17 +100,24 @@ Deno.serve(async (req) => {
 
     // Registrar ou atualizar conexão
     if (currentUrl) {
+      console.log(`[get-flow-data] Registrando conexão para URL: ${currentUrl}`);
+      
       // Primeiro tentar atualizar conexão existente
-      const { data: existingConnection } = await supabase
+      const { data: existingConnection, error: connectionSelectError } = await supabase
         .from('flow_connections')
         .select('id')
         .eq('flow_id', flowId)
         .eq('url', currentUrl)
-        .single();
+        .maybeSingle();
+
+      if (connectionSelectError) {
+        console.error('[get-flow-data] Erro ao buscar conexão existente:', connectionSelectError);
+      }
 
       if (existingConnection) {
-        // Atualizar conexão existente
-        await supabase
+        console.log(`[get-flow-data] Atualizando conexão existente: ${existingConnection.id}`);
+        
+        const { error: updateError } = await supabase
           .from('flow_connections')
           .update({
             last_ping: new Date().toISOString(),
@@ -111,9 +128,14 @@ Deno.serve(async (req) => {
                        '0.0.0.0'
           })
           .eq('id', existingConnection.id);
+          
+        if (updateError) {
+          console.error('[get-flow-data] Erro ao atualizar conexão:', updateError);
+        }
       } else {
-        // Criar nova conexão
-        await supabase
+        console.log(`[get-flow-data] Criando nova conexão`);
+        
+        const { error: insertError } = await supabase
           .from('flow_connections')
           .insert({
             flow_id: flowId,
@@ -125,6 +147,10 @@ Deno.serve(async (req) => {
             last_ping: new Date().toISOString(),
             is_active: true
           });
+          
+        if (insertError) {
+          console.error('[get-flow-data] Erro ao criar conexão:', insertError);
+        }
       }
     }
 

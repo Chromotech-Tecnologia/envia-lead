@@ -1,1 +1,7 @@
 project_id = "fuzkdrkhvmaimpgzvimq"
+
+[functions.get-flow-data]
+verify_jwt = false
+
+[functions.save-lead]
+verify_jwt = false

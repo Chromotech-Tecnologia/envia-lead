@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   TrendingUp, 
   Users, 
@@ -15,7 +17,7 @@ import {
   Smartphone,
   Globe,
   Clock,
-  Calendar,
+  CalendarIcon,
   Filter
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -27,6 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const DashboardMetrics = () => {
   const [dateFilter, setDateFilter] = useState('7');
@@ -34,6 +38,9 @@ const DashboardMetrics = () => {
   const [deviceFilter, setDeviceFilter] = useState('all');
   const [flows, setFlows] = useState<any[]>([]);
   const [realMetrics, setRealMetrics] = useState<any>(null);
+  const [customDateStart, setCustomDateStart] = useState<Date>();
+  const [customDateEnd, setCustomDateEnd] = useState<Date>();
+  const [showCustomDate, setShowCustomDate] = useState(false);
 
   // Load flows for filter
   useEffect(() => {
@@ -181,7 +188,14 @@ const DashboardMetrics = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Período</Label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
+              <Select value={dateFilter} onValueChange={(value) => {
+                if (value === 'custom') {
+                  setShowCustomDate(true);
+                } else {
+                  setShowCustomDate(false);
+                }
+                setDateFilter(value);
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -190,8 +204,61 @@ const DashboardMetrics = () => {
                   <SelectItem value="7">Últimos 7 dias</SelectItem>
                   <SelectItem value="30">Últimos 30 dias</SelectItem>
                   <SelectItem value="90">Últimos 90 dias</SelectItem>
+                  <SelectItem value="custom">Período Personalizado</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {showCustomDate && (
+                <div className="flex gap-2 mt-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customDateStart && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateStart ? format(customDateStart, "dd/MM/yyyy") : "Data inicial"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateStart}
+                        onSelect={setCustomDateStart}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customDateEnd && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateEnd ? format(customDateEnd, "dd/MM/yyyy") : "Data final"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateEnd}
+                        onSelect={setCustomDateEnd}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </div>
             
             <div>

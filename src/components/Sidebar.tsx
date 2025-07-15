@@ -5,10 +5,10 @@ import {
   BarChart3, 
   MessageSquare, 
   Users, 
-  Settings, 
-  TestTube,
+  Settings,
   ChevronLeft, 
-  Menu 
+  Menu,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from './Logo';
@@ -28,12 +28,17 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const handleLogout = () => {
+    if (window.confirm('Tem certeza que deseja sair?')) {
+      window.location.href = '/auth';
+    }
+  };
+
   const menuItems: MenuItem[] = [
     { icon: BarChart3, label: 'Dashboard', path: '/' },
     { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
     { icon: Users, label: 'Leads', path: '/leads' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
-    { icon: TestTube, label: 'Teste', path: '/test' },
   ];
 
   const toggleCollapse = () => {
@@ -71,6 +76,17 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           </NavLink>
         ))}
       </nav>
+      
+      <div className="px-2 pb-4">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <LogOut className="h-5 w-5" />
+          {!isCollapsed && <span className="ml-3">Sair</span>}
+        </Button>
+      </div>
     </div>
   );
 };

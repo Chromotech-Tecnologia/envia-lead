@@ -55,6 +55,31 @@ const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
         </Badge>
       </div>
 
+      {/* WhatsApp */}
+      {flow.whatsapp && (
+        <div className="mb-4 p-2 bg-green-50 rounded-lg border border-green-200">
+          <div className="text-xs text-green-700 font-medium">WhatsApp:</div>
+          <div className="text-xs text-green-600">{flow.whatsapp}</div>
+        </div>
+      )}
+
+      {/* Email de Notificação */}
+      {flow.flow_emails && flow.flow_emails.length > 0 && (
+        <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="text-xs text-blue-700 font-medium">Emails:</div>
+          {flow.flow_emails.slice(0, 2).map((email: any, index: number) => (
+            <div key={index} className="text-xs text-blue-600 truncate">
+              {email.email}
+            </div>
+          ))}
+          {flow.flow_emails.length > 2 && (
+            <div className="text-xs text-blue-500">
+              +{flow.flow_emails.length - 2} emails
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Site Conectado */}
       {connectionStatus.isConnected && activeConnections.length > 0 && (
         <div className="mb-4 p-2 bg-green-50 rounded-lg border border-green-200">

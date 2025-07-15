@@ -473,7 +473,18 @@
     
     if (question.type === 'single' || question.type === 'multiple' || question.type === 'select' || question.type === 'radio') {
       // Opções de múltipla escolha
-      const options = question.options || [];
+      const options = Array.isArray(question.options) ? question.options : [];
+      
+      if (options.length === 0) {
+        console.warn('[EnviaLead] Pergunta de múltipla escolha sem opções:', question);
+        addMessage('⚠️ Esta pergunta não possui opções configuradas.', true, flowData);
+        setTimeout(() => {
+          chatState.currentQuestionIndex++;
+          showNextQuestion(flowData);
+        }, 1000);
+        return;
+      }
+      
       options.forEach((option, index) => {
         const optionBtn = document.createElement('button');
         optionBtn.textContent = option;
@@ -516,7 +527,16 @@
       inputGroup.style.cssText = 'display: flex; gap: 8px; align-items: center;';
       
       const textInput = document.createElement('input');
-      textInput.type = 'text';
+      
+      // Definir tipo de input baseado no tipo da pergunta
+      if (question.type === 'email') {
+        textInput.type = 'email';
+      } else if (question.type === 'phone' || question.type === 'telefone') {
+        textInput.type = 'tel';
+      } else {
+        textInput.type = 'text';
+      }
+      
       textInput.placeholder = question.placeholder || 'Digite sua resposta...';
       textInput.style.cssText = `
         flex: 1;
@@ -527,6 +547,12 @@
         font-size: 14px;
         background: #f8fafc;
       `;
+      
+      // Aplicar máscara durante a digitação
+      textInput.oninput = function() {
+        const maskedValue = applyInputMask(this.value, question.type);
+        this.value = maskedValue;
+      };
       
       textInput.onfocus = function() {
         this.style.borderColor = flowData.colors?.primary || '#FF6B35';
@@ -567,6 +593,29 @@
       
       const handleSend = () => {
         const value = textInput.value.trim();
+        
+        // Validar input obrigatório
+        if (question.required && !value) {
+          alert('Este campo é obrigatório.');
+          textInput.focus();
+          return;
+        }
+        
+        // Validar formato específico
+        if (value && !validateInput(value, question.type)) {
+          let errorMessage = 'Formato inválido.';
+          
+          if (question.type === 'email') {
+            errorMessage = 'Por favor, digite um email válido.';
+          } else if (question.type === 'phone' || question.type === 'telefone') {
+            errorMessage = 'Por favor, digite um telefone válido.';
+          }
+          
+          alert(errorMessage);
+          textInput.focus();
+          return;
+        }
+        
         if (value) {
           handleAnswer(question.id, value, flowData);
         }
@@ -653,7 +702,10 @@
         };
         
         whatsappBtn.onclick = function() {
-          const message = 'Olá! Acabei de preencher o formulário no site e gostaria de continuar a conversa.';
+          const message = replaceVariables(
+            flowData.whatsapp_message_template || 'Olá! Acabei de preencher o formulário no site e gostaria de continuar a conversa.',
+            chatState.responses
+          );
           const whatsappUrl = `https://wa.me/${flowData.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
           window.open(whatsappUrl, '_blank');
         };
@@ -672,6 +724,68 @@
     
     // Salvar lead vazio
     saveLead(flowData, true);
+  }
+
+  // Função para substituir variáveis no texto
+  function replaceVariables(text, responses) {
+    if (!text || !responses) return text;
+    
+    let result = text;
+    
+    // Substituir variáveis comuns
+    for (const [key, value] of Object.entries(responses)) {
+      const placeholders = [
+        `#${key}`,
+        `{${key}}`,
+        `{{${key}}}`,
+        `[${key}]`
+      ];
+      
+      placeholders.forEach(placeholder => {
+        result = result.replace(new RegExp(placeholder, 'gi'), value);
+      });
+    }
+    
+    // Variáveis especiais
+    result = result.replace(/#nome/gi, responses.nome || responses.name || 'usuário');
+    result = result.replace(/#email/gi, responses.email || '');
+    result = result.replace(/#telefone/gi, responses.telefone || responses.phone || '');
+    result = result.replace(/#empresa/gi, responses.empresa || responses.company || '');
+    
+    return result;
+  }
+
+  // Função para aplicar máscaras de input
+  function applyInputMask(value, type) {
+    switch (type) {
+      case 'phone':
+      case 'telefone':
+        const cleanPhone = value.replace(/\D/g, '');
+        if (cleanPhone.length <= 10) {
+          return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+        } else {
+          return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        }
+      case 'email':
+        return value.toLowerCase().trim();
+      default:
+        return value;
+    }
+  }
+
+  // Função para validar inputs
+  function validateInput(value, type) {
+    switch (type) {
+      case 'phone':
+      case 'telefone':
+        const cleanPhone = value.replace(/\D/g, '');
+        return cleanPhone.length >= 10 && cleanPhone.length <= 11;
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+      default:
+        return value.trim().length > 0;
+    }
   }
 
   // Função para salvar lead
@@ -697,12 +811,47 @@
     .then(result => {
       if (result.success) {
         console.log('[EnviaLead] Lead salvo com sucesso:', result.data);
+        
+        // Enviar por email se lead completo
+        if (completed && flowData.flow_emails && flowData.flow_emails.length > 0) {
+          sendLeadByEmail(flowData, chatState.responses);
+        }
       } else {
         console.error('[EnviaLead] Erro ao salvar lead:', result.error);
       }
     })
     .catch(error => {
       console.error('[EnviaLead] Erro na requisição de salvamento:', error);
+    });
+  }
+
+  // Função para enviar lead por email
+  function sendLeadByEmail(flowData, responses) {
+    const emailData = {
+      flow_id: flowData.id,
+      flow_name: flowData.name,
+      responses: responses,
+      emails: flowData.flow_emails.map(e => e.email),
+      url: window.location.href
+    };
+
+    fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/send-lead-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        console.log('[EnviaLead] Email enviado com sucesso');
+      } else {
+        console.error('[EnviaLead] Erro ao enviar email:', result.error);
+      }
+    })
+    .catch(error => {
+      console.error('[EnviaLead] Erro no envio de email:', error);
     });
   }
 

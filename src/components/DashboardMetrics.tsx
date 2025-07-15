@@ -1,7 +1,11 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   TrendingUp, 
   Users, 
@@ -10,45 +14,134 @@ import {
   Monitor,
   Smartphone,
   Globe,
-  Clock
+  Clock,
+  Calendar,
+  Filter
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from '@/integrations/supabase/client';
 
 const DashboardMetrics = () => {
-  const metrics = [
+  const [dateFilter, setDateFilter] = useState('7');
+  const [flowFilter, setFlowFilter] = useState('all');
+  const [deviceFilter, setDeviceFilter] = useState('all');
+  const [flows, setFlows] = useState<any[]>([]);
+  const [realMetrics, setRealMetrics] = useState<any>(null);
+
+  // Load flows for filter
+  useEffect(() => {
+    loadFlows();
+  }, []);
+
+  // Load real metrics when filters change
+  useEffect(() => {
+    loadRealMetrics();
+  }, [dateFilter, flowFilter, deviceFilter]);
+
+  const loadFlows = async () => {
+    const { data, error } = await supabase
+      .from('flows')
+      .select('id, name')
+      .eq('is_active', true);
+    
+    if (!error && data) {
+      setFlows(data);
+    }
+  };
+
+  const loadRealMetrics = async () => {
+    try {
+      // Calculate date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - parseInt(dateFilter));
+
+      // Get leads data
+      let leadsQuery = supabase
+        .from('leads')
+        .select('*, flow_id, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (flowFilter !== 'all') {
+        leadsQuery = leadsQuery.eq('flow_id', flowFilter);
+      }
+
+      const { data: leads } = await leadsQuery;
+
+      // Get connections data
+      let connectionsQuery = supabase
+        .from('flow_connections')
+        .select('*, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (flowFilter !== 'all') {
+        connectionsQuery = connectionsQuery.eq('flow_id', flowFilter);
+      }
+
+      const { data: connections } = await connectionsQuery;
+
+      // Calculate metrics
+      const totalConnections = connections?.length || 0;
+      const totalLeads = leads?.length || 0;
+      const completedLeads = leads?.filter(l => l.completed)?.length || 0;
+      const conversionRate = totalConnections > 0 ? (totalLeads / totalConnections) * 100 : 0;
+
+      setRealMetrics({
+        totalConnections,
+        totalLeads,
+        completedLeads,
+        conversionRate: conversionRate.toFixed(1),
+        leads: leads || [],
+        connections: connections || []
+      });
+
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+    }
+  };
+  const metrics = realMetrics ? [
     {
       title: "Total de Acessos",
-      value: "15,234",
+      value: realMetrics.totalConnections.toLocaleString(),
       change: "+12.5%",
       changeType: "positive",
       icon: MessageSquare,
-      description: "Sessões no chat este mês"
+      description: "Sessões no chat"
     },
     {
       title: "Leads Gerados",
-      value: "3,847",
+      value: realMetrics.totalLeads.toLocaleString(),
       change: "+8.1%", 
       changeType: "positive",
       icon: Users,
-      description: "Leads qualificados"
+      description: "Leads capturados"
     },
     {
       title: "Taxa de Conversão",
-      value: "25.2%",
+      value: `${realMetrics.conversionRate}%`,
       change: "+2.3%",
       changeType: "positive", 
       icon: Target,
       description: "Leads por acessos"
     },
     {
-      title: "Fluxos Ativos",
-      value: "12",
+      title: "Leads Completos",
+      value: realMetrics.completedLeads.toLocaleString(),
       change: "+3",
       changeType: "neutral",
       icon: Globe,
-      description: "Chats configurados"
+      description: "Formulários finalizados"
     }
-  ];
+  ] : [];
 
   const chartData = [
     { name: 'Jan', acessos: 4000, leads: 1200, conversao: 30 },
@@ -76,6 +169,66 @@ const DashboardMetrics = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filtros de Análise
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Período</Label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Hoje</SelectItem>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Fluxo</Label>
+              <Select value={flowFilter} onValueChange={setFlowFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Fluxos</SelectItem>
+                  {flows.map(flow => (
+                    <SelectItem key={flow.id} value={flow.id}>
+                      {flow.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Dispositivo</Label>
+              <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Dispositivos</SelectItem>
+                  <SelectItem value="desktop">Desktop</SelectItem>
+                  <SelectItem value="mobile">Mobile</SelectItem>
+                  <SelectItem value="tablet">Tablet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Métricas Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => {

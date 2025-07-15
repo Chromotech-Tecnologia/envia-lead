@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,8 @@ import {
   Clock,
   Smartphone,
   Monitor,
-  MessageSquare
+  MessageSquare,
+  RefreshCw
 } from 'lucide-react';
 import {
   Table,
@@ -30,13 +31,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from '@/integrations/supabase/client';
 
 const LeadsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deviceFilter, setDeviceFilter] = useState('all');
+  const [flowFilter, setFlowFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [leads, setLeads] = useState<any[]>([]);
+  const [flows, setFlows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const leads = [
+  // Load data on mount
+  useEffect(() => {
+    loadFlows();
+    loadLeads();
+  }, []);
+
+  // Reload leads when filters change
+  useEffect(() => {
+    loadLeads();
+  }, [statusFilter, flowFilter, dateFilter]);
+
+  const loadFlows = async () => {
+    const { data, error } = await supabase
+      .from('flows')
+      .select('id, name')
+      .eq('is_active', true);
+    
+    if (!error && data) {
+      setFlows(data);
+    }
+  };
+
+  const loadLeads = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('leads')
+        .select(`
+          *,
+          flows (
+            name,
+            attendant_name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      // Apply filters
+      if (statusFilter === 'completo') {
+        query = query.eq('completed', true);
+      } else if (statusFilter === 'incompleto') {
+        query = query.eq('completed', false);
+      }
+
+      if (flowFilter !== 'all') {
+        query = query.eq('flow_id', flowFilter);
+      }
+
+      if (dateFilter !== 'all') {
+        const days = parseInt(dateFilter);
+        const date = new Date();
+        date.setDate(date.getDate() - days);
+        query = query.gte('created_at', date.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setLeads(data || []);
+
+    } catch (error) {
+      console.error('Error loading leads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleLeads = [
     {
       id: 1,
       nome: 'João Silva',
@@ -97,15 +171,21 @@ const LeadsTable = () => {
     }
   ];
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.fluxo.toLowerCase().includes(searchTerm.toLowerCase());
+  const displayLeads = leads.length > 0 ? leads : sampleLeads;
+
+  const filteredLeads = displayLeads.filter(lead => {
+    const searchFields = [
+      lead.responses?.nome || lead.nome || '',
+      lead.responses?.email || lead.email || '', 
+      lead.flows?.name || lead.fluxo || '',
+      lead.responses?.name || '',
+      lead.responses?.telefone || lead.telefone || ''
+    ].join(' ').toLowerCase();
     
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    const matchesSearch = searchFields.includes(searchTerm.toLowerCase());
     const matchesDevice = deviceFilter === 'all' || lead.dispositivo === deviceFilter;
     
-    return matchesSearch && matchesStatus && matchesDevice;
+    return matchesSearch && matchesDevice;
   });
 
   const generateWhatsAppLink = (lead: any) => {
@@ -134,55 +214,88 @@ const LeadsTable = () => {
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar CSV
+              <Button variant="outline" onClick={loadLeads} disabled={loading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
               </Button>
               <Button variant="outline">
                 <Download className="w-4 h-4 mr-2" />
-                Exportar Excel
+                Exportar CSV
               </Button>
             </div>
           </div>
         </CardHeader>
         
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Busca */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por nome, email ou fluxo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Busca */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por nome, email ou fluxo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Filtro Dispositivo */}
+              <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Dispositivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Dispositivos</SelectItem>
+                  <SelectItem value="desktop">Desktop</SelectItem>
+                  <SelectItem value="mobile">Mobile</SelectItem>
+                  <SelectItem value="tablet">Tablet</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
-            {/* Filtro Status */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="completo">Completo</SelectItem>
-                <SelectItem value="incompleto">Incompleto</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {/* Filtro Dispositivo */}
-            <Select value={deviceFilter} onValueChange={setDeviceFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Dispositivo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Dispositivos</SelectItem>
-                <SelectItem value="desktop">Desktop</SelectItem>
-                <SelectItem value="mobile">Mobile</SelectItem>
-                <SelectItem value="tablet">Tablet</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Filtro Status */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="completo">Completo</SelectItem>
+                  <SelectItem value="incompleto">Incompleto</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Filtro Fluxo */}
+              <Select value={flowFilter} onValueChange={setFlowFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Fluxo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Fluxos</SelectItem>
+                  {flows.map(flow => (
+                    <SelectItem key={flow.id} value={flow.id}>
+                      {flow.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Filtro Data */}
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Períodos</SelectItem>
+                  <SelectItem value="1">Hoje</SelectItem>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -192,7 +305,7 @@ const LeadsTable = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{leads.length}</p>
+              <p className="text-2xl font-bold text-blue-600">{displayLeads.length}</p>
               <p className="text-sm text-gray-600">Total de Leads</p>
             </div>
           </CardContent>
@@ -202,7 +315,7 @@ const LeadsTable = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">
-                {leads.filter(l => l.status === 'completo').length}
+                {displayLeads.filter(l => (l.completed || l.status === 'completo')).length}
               </p>
               <p className="text-sm text-gray-600">Completos</p>
             </div>
@@ -213,7 +326,7 @@ const LeadsTable = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-600">
-                {leads.filter(l => l.status === 'incompleto').length}
+                {displayLeads.filter(l => (!l.completed && l.status !== 'completo')).length}
               </p>
               <p className="text-sm text-gray-600">Incompletos</p>
             </div>
@@ -224,7 +337,10 @@ const LeadsTable = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-purple-600">
-                {((leads.filter(l => l.status === 'completo').length / leads.length) * 100).toFixed(1)}%
+                {displayLeads.length > 0 
+                  ? ((displayLeads.filter(l => (l.completed || l.status === 'completo')).length / displayLeads.length) * 100).toFixed(1)
+                  : 0
+                }%
               </p>
               <p className="text-sm text-gray-600">Taxa de Conclusão</p>
             </div>
@@ -252,22 +368,22 @@ const LeadsTable = () => {
                 <TableRow key={lead.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div>
-                      <p className="font-medium">{lead.nome}</p>
-                      <p className="text-sm text-gray-600">{lead.email}</p>
-                      <p className="text-sm text-gray-600">{lead.telefone}</p>
+                      <p className="font-medium">{lead.responses?.nome || lead.nome}</p>
+                      <p className="text-sm text-gray-600">{lead.responses?.email || lead.email}</p>
+                      <p className="text-sm text-gray-600">{lead.responses?.telefone || lead.telefone}</p>
                     </div>
                   </TableCell>
                   
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm">{lead.fluxo}</span>
+                      <span className="text-sm">{lead.flows?.name || lead.fluxo}</span>
                     </div>
                   </TableCell>
                   
                   <TableCell>
-                    <Badge variant={lead.status === 'completo' ? 'default' : 'secondary'}>
-                      {lead.status === 'completo' ? 'Completo' : 'Incompleto'}
+                    <Badge variant={(lead.completed || lead.status === 'completo') ? 'default' : 'secondary'}>
+                      {(lead.completed || lead.status === 'completo') ? 'Completo' : 'Incompleto'}
                     </Badge>
                   </TableCell>
                   
@@ -284,7 +400,13 @@ const LeadsTable = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm">{lead.dataHora}</span>
+                      <span className="text-sm">
+                        {lead.created_at 
+                          ? new Date(lead.created_at).toLocaleDateString('pt-BR') + ' ' + 
+                            new Date(lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                          : lead.dataHora
+                        }
+                      </span>
                     </div>
                   </TableCell>
                   

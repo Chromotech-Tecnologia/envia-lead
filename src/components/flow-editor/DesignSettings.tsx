@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Palette, Upload } from 'lucide-react';
 import PositionSettings from './PositionSettings';
+import AvatarUploader from '../AvatarUploader';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DesignSettingsProps {
   flowData: any;
@@ -13,21 +16,30 @@ interface DesignSettingsProps {
 }
 
 const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Por enquanto, usar URL temporária. Futuramente implementar upload real
-      const tempUrl = URL.createObjectURL(file);
-      setFlowData(prev => ({...prev, avatar_url: tempUrl}));
-    }
-  };
+  const [userCompanyId, setUserCompanyId] = React.useState<string>('');
 
-  const predefinedAvatars = [
-    '👤', '🤖', '👨‍💼', '👩‍💼', '🧑‍💻', '👩‍💻', '👨‍🔧', '👩‍🔧', '👨‍⚕️', '👩‍⚕️'
-  ];
+  // Get user company ID
+  React.useEffect(() => {
+    const getUserCompany = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserCompanyId(profile.company_id);
+        }
+      }
+    };
+    
+    getUserCompany();
+  }, []);
 
-  const selectPredefinedAvatar = (avatar: string) => {
-    setFlowData(prev => ({...prev, avatar_url: avatar}));
+  const handleAvatarSelect = (url: string) => {
+    setFlowData(prev => ({...prev, avatar_url: url}));
   };
 
   return (
@@ -117,56 +129,13 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
           <CardTitle>Avatar do Atendente</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              {flowData.avatar_url && (
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                  {flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:') ? (
-                    <img 
-                      src={flowData.avatar_url} 
-                      alt="Avatar" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl">{flowData.avatar_url}</span>
-                  )}
-                </div>
-              )}
-              <div className="flex-1">
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <Button variant="outline" asChild>
-                    <span>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Fazer Upload do Avatar
-                    </span>
-                  </Button>
-                </Label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label className="text-sm font-medium">Ou escolha um avatar padrão:</Label>
-              <div className="grid grid-cols-5 gap-2 mt-2">
-                {predefinedAvatars.map((avatar, index) => (
-                  <Button
-                    key={index}
-                    variant={flowData.avatar_url === avatar ? "default" : "outline"}
-                    onClick={() => selectPredefinedAvatar(avatar)}
-                    className="w-12 h-12 text-xl p-0"
-                  >
-                    {avatar}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
+          {userCompanyId && (
+            <AvatarUploader
+              onAvatarSelect={handleAvatarSelect}
+              selectedAvatar={flowData.avatar_url}
+              companyId={userCompanyId}
+            />
+          )}
         </CardContent>
       </Card>
 

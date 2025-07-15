@@ -15,6 +15,22 @@ export interface Flow {
   minimum_question: number | null;
   company_id: string;
   colors: any;
+  attendant_name?: string | null;
+  welcome_message?: string | null;
+  final_message?: string | null;
+  final_message_custom?: string | null;
+  button_position?: string | null;
+  chat_position?: string | null;
+  button_size?: number | null;
+  chat_width?: number | null;
+  chat_height?: number | null;
+  button_offset_x?: number | null;
+  button_offset_y?: number | null;
+  chat_offset_x?: number | null;
+  chat_offset_y?: number | null;
+  show_whatsapp_button?: boolean | null;
+  whatsapp_message_template?: string | null;
+  button_avatar_url?: string | null;
   urls?: string[];
   emails?: string[];
   questions?: any[];
@@ -308,21 +324,143 @@ export const useFlows = () => {
         return null;
       }
 
-      const duplicatedFlow = {
-        ...originalFlow,
-        id: undefined,
+      const profile = await fetchUserProfile();
+      if (!profile) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Perfil do usuário não encontrado",
+        });
+        return null;
+      }
+
+      // 1. Criar o fluxo principal
+      const newFlow = {
         name: `${originalFlow.name} (Cópia)`,
-        created_at: undefined,
-        updated_at: undefined,
+        description: originalFlow.description,
+        company_id: profile.company_id,
+        is_active: originalFlow.is_active,
+        colors: originalFlow.colors,
+        avatar_url: originalFlow.avatar_url,
+        position: originalFlow.position,
+        whatsapp: originalFlow.whatsapp,
+        minimum_question: originalFlow.minimum_question,
+        attendant_name: originalFlow.attendant_name,
+        welcome_message: originalFlow.welcome_message,
+        final_message: originalFlow.final_message,
+        final_message_custom: originalFlow.final_message_custom,
+        button_position: originalFlow.button_position,
+        chat_position: originalFlow.chat_position,
+        button_size: originalFlow.button_size,
+        chat_width: originalFlow.chat_width,
+        chat_height: originalFlow.chat_height,
+        button_offset_x: originalFlow.button_offset_x,
+        button_offset_y: originalFlow.button_offset_y,
+        chat_offset_x: originalFlow.chat_offset_x,
+        chat_offset_y: originalFlow.chat_offset_y,
+        show_whatsapp_button: originalFlow.show_whatsapp_button,
+        whatsapp_message_template: originalFlow.whatsapp_message_template,
+        button_avatar_url: originalFlow.button_avatar_url,
       };
 
-      return await createFlow(duplicatedFlow);
+      const { data: createdFlow, error: flowError } = await supabase
+        .from('flows')
+        .insert([newFlow])
+        .select()
+        .single();
+
+      if (flowError) {
+        console.error('Erro ao duplicar fluxo:', flowError);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível duplicar o fluxo: " + flowError.message,
+        });
+        return null;
+      }
+
+      // 2. Duplicar perguntas
+      if (originalFlow.questions && originalFlow.questions.length > 0) {
+        const questionsToInsert = originalFlow.questions.map(question => ({
+          flow_id: createdFlow.id,
+          type: question.type,
+          title: question.title,
+          placeholder: question.placeholder,
+          required: question.required,
+          order_index: question.order,
+          options: question.options,
+        }));
+
+        const { error: questionsError } = await supabase
+          .from('questions')
+          .insert(questionsToInsert);
+
+        if (questionsError) {
+          console.error('Erro ao duplicar perguntas:', questionsError);
+          // Reverter criação do fluxo se houver erro
+          await supabase.from('flows').delete().eq('id', createdFlow.id);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Erro ao duplicar perguntas do fluxo",
+          });
+          return null;
+        }
+      }
+
+      // 3. Duplicar URLs
+      if (originalFlow.urls && originalFlow.urls.length > 0) {
+        const urlsToInsert = originalFlow.urls
+          .filter(url => url && url.trim() !== '')
+          .map(url => ({
+            flow_id: createdFlow.id,
+            url: url.trim(),
+          }));
+
+        if (urlsToInsert.length > 0) {
+          const { error: urlsError } = await supabase
+            .from('flow_urls')
+            .insert(urlsToInsert);
+
+          if (urlsError) {
+            console.error('Erro ao duplicar URLs:', urlsError);
+          }
+        }
+      }
+
+      // 4. Duplicar emails
+      if (originalFlow.emails && originalFlow.emails.length > 0) {
+        const emailsToInsert = originalFlow.emails
+          .filter(email => email && email.trim() !== '')
+          .map(email => ({
+            flow_id: createdFlow.id,
+            email: email.trim(),
+          }));
+
+        if (emailsToInsert.length > 0) {
+          const { error: emailsError } = await supabase
+            .from('flow_emails')
+            .insert(emailsToInsert);
+
+          if (emailsError) {
+            console.error('Erro ao duplicar emails:', emailsError);
+          }
+        }
+      }
+
+      await fetchFlows();
+      toast({
+        title: "Sucesso!",
+        description: "Fluxo duplicado com sucesso",
+      });
+
+      return createdFlow;
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('Erro inesperado ao duplicar fluxo:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro inesperado",
+        description: "Ocorreu um erro inesperado ao duplicar o fluxo",
       });
       return null;
     }

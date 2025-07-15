@@ -86,6 +86,36 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
             />
           </div>
         </div>
+
+        {/* Configurações Finais */}
+        <div className="space-y-4 pt-6 border-t">
+          <h3 className="text-lg font-medium">Configurações Finais</h3>
+          
+          <div>
+            <Label htmlFor="finalMessage">Mensagem Final</Label>
+            <Textarea
+              id="finalMessage"
+              value={flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.'}
+              onChange={(e) => setFlowData(prev => ({...prev, final_message: e.target.value}))}
+              placeholder="Mensagem exibida após completar o chat..."
+              className="min-h-[60px]"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="whatsappMessageTemplate">Texto para WhatsApp</Label>
+            <Textarea
+              id="whatsappMessageTemplate"
+              value={flowData.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.'}
+              onChange={(e) => setFlowData(prev => ({...prev, whatsapp_message_template: e.target.value}))}
+              placeholder="Use #nome, #telefone, #email para variáveis dinâmicas..."
+              className="min-h-[60px]"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Use variáveis como #nome, #telefone, #email que serão substituídas pelas respostas do usuário
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

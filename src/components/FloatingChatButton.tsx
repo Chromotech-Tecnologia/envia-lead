@@ -34,7 +34,8 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
     responses,
     currentQuestion,
     handleSendAnswer,
-    startConversation
+    startConversation,
+    replaceVariables
   } = useChatLogic(flowData);
 
   const handleOpenChat = () => {
@@ -69,14 +70,16 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
         zIndex: 9999
       }}
     >
-      {/* Botão flutuante */}
-      <ChatButton
-        isOpen={isOpen}
-        colors={colors}
-        flowData={flowData}
-        position={flowData.button_position || position}
-        onClick={handleButtonClick}
-      />
+      {/* Botão flutuante - esconder quando chat está aberto */}
+      {!isOpen && (
+        <ChatButton
+          isOpen={isOpen}
+          colors={colors}
+          flowData={flowData}
+          position={flowData.button_position || position}
+          onClick={handleButtonClick}
+        />
+      )}
 
       {/* Bolha de boas-vindas */}
       {!isOpen && (
@@ -103,6 +106,7 @@ const FloatingChatButton = ({ flowData, position, onHidePreview, isPreview = fal
           responses={responses}
           onClose={handleCloseChat}
           onSendAnswer={handleSendAnswer}
+          replaceVariables={replaceVariables}
         />
       )}
     </div>

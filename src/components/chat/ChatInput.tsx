@@ -1,3 +1,4 @@
+import { Send } from 'lucide-react';
 
 interface ChatInputProps {
   currentQuestion: any;
@@ -8,6 +9,7 @@ interface ChatInputProps {
   isTyping: boolean;
   responses: Record<string, string>;
   onSendAnswer: (answer: string) => void;
+  replaceVariables?: (text: string, responses: Record<string, string>) => string;
 }
 
 const ChatInput = ({ 
@@ -18,7 +20,8 @@ const ChatInput = ({
   waitingForInput, 
   isTyping, 
   responses, 
-  onSendAnswer 
+  onSendAnswer,
+  replaceVariables 
 }: ChatInputProps) => {
   if (showCompletion) {
     return (
@@ -28,12 +31,14 @@ const ChatInput = ({
           <button 
             className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
             onClick={() => {
-              let messageText = 'Olá! Gostaria de continuar nossa conversa. Aqui estão minhas informações:\n\n';
-              Object.keys(responses).forEach((questionId) => {
-                if (responses[questionId]) {
-                  messageText += `${questionId}: ${responses[questionId]}\n`;
-                }
-              });
+              // Usar template personalizado com variáveis
+              let messageText = flowData?.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.';
+              
+              // Substituir variáveis se a função estiver disponível
+              if (replaceVariables) {
+                messageText = replaceVariables(messageText, responses);
+              }
+              
               const whatsappNumber = flowData.whatsapp.replace(/\D/g, '');
               const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
               window.open(whatsappUrl, '_blank');
@@ -101,12 +106,12 @@ const ChatInput = ({
                   input.value = '';
                 }
               }}
-              className="px-4 py-2 text-white rounded-lg transition-colors"
+              className="p-2 text-white rounded-lg transition-colors flex items-center justify-center"
               style={{ 
                 background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
               }}
             >
-              Enviar
+              <Send className="w-4 h-4" />
             </button>
           </div>
         )}

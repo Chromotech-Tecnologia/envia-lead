@@ -44,7 +44,10 @@ export const useFlowOperations = () => {
       ],
       minimumQuestion: flow?.minimum_question || 1,
       welcomeMessage: flow?.welcome_message || 'Olá! Como posso ajudá-lo?',
-      showWhatsappButton: flow?.show_whatsapp_button !== false
+      showWhatsappButton: flow?.show_whatsapp_button !== false,
+      attendant_name: flow?.attendant_name || 'Atendimento',
+      final_message: flow?.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.',
+      whatsapp_message_template: flow?.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.'
     };
   };
 

@@ -89,7 +89,7 @@
       position: fixed;
       width: ${buttonSize}px;
       height: ${buttonSize}px;
-      background: ${flowData.colors?.primary || '#FF6B35'};
+      background: linear-gradient(45deg, ${flowData.colors?.primary || '#FF6B35'}, ${flowData.colors?.secondary || '#3B82F6'});
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -133,11 +133,17 @@
     
     // Ação do clique
     button.onclick = function() {
+      // Esconder botão quando chat abrir
+      button.style.display = 'none';
       openChatModal(flowData);
     };
     
     // Adicionar botão à página
     document.body.appendChild(button);
+    
+    // Guardar referência global para mostrar/esconder o botão
+    window.enviaLeadButton = button;
+    
     console.log('[EnviaLead] Widget criado para fluxo:', flowData.name);
   }
   
@@ -170,6 +176,11 @@
       existingModal.remove();
     }
     chatState.isOpen = false;
+    
+    // Mostrar botão novamente quando chat fechar
+    if (window.enviaLeadButton) {
+      window.enviaLeadButton.style.display = 'flex';
+    }
   }
 
   // Função para criar o modal de chat completo
@@ -260,7 +271,7 @@
     
     const titleDiv = document.createElement('div');
     const title = document.createElement('div');
-    title.textContent = 'Atendimento';
+    title.textContent = flowData.attendant_name || 'Atendimento';
     title.style.cssText = 'font-weight: 600; font-size: 14px;';
     
     const status = document.createElement('div');
@@ -530,15 +541,15 @@
       const sendBtn = document.createElement('button');
       sendBtn.innerHTML = '→';
       sendBtn.style.cssText = `
-        padding: 12px;
-        width: 44px;
-        height: 44px;
-        background: ${flowData.colors?.primary || '#FF6B35'};
+        padding: 8px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, ${flowData.colors?.primary || '#FF6B35'}, ${flowData.colors?.secondary || '#3B82F6'});
         color: white;
         border: none;
         border-radius: 50%;
         cursor: pointer;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         display: flex;
         align-items: center;

@@ -22,6 +22,7 @@ interface ChatWindowProps {
   responses: Record<string, string>;
   onClose: () => void;
   onSendAnswer: (answer: string) => void;
+  replaceVariables?: (text: string, responses: Record<string, string>) => string;
 }
 
 const ChatWindow = ({ 
@@ -35,7 +36,8 @@ const ChatWindow = ({
   waitingForInput, 
   responses, 
   onClose, 
-  onSendAnswer 
+  onSendAnswer,
+  replaceVariables 
 }: ChatWindowProps) => {
   const getChatWindowPosition = () => {
     // Lógica para abrir o chat no lado oposto ao botão
@@ -74,7 +76,7 @@ const ChatWindow = ({
             </div>
           )}
           <div>
-            <div className="font-semibold text-sm">{flowData?.name || 'Atendimento'}</div>
+            <div className="font-semibold text-sm">{flowData?.attendant_name || 'Atendimento'}</div>
             <div className="text-xs opacity-90 flex items-center gap-1">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               Online agora
@@ -104,6 +106,7 @@ const ChatWindow = ({
         isTyping={isTyping}
         responses={responses}
         onSendAnswer={onSendAnswer}
+        replaceVariables={replaceVariables}
       />
     </div>
   );

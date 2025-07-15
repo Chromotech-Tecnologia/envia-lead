@@ -30,10 +30,42 @@ export const useChatLogic = (flowData: any) => {
     }))
     .sort((a: any, b: any) => a.order - b.order) : [];
 
+  // Função para substituir variáveis no texto
+  const replaceVariables = (text: string, responses: Record<string, string>) => {
+    let processedText = text;
+    
+    // Criar mapeamento de IDs de perguntas para labels mais amigáveis
+    const variableMap: Record<string, string> = {};
+    
+    questions.forEach((question: any) => {
+      const questionTitle = question.title.toLowerCase();
+      if (questionTitle.includes('nome')) {
+        variableMap['#nome'] = responses[question.id] || '';
+      } else if (questionTitle.includes('telefone') || questionTitle.includes('celular')) {
+        variableMap['#telefone'] = responses[question.id] || '';
+      } else if (questionTitle.includes('email') || questionTitle.includes('e-mail')) {
+        variableMap['#email'] = responses[question.id] || '';
+      } else if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
+        variableMap['#empresa'] = responses[question.id] || '';
+      }
+    });
+    
+    // Substituir variáveis no texto
+    Object.keys(variableMap).forEach(variable => {
+      const regex = new RegExp(variable, 'gi');
+      processedText = processedText.replace(regex, variableMap[variable]);
+    });
+    
+    return processedText;
+  };
+
   const addMessage = (text: string, isBot: boolean) => {
+    // Se for mensagem do bot, processar variáveis
+    const processedText = isBot ? replaceVariables(text, responses) : text;
+    
     const newMessage = {
       id: Date.now().toString(),
-      text,
+      text: processedText,
       isBot,
       timestamp: Date.now()
     };
@@ -79,7 +111,8 @@ export const useChatLogic = (flowData: any) => {
       // Finalizar conversa
       setTimeout(() => {
         setShowCompletion(true);
-        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+        const finalMessage = flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+        addMessage(finalMessage, true);
       }, 1000);
     }
   };
@@ -105,6 +138,7 @@ export const useChatLogic = (flowData: any) => {
     responses,
     currentQuestion,
     handleSendAnswer,
-    startConversation
+    startConversation,
+    replaceVariables
   };
 };

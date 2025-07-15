@@ -95,6 +95,25 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
 
       <Card>
         <CardHeader>
+          <CardTitle>Informações do Atendente</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="attendantName">Nome do Atendente</Label>
+              <Input
+                id="attendantName"
+                value={flowData.attendant_name || 'Atendimento'}
+                onChange={(e) => setFlowData(prev => ({...prev, attendant_name: e.target.value}))}
+                placeholder="Digite o nome do atendente"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Avatar do Atendente</CardTitle>
         </CardHeader>
         <CardContent>
@@ -153,26 +172,6 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
 
       <PositionSettings flowData={flowData} setFlowData={setFlowData} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurações Finais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="showWhatsappButton">Botão do WhatsApp</Label>
-              <p className="text-sm text-gray-500">
-                Mostrar botão para continuar conversa no WhatsApp ao final do chat
-              </p>
-            </div>
-            <Switch
-              id="showWhatsappButton"
-              checked={flowData.showWhatsappButton !== false}
-              onCheckedChange={(checked) => setFlowData(prev => ({...prev, showWhatsappButton: checked}))}
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

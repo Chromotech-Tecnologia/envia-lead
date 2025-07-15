@@ -151,6 +151,7 @@ export type Database = {
       }
       flows: {
         Row: {
+          attendant_name: string | null
           avatar_url: string | null
           button_offset_x: number | null
           button_offset_y: number | null
@@ -165,6 +166,7 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           description: string | null
+          final_message: string | null
           id: string
           is_active: boolean | null
           minimum_question: number | null
@@ -174,8 +176,10 @@ export type Database = {
           updated_at: string | null
           welcome_message: string | null
           whatsapp: string | null
+          whatsapp_message_template: string | null
         }
         Insert: {
+          attendant_name?: string | null
           avatar_url?: string | null
           button_offset_x?: number | null
           button_offset_y?: number | null
@@ -190,6 +194,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           description?: string | null
+          final_message?: string | null
           id?: string
           is_active?: boolean | null
           minimum_question?: number | null
@@ -199,8 +204,10 @@ export type Database = {
           updated_at?: string | null
           welcome_message?: string | null
           whatsapp?: string | null
+          whatsapp_message_template?: string | null
         }
         Update: {
+          attendant_name?: string | null
           avatar_url?: string | null
           button_offset_x?: number | null
           button_offset_y?: number | null
@@ -215,6 +222,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           description?: string | null
+          final_message?: string | null
           id?: string
           is_active?: boolean | null
           minimum_question?: number | null
@@ -224,6 +232,7 @@ export type Database = {
           updated_at?: string | null
           welcome_message?: string | null
           whatsapp?: string | null
+          whatsapp_message_template?: string | null
         }
         Relationships: [
           {
@@ -367,6 +376,44 @@ export type Database = {
             columns: ["flow_id"]
             isOneToOne: false
             referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_avatars: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string | null
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_avatars_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

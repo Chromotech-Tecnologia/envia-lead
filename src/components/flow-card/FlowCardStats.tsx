@@ -7,7 +7,7 @@ interface FlowCardStatsProps {
 }
 
 const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
-  const { connectionStatus } = useFlowConnections(flow?.id);
+  const { connectionStatus, activeConnections } = useFlowConnections(flow?.id);
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -54,6 +54,24 @@ const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
           {flow.is_active ? "Ativo" : "Inativo"}
         </Badge>
       </div>
+
+      {/* Site Conectado */}
+      {connectionStatus.isConnected && activeConnections.length > 0 && (
+        <div className="mb-4 p-2 bg-green-50 rounded-lg border border-green-200">
+          <div className="text-xs text-green-700 font-medium">Site Conectado:</div>
+          <div className="text-xs text-green-600 truncate" title={activeConnections[0].url}>
+            {activeConnections[0].url}
+          </div>
+          <div className="text-xs text-green-500">
+            Última atividade: {new Date(activeConnections[0].last_ping).toLocaleString('pt-BR')}
+          </div>
+          {activeConnections.length > 1 && (
+            <div className="text-xs text-green-500">
+              +{activeConnections.length - 1} site{activeConnections.length > 2 ? 's' : ''} conectado{activeConnections.length > 2 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
         <div>

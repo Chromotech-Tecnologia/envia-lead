@@ -313,19 +313,59 @@ export const useFlows = () => {
   };
 
   const duplicateFlow = async (id: string) => {
+    console.log('🔄 Iniciando duplicação do fluxo:', id);
+    
     try {
-      const originalFlow = flows.find(flow => flow.id === id);
-      if (!originalFlow) {
+      // 1. Buscar dados do fluxo original diretamente do banco
+      const { data: originalFlow, error: flowFetchError } = await supabase
+        .from('flows')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (flowFetchError || !originalFlow) {
+        console.error('❌ Erro ao buscar fluxo original:', flowFetchError);
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível encontrar o fluxo",
+          description: "Não foi possível encontrar o fluxo original",
         });
         return null;
       }
 
+      console.log('✅ Fluxo original encontrado:', originalFlow.name);
+
+      // 2. Buscar dados relacionados do banco
+      const [questionsResult, urlsResult, emailsResult] = await Promise.all([
+        supabase.from('questions').select('*').eq('flow_id', id).order('order_index'),
+        supabase.from('flow_urls').select('*').eq('flow_id', id),
+        supabase.from('flow_emails').select('*').eq('flow_id', id)
+      ]);
+
+      if (questionsResult.error) {
+        console.error('❌ Erro ao buscar perguntas:', questionsResult.error);
+      }
+      if (urlsResult.error) {
+        console.error('❌ Erro ao buscar URLs:', urlsResult.error);
+      }
+      if (emailsResult.error) {
+        console.error('❌ Erro ao buscar emails:', emailsResult.error);
+      }
+
+      const originalQuestions = questionsResult.data || [];
+      const originalUrls = urlsResult.data || [];
+      const originalEmails = emailsResult.data || [];
+
+      console.log('📊 Dados relacionados encontrados:', {
+        questions: originalQuestions.length,
+        urls: originalUrls.length,
+        emails: originalEmails.length
+      });
+
+      // 3. Verificar perfil do usuário
       const profile = await fetchUserProfile();
       if (!profile) {
+        console.error('❌ Perfil do usuário não encontrado');
         toast({
           variant: "destructive",
           title: "Erro",
@@ -334,7 +374,9 @@ export const useFlows = () => {
         return null;
       }
 
-      // 1. Criar o fluxo principal
+      console.log('✅ Perfil do usuário verificado, empresa:', profile.company_id);
+
+      // 4. Criar o novo fluxo
       const newFlow = {
         name: `${originalFlow.name} (Cópia)`,
         description: originalFlow.description,
@@ -363,31 +405,36 @@ export const useFlows = () => {
         button_avatar_url: originalFlow.button_avatar_url,
       };
 
+      console.log('🎯 Criando novo fluxo...');
       const { data: createdFlow, error: flowError } = await supabase
         .from('flows')
         .insert([newFlow])
         .select()
         .single();
 
-      if (flowError) {
-        console.error('Erro ao duplicar fluxo:', flowError);
+      if (flowError || !createdFlow) {
+        console.error('❌ Erro ao criar novo fluxo:', flowError);
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível duplicar o fluxo: " + flowError.message,
+          description: "Não foi possível criar o novo fluxo: " + (flowError?.message || 'Erro desconhecido'),
         });
         return null;
       }
 
-      // 2. Duplicar perguntas
-      if (originalFlow.questions && originalFlow.questions.length > 0) {
-        const questionsToInsert = originalFlow.questions.map(question => ({
+      console.log('✅ Novo fluxo criado com ID:', createdFlow.id);
+
+      // 5. Duplicar perguntas
+      if (originalQuestions.length > 0) {
+        console.log('📝 Duplicando', originalQuestions.length, 'perguntas...');
+        
+        const questionsToInsert = originalQuestions.map(question => ({
           flow_id: createdFlow.id,
           type: question.type,
           title: question.title,
           placeholder: question.placeholder,
           required: question.required,
-          order_index: question.order,
+          order_index: question.order_index,
           options: question.options,
         }));
 
@@ -396,59 +443,73 @@ export const useFlows = () => {
           .insert(questionsToInsert);
 
         if (questionsError) {
-          console.error('Erro ao duplicar perguntas:', questionsError);
-          // Reverter criação do fluxo se houver erro
+          console.error('❌ Erro ao duplicar perguntas:', questionsError);
+          // Reverter criação do fluxo
           await supabase.from('flows').delete().eq('id', createdFlow.id);
           toast({
             variant: "destructive",
             title: "Erro",
-            description: "Erro ao duplicar perguntas do fluxo",
+            description: "Erro ao duplicar perguntas: " + questionsError.message,
           });
           return null;
         }
+
+        console.log('✅ Perguntas duplicadas com sucesso');
+      } else {
+        console.log('ℹ️ Nenhuma pergunta para duplicar');
       }
 
-      // 3. Duplicar URLs
-      if (originalFlow.urls && originalFlow.urls.length > 0) {
-        const urlsToInsert = originalFlow.urls
-          .filter(url => url && url.trim() !== '')
-          .map(url => ({
-            flow_id: createdFlow.id,
-            url: url.trim(),
-          }));
+      // 6. Duplicar URLs
+      if (originalUrls.length > 0) {
+        console.log('🔗 Duplicando', originalUrls.length, 'URLs...');
+        
+        const urlsToInsert = originalUrls.map(urlObj => ({
+          flow_id: createdFlow.id,
+          url: urlObj.url,
+        }));
 
-        if (urlsToInsert.length > 0) {
-          const { error: urlsError } = await supabase
-            .from('flow_urls')
-            .insert(urlsToInsert);
+        const { error: urlsError } = await supabase
+          .from('flow_urls')
+          .insert(urlsToInsert);
 
-          if (urlsError) {
-            console.error('Erro ao duplicar URLs:', urlsError);
-          }
+        if (urlsError) {
+          console.error('❌ Erro ao duplicar URLs:', urlsError);
+          // Não reverter aqui, URLs são opcionais
+        } else {
+          console.log('✅ URLs duplicadas com sucesso');
         }
+      } else {
+        console.log('ℹ️ Nenhuma URL para duplicar');
       }
 
-      // 4. Duplicar emails
-      if (originalFlow.emails && originalFlow.emails.length > 0) {
-        const emailsToInsert = originalFlow.emails
-          .filter(email => email && email.trim() !== '')
-          .map(email => ({
-            flow_id: createdFlow.id,
-            email: email.trim(),
-          }));
+      // 7. Duplicar emails
+      if (originalEmails.length > 0) {
+        console.log('📧 Duplicando', originalEmails.length, 'emails...');
+        
+        const emailsToInsert = originalEmails.map(emailObj => ({
+          flow_id: createdFlow.id,
+          email: emailObj.email,
+        }));
 
-        if (emailsToInsert.length > 0) {
-          const { error: emailsError } = await supabase
-            .from('flow_emails')
-            .insert(emailsToInsert);
+        const { error: emailsError } = await supabase
+          .from('flow_emails')
+          .insert(emailsToInsert);
 
-          if (emailsError) {
-            console.error('Erro ao duplicar emails:', emailsError);
-          }
+        if (emailsError) {
+          console.error('❌ Erro ao duplicar emails:', emailsError);
+          // Não reverter aqui, emails são opcionais
+        } else {
+          console.log('✅ Emails duplicados com sucesso');
         }
+      } else {
+        console.log('ℹ️ Nenhum email para duplicar');
       }
 
+      // 8. Recarregar lista de fluxos
+      console.log('🔄 Recarregando lista de fluxos...');
       await fetchFlows();
+      
+      console.log('🎉 Duplicação concluída com sucesso!');
       toast({
         title: "Sucesso!",
         description: "Fluxo duplicado com sucesso",
@@ -456,11 +517,11 @@ export const useFlows = () => {
 
       return createdFlow;
     } catch (error) {
-      console.error('Erro inesperado ao duplicar fluxo:', error);
+      console.error('💥 Erro inesperado ao duplicar fluxo:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro inesperado ao duplicar o fluxo",
+        description: "Ocorreu um erro inesperado: " + (error instanceof Error ? error.message : 'Erro desconhecido'),
       });
       return null;
     }

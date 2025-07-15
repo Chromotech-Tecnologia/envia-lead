@@ -229,7 +229,7 @@ const AvatarUploader = ({ onAvatarSelect, selectedAvatar, companyId }: AvatarUpl
               {savedAvatars.map((avatar) => (
                 <div key={avatar.id} className="relative group">
                   <div 
-                    className={`relative w-full aspect-square rounded-full overflow-hidden cursor-pointer transition-all duration-200 ${
+                    className={`relative w-20 h-20 rounded-full overflow-hidden cursor-pointer transition-all duration-200 ${
                       selectedAvatar === avatar.url 
                         ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
                         : 'ring-2 ring-border hover:ring-primary/50'

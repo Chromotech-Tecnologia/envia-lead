@@ -153,6 +153,7 @@ export type Database = {
         Row: {
           attendant_name: string | null
           avatar_url: string | null
+          button_avatar_url: string | null
           button_offset_x: number | null
           button_offset_y: number | null
           button_position: string | null
@@ -181,6 +182,7 @@ export type Database = {
         Insert: {
           attendant_name?: string | null
           avatar_url?: string | null
+          button_avatar_url?: string | null
           button_offset_x?: number | null
           button_offset_y?: number | null
           button_position?: string | null
@@ -209,6 +211,7 @@ export type Database = {
         Update: {
           attendant_name?: string | null
           avatar_url?: string | null
+          button_avatar_url?: string | null
           button_offset_x?: number | null
           button_offset_y?: number | null
           button_position?: string | null

@@ -228,25 +228,30 @@ const AvatarUploader = ({ onAvatarSelect, selectedAvatar, companyId }: AvatarUpl
             <div className="grid grid-cols-4 gap-3">
               {savedAvatars.map((avatar) => (
                 <div key={avatar.id} className="relative group">
-                  <Button
-                    variant={selectedAvatar === avatar.url ? "default" : "outline"}
-                    className="aspect-square p-1 w-full relative overflow-hidden rounded-full"
+                  <div 
+                    className={`relative w-full aspect-square rounded-full overflow-hidden cursor-pointer transition-all duration-200 ${
+                      selectedAvatar === avatar.url 
+                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
+                        : 'ring-2 ring-border hover:ring-primary/50'
+                    }`}
                     onClick={() => onAvatarSelect(avatar.url)}
                   >
                     <img 
                       src={avatar.url} 
                       alt={avatar.name}
-                      className="w-full h-full object-cover rounded-full"
+                      className="w-full h-full object-cover"
                     />
                     {selectedAvatar === avatar.url && (
-                      <Check className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-white rounded-full p-0.5" />
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-primary bg-background rounded-full p-1" />
+                      </div>
                     )}
-                  </Button>
+                  </div>
                   
                   <Button
                     variant="destructive"
                     size="sm"
-                    className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
                     onClick={() => deleteSavedAvatar(avatar)}
                   >
                     <X className="w-3 h-3" />

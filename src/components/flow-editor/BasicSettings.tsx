@@ -46,6 +46,22 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="isActive">Status do Fluxo</Label>
+              <p className="text-sm text-gray-500">
+                Ativar ou desativar este fluxo
+              </p>
+            </div>
+            <Switch
+              id="isActive"
+              checked={flowData.is_active !== false}
+              onCheckedChange={(checked) => setFlowData(prev => ({...prev, is_active: checked}))}
+            />
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="description">Descrição</Label>
           <Textarea

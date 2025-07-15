@@ -230,13 +230,13 @@ const AvatarUploader = ({ onAvatarSelect, selectedAvatar, companyId }: AvatarUpl
                 <div key={avatar.id} className="relative group">
                   <Button
                     variant={selectedAvatar === avatar.url ? "default" : "outline"}
-                    className="aspect-square p-1 w-full relative overflow-hidden"
+                    className="aspect-square p-1 w-full relative overflow-hidden rounded-full"
                     onClick={() => onAvatarSelect(avatar.url)}
                   >
                     <img 
                       src={avatar.url} 
                       alt={avatar.name}
-                      className="w-full h-full object-cover rounded"
+                      className="w-full h-full object-cover rounded-full"
                     />
                     {selectedAvatar === avatar.url && (
                       <Check className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-white rounded-full p-0.5" />

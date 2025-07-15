@@ -11,6 +11,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import Logo from './Logo';
 
 interface MenuItem {
@@ -28,9 +29,19 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Tem certeza que deseja sair?')) {
-      window.location.href = '/auth';
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Error logging out:', error);
+        } else {
+          window.location.href = '/auth';
+        }
+      } catch (error) {
+        console.error('Error during logout:', error);
+        window.location.href = '/auth';
+      }
     }
   };
 

@@ -126,13 +126,28 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Avatar do Atendente</CardTitle>
+          <CardTitle>Avatar do Chat</CardTitle>
         </CardHeader>
         <CardContent>
           {userCompanyId && (
             <AvatarUploader
               onAvatarSelect={handleAvatarSelect}
               selectedAvatar={flowData.avatar_url}
+              companyId={userCompanyId}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Avatar do Botão Flutuante</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userCompanyId && (
+            <AvatarUploader
+              onAvatarSelect={(url) => setFlowData(prev => ({...prev, button_avatar_url: url}))}
+              selectedAvatar={flowData.button_avatar_url}
               companyId={userCompanyId}
             />
           )}

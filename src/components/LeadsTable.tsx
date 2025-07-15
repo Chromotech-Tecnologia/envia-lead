@@ -4,17 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Search,
   Filter,
   Download,
   ExternalLink,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Smartphone,
   Monitor,
   MessageSquare,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import {
   Table,
@@ -31,7 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import LeadDetailsModal from './LeadDetailsModal';
 
 const LeadsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +49,12 @@ const LeadsTable = () => {
   const [leads, setLeads] = useState<any[]>([]);
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [customDateStart, setCustomDateStart] = useState<Date>();
+  const [customDateEnd, setCustomDateEnd] = useState<Date>();
+  const [showCustomDate, setShowCustomDate] = useState(false);
+  const { toast } = useToast();
 
   // Load data on mount
   useEffect(() => {
@@ -90,7 +103,11 @@ const LeadsTable = () => {
         query = query.eq('flow_id', flowFilter);
       }
 
-      if (dateFilter !== 'all') {
+      if (dateFilter === 'custom' && customDateStart && customDateEnd) {
+        query = query
+          .gte('created_at', customDateStart.toISOString())
+          .lte('created_at', customDateEnd.toISOString());
+      } else if (dateFilter !== 'all') {
         const days = parseInt(dateFilter);
         const date = new Date();
         date.setDate(date.getDate() - days);
@@ -200,6 +217,57 @@ const LeadsTable = () => {
     return `https://api.whatsapp.com/send/?phone=5511999999999&text=${mensagem}`;
   };
 
+  const exportToCSV = () => {
+    if (filteredLeads.length === 0) {
+      toast({
+        title: 'Aviso',
+        description: 'Não há leads para exportar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const headers = ['Nome', 'Email', 'Telefone', 'Fluxo', 'Status', 'Data', 'Hora', 'IP', 'Dispositivo'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredLeads.map(lead => [
+        lead.responses?.nome || lead.nome || '',
+        lead.responses?.email || lead.email || '',
+        lead.responses?.telefone || lead.telefone || '',
+        lead.flows?.name || lead.fluxo || '',
+        (lead.completed || lead.status === 'completo') ? 'Completo' : 'Incompleto',
+        lead.created_at 
+          ? new Date(lead.created_at).toLocaleDateString('pt-BR')
+          : lead.dataHora?.split(' ')[0] || '',
+        lead.created_at 
+          ? new Date(lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : lead.dataHora?.split(' ')[1] || '',
+        lead.ip_address || '',
+        lead.dispositivo || ''
+      ].map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Sucesso',
+      description: 'Arquivo CSV exportado com sucesso!',
+    });
+  };
+
+  const handleViewDetails = (lead: any) => {
+    setSelectedLead(lead);
+    setShowDetailsModal(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Filtros e Ações */}
@@ -218,7 +286,7 @@ const LeadsTable = () => {
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={exportToCSV}>
                 <Download className="w-4 h-4 mr-2" />
                 Exportar CSV
               </Button>
@@ -283,7 +351,14 @@ const LeadsTable = () => {
               </Select>
               
               {/* Filtro Data */}
-              <Select value={dateFilter} onValueChange={setDateFilter}>
+              <Select value={dateFilter} onValueChange={(value) => {
+                if (value === 'custom') {
+                  setShowCustomDate(true);
+                } else {
+                  setShowCustomDate(false);
+                }
+                setDateFilter(value);
+              }}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Período" />
                 </SelectTrigger>
@@ -293,8 +368,61 @@ const LeadsTable = () => {
                   <SelectItem value="7">Últimos 7 dias</SelectItem>
                   <SelectItem value="30">Últimos 30 dias</SelectItem>
                   <SelectItem value="90">Últimos 90 dias</SelectItem>
+                  <SelectItem value="custom">Período Personalizado</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {showCustomDate && (
+                <div className="flex gap-2 col-span-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customDateStart && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateStart ? format(customDateStart, "dd/MM/yyyy") : "Data inicial"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateStart}
+                        onSelect={setCustomDateStart}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customDateEnd && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateEnd ? format(customDateEnd, "dd/MM/yyyy") : "Data final"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateEnd}
+                        onSelect={setCustomDateEnd}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -434,7 +562,12 @@ const LeadsTable = () => {
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewDetails(lead)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
                         Ver Detalhes
                       </Button>
                     </div>
@@ -460,6 +593,13 @@ const LeadsTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      <LeadDetailsModal
+        lead={selectedLead}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </div>
   );
 };

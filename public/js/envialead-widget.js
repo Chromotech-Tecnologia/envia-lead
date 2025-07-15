@@ -70,14 +70,15 @@
     // Criar botão do chat
     const button = document.createElement('div');
     
-    // Determinar o conteúdo do botão baseado no avatar
-    if (flowData.avatar_url) {
-      if (flowData.avatar_url.startsWith('http') || flowData.avatar_url.startsWith('blob:')) {
+    // Determinar o conteúdo do botão baseado no avatar do botão flutuante
+    const avatarUrl = flowData.button_avatar_url || flowData.avatar_url;
+    if (avatarUrl) {
+      if (avatarUrl.startsWith('http') || avatarUrl.startsWith('blob:')) {
         // É uma imagem
-        button.innerHTML = `<img src="${flowData.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        button.innerHTML = `<img src="${avatarUrl}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
       } else {
         // É um emoji
-        button.innerHTML = flowData.avatar_url;
+        button.innerHTML = avatarUrl;
       }
     } else {
       // Usar ícone padrão
@@ -318,7 +319,7 @@
       flex: 1;
       padding: 16px;
       overflow-y: auto;
-      background: #f8fafc;
+      background: ${flowData.colors?.background || '#f8fafc'};
     `;
 
     // Container do input
@@ -669,8 +670,9 @@
     // Salvar lead completo no banco
     saveLead(flowData, true);
 
-    // Mensagem de agradecimento
-    addMessage('✅ Obrigado! Suas respostas foram registradas com sucesso.', true, flowData);
+    // Mensagem de agradecimento customizável
+    const finalMessage = flowData.final_message_custom || flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.';
+    addMessage(`✅ ${finalMessage}`, true, flowData);
 
     // Botão do WhatsApp se configurado
     inputContainer.innerHTML = '';

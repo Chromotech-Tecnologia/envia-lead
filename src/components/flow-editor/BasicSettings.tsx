@@ -108,14 +108,17 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
           <h3 className="text-lg font-medium">Configurações Finais</h3>
           
           <div>
-            <Label htmlFor="finalMessage">Mensagem Final</Label>
+            <Label htmlFor="finalMessage">Mensagem de Conclusão</Label>
             <Textarea
               id="finalMessage"
-              value={flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.'}
-              onChange={(e) => setFlowData(prev => ({...prev, final_message: e.target.value}))}
+              value={flowData.final_message_custom || flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.'}
+              onChange={(e) => setFlowData(prev => ({...prev, final_message_custom: e.target.value}))}
               placeholder="Mensagem exibida após completar o chat..."
               className="min-h-[60px]"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Esta mensagem será exibida no site quando o usuário completar o chat
+            </p>
           </div>
 
           <div>

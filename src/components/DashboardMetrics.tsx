@@ -50,7 +50,7 @@ const DashboardMetrics = () => {
   // Load real metrics when filters change
   useEffect(() => {
     loadRealMetrics();
-  }, [dateFilter, flowFilter, deviceFilter]);
+  }, [dateFilter, flowFilter, deviceFilter, customDateStart, customDateEnd]);
 
   const loadFlows = async () => {
     const { data, error } = await supabase
@@ -66,14 +66,21 @@ const DashboardMetrics = () => {
   const loadRealMetrics = async () => {
     try {
       // Calculate date range
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(dateFilter));
+      let startDate: Date, endDate: Date;
+      
+      if (dateFilter === 'custom' && customDateStart && customDateEnd) {
+        startDate = customDateStart;
+        endDate = customDateEnd;
+      } else {
+        endDate = new Date();
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - parseInt(dateFilter));
+      }
 
       // Get leads data
       let leadsQuery = supabase
         .from('leads')
-        .select('*, flow_id, created_at')
+        .select('*, flow_id, created_at, ip_address, user_agent')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
 
@@ -86,7 +93,7 @@ const DashboardMetrics = () => {
       // Get connections data
       let connectionsQuery = supabase
         .from('flow_connections')
-        .select('*, created_at')
+        .select('*, created_at, url, user_agent')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
 
@@ -96,11 +103,45 @@ const DashboardMetrics = () => {
 
       const { data: connections } = await connectionsQuery;
 
+      // Get flow URLs for mapping
+      const { data: flowUrls } = await supabase
+        .from('flow_urls')
+        .select('*');
+
       // Calculate metrics
       const totalConnections = connections?.length || 0;
       const totalLeads = leads?.length || 0;
       const completedLeads = leads?.filter(l => l.completed)?.length || 0;
       const conversionRate = totalConnections > 0 ? (totalLeads / totalConnections) * 100 : 0;
+
+      // Device analysis
+      const deviceStats = connections?.reduce((acc, conn) => {
+        const userAgent = conn.user_agent?.toLowerCase() || '';
+        let device = 'desktop';
+        
+        if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
+          device = 'mobile';
+        } else if (userAgent.includes('tablet') || userAgent.includes('ipad')) {
+          device = 'tablet';
+        }
+        
+        acc[device] = (acc[device] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // URL analysis
+      const urlStats = connections?.reduce((acc, conn) => {
+        const url = new URL(conn.url).pathname;
+        acc[url] = (acc[url] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // Hourly analysis
+      const hourlyStats = connections?.reduce((acc, conn) => {
+        const hour = new Date(conn.created_at).getHours();
+        acc[hour] = (acc[hour] || 0) + 1;
+        return acc;
+      }, {} as Record<number, number>) || {};
 
       setRealMetrics({
         totalConnections,
@@ -108,7 +149,10 @@ const DashboardMetrics = () => {
         completedLeads,
         conversionRate: conversionRate.toFixed(1),
         leads: leads || [],
-        connections: connections || []
+        connections: connections || [],
+        deviceStats,
+        urlStats,
+        hourlyStats
       });
 
     } catch (error) {
@@ -150,22 +194,57 @@ const DashboardMetrics = () => {
     }
   ] : [];
 
-  const chartData = [
-    { name: 'Jan', acessos: 4000, leads: 1200, conversao: 30 },
-    { name: 'Fev', acessos: 3000, leads: 1398, conversao: 46.6 },
-    { name: 'Mar', acessos: 2000, leads: 800, conversao: 40 },
-    { name: 'Abr', acessos: 2780, leads: 1108, conversao: 39.9 },
-    { name: 'Mai', acessos: 1890, leads: 680, conversao: 36 },
-    { name: 'Jun', acessos: 2390, leads: 1200, conversao: 50.2 },
+  // Generate real chart data from metrics
+  const chartData = realMetrics ? (() => {
+    const monthlyData = [];
+    const currentDate = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthConnections = realMetrics.connections.filter(c => 
+        new Date(c.created_at).getMonth() === date.getMonth() &&
+        new Date(c.created_at).getFullYear() === date.getFullYear()
+      ).length;
+      
+      const monthLeads = realMetrics.leads.filter(l => 
+        new Date(l.created_at).getMonth() === date.getMonth() &&
+        new Date(l.created_at).getFullYear() === date.getFullYear()
+      ).length;
+      
+      monthlyData.push({
+        name: date.toLocaleDateString('pt-BR', { month: 'short' }),
+        acessos: monthConnections,
+        leads: monthLeads,
+        conversao: monthConnections > 0 ? ((monthLeads / monthConnections) * 100) : 0
+      });
+    }
+    
+    return monthlyData;
+  })() : [
+    { name: 'Jan', acessos: 0, leads: 0, conversao: 0 },
+    { name: 'Fev', acessos: 0, leads: 0, conversao: 0 },
+    { name: 'Mar', acessos: 0, leads: 0, conversao: 0 },
+    { name: 'Abr', acessos: 0, leads: 0, conversao: 0 },
+    { name: 'Mai', acessos: 0, leads: 0, conversao: 0 },
+    { name: 'Jun', acessos: 0, leads: 0, conversao: 0 },
   ];
 
-  const deviceData = [
+  const deviceData = realMetrics?.deviceStats ? Object.entries(realMetrics.deviceStats).map(([device, count], index) => ({
+    name: device === 'desktop' ? 'Desktop' : device === 'mobile' ? 'Mobile' : 'Tablet',
+    value: Math.round((Number(count) / realMetrics.totalConnections) * 100),
+    color: ['#3B82F6', '#10B981', '#F59E0B'][index] || '#6B7280'
+  })) : [
     { name: 'Desktop', value: 60, color: '#3B82F6' },
     { name: 'Mobile', value: 35, color: '#10B981' },
     { name: 'Tablet', value: 5, color: '#F59E0B' },
   ];
 
-  const hourlyData = [
+  const hourlyData = realMetrics?.hourlyStats ? Object.entries(realMetrics.hourlyStats)
+    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+    .map(([hour, count]) => ({
+      hora: `${hour.padStart(2, '0')}h`,
+      acessos: Number(count)
+    })) : [
     { hora: '00h', acessos: 12 },
     { hora: '04h', acessos: 8 },
     { hora: '08h', acessos: 45 },
@@ -416,7 +495,26 @@ const DashboardMetrics = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
+              {realMetrics?.urlStats ? Object.entries(realMetrics.urlStats)
+                .sort(([,a], [,b]) => Number(b) - Number(a))
+                .slice(0, 4)
+                .map(([url, count], index) => {
+                  const conversionRate = realMetrics.leads.filter(l => 
+                    l.responses && JSON.stringify(l.responses).includes(url)
+                  ).length / Number(count) * 100;
+                  
+                  return (
+                    <div key={index} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{url}</p>
+                        <p className="text-xs text-gray-500">{String(count)} acessos</p>
+                      </div>
+                      <Badge variant="outline">
+                        {conversionRate.toFixed(1)}% conversão
+                      </Badge>
+                    </div>
+                  );
+                }) : [
                 { url: '/produtos', acessos: 1250, conversao: 28 },
                 { url: '/servicos', acessos: 980, conversao: 22 },
                 { url: '/sobre', acessos: 750, conversao: 15 },
@@ -446,23 +544,23 @@ const DashboardMetrics = () => {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span>Acessos (Meta: 100)</span>
-                  <span>87</span>
+                  <span>{realMetrics?.totalConnections || 0}</span>
                 </div>
-                <Progress value={87} className="h-2" />
+                <Progress value={Math.min((realMetrics?.totalConnections || 0) / 100 * 100, 100)} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span>Leads (Meta: 25)</span>
-                  <span>22</span>
+                  <span>{realMetrics?.totalLeads || 0}</span>
                 </div>
-                <Progress value={88} className="h-2" />
+                <Progress value={Math.min((realMetrics?.totalLeads || 0) / 25 * 100, 100)} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span>Conversão (Meta: 20%)</span>
-                  <span>25.3%</span>
+                  <span>{realMetrics?.conversionRate || 0}%</span>
                 </div>
-                <Progress value={100} className="h-2" />
+                <Progress value={Math.min(parseFloat(realMetrics?.conversionRate || '0') / 20 * 100, 100)} className="h-2" />
               </div>
             </div>
           </CardContent>

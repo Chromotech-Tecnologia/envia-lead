@@ -168,6 +168,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           final_message: string | null
+          final_message_custom: string | null
           id: string
           is_active: boolean | null
           minimum_question: number | null
@@ -197,6 +198,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           final_message?: string | null
+          final_message_custom?: string | null
           id?: string
           is_active?: boolean | null
           minimum_question?: number | null
@@ -226,6 +228,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           final_message?: string | null
+          final_message_custom?: string | null
           id?: string
           is_active?: boolean | null
           minimum_question?: number | null

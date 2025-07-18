@@ -383,13 +383,20 @@
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  // Função para mostrar indicador de digitação
+  // Função para mostrar indicador de digitação com animação melhorada
   function showTypingIndicator(flowData) {
     const messagesContainer = document.getElementById('chat-messages');
     
     const typingDiv = document.createElement('div');
     typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'flex justify-start mb-3';
+    typingDiv.style.cssText = `
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.3s ease-out forwards;
+    `;
     
     const bubble = document.createElement('div');
     bubble.style.cssText = `
@@ -400,9 +407,10 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     `;
     
-    // Três pontos animados - idêntico ao ChatMessages.tsx
+    // Três pontos animados com efeito mais suave
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('div');
       dot.style.cssText = `
@@ -410,8 +418,8 @@
         height: 8px;
         background: #9ca3af;
         border-radius: 50%;
-        animation: bounce 1.4s infinite ease-in-out;
-        animation-delay: ${i * 0.16}s;
+        animation: typingDots 1.5s infinite ease-in-out;
+        animation-delay: ${i * 0.2}s;
       `;
       bubble.appendChild(dot);
     }
@@ -419,8 +427,11 @@
     typingDiv.appendChild(bubble);
     messagesContainer.appendChild(typingDiv);
     
-    // Scroll para baixo
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Scroll suave para baixo
+    messagesContainer.scrollTo({
+      top: messagesContainer.scrollHeight,
+      behavior: 'smooth'
+    });
   }
 
   // Função para remover indicador de digitação
@@ -679,9 +690,9 @@
     const finalMessage = flowData.final_message_custom || flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.';
     addMessage(`✅ ${finalMessage}`, true, flowData);
 
-    // Botão do WhatsApp se configurado
+    // Botão do WhatsApp se configurado - com informações completas
     inputContainer.innerHTML = '';
-    if (flowData.whatsapp && flowData.showWhatsappButton) {
+    if (flowData.whatsapp && flowData.show_whatsapp_button !== false) {
       setTimeout(() => {
         const whatsappBtn = document.createElement('button');
         whatsappBtn.innerHTML = '💬 Continuar no WhatsApp';
@@ -695,25 +706,35 @@
           cursor: pointer;
           font-size: 14px;
           font-weight: 600;
-          transition: all 0.2s;
+          transition: all 0.3s;
+          box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
         `;
         
         whatsappBtn.onmouseenter = function() {
           this.style.background = '#128c7e';
-          this.style.transform = 'translateY(-1px)';
+          this.style.transform = 'translateY(-2px)';
+          this.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)';
         };
         
         whatsappBtn.onmouseleave = function() {
           this.style.background = '#25d366';
           this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
         };
         
         whatsappBtn.onclick = function() {
-          const message = replaceVariables(
-            flowData.whatsapp_message_template || 'Olá! Acabei de preencher o formulário no site e gostaria de continuar a conversa.',
-            chatState.responses
-          );
-          const whatsappUrl = `https://wa.me/${flowData.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+          // Criar mensagem com todas as informações coletadas
+          let detailedMessage = flowData.whatsapp_message_template || 'Olá! Acabei de preencher o formulário no site e gostaria de continuar a conversa.\n\nInformações fornecidas:';
+          
+          // Adicionar todas as respostas à mensagem do WhatsApp
+          for (const [question, answer] of Object.entries(chatState.responses)) {
+            detailedMessage += `\n• ${question}: ${answer}`;
+          }
+          
+          detailedMessage += `\n\nSite: ${window.location.href}`;
+          
+          const finalMessage = replaceVariables(detailedMessage, chatState.responses);
+          const whatsappUrl = `https://wa.me/${flowData.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(finalMessage)}`;
           window.open(whatsappUrl, '_blank');
         };
         
@@ -862,9 +883,31 @@
     });
   }
 
-  // Adicionar estilos de animação
+  // Adicionar estilos de animação melhorados
   const style = document.createElement('style');
   style.textContent = `
+    @keyframes typingDots {
+      0%, 60%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+      30% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
     @keyframes bounce {
       0%, 80%, 100% {
         transform: scale(0);
@@ -880,6 +923,17 @@
       }
       50% {
         opacity: 0.5;
+      }
+    }
+    
+    @keyframes slideInFromRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
       }
     }
   `;

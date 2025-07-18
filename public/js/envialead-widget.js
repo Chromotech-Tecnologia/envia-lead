@@ -1,5 +1,52 @@
 // EnviaLead Chat Widget - Design Idêntico ao Sistema
 (function() {
+  // ====== ESTILOS CSS PARA ANIMAÇÕES ======
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes typingDots {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-8px); opacity: 1; }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes buttonPulse {
+      0% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+      50% { box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,107,53,0.2); }
+      100% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    }
+    
+    .envialead-smooth-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  `;
+  document.head.appendChild(style);
+  
   console.log('[EnviaLead] Iniciando widget integrado...');
   
   // Pegar Flow ID da URL do script
@@ -855,88 +902,49 @@
 
   // Função para enviar lead por email
   function sendLeadByEmail(flowData, responses) {
+    console.log('[EnviaLead] Enviando lead por email:', responses);
+    
+    // Verificar se há emails configurados
+    const emails = flowData.flow_emails ? flowData.flow_emails.map(e => e.email) : [];
+    if (emails.length === 0) {
+      console.warn('[EnviaLead] Nenhum email configurado para receber leads');
+      return;
+    }
+    
     const emailData = {
       flow_id: flowData.id,
       flow_name: flowData.name,
       responses: responses,
-      emails: flowData.flow_emails.map(e => e.email),
+      emails: emails,
       url: window.location.href
     };
 
     fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/send-lead-email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
       },
       body: JSON.stringify(emailData)
     })
-    .then(response => response.json())
+    .then(response => {
+      console.log('[EnviaLead] Status do envio de email:', response.status);
+      return response.json();
+    })
     .then(result => {
       if (result.success) {
-        console.log('[EnviaLead] Email enviado com sucesso');
+        console.log('[EnviaLead] Email enviado com sucesso:', result);
       } else {
         console.error('[EnviaLead] Erro ao enviar email:', result.error);
+        if (result.error && result.error.includes('RESEND_API_KEY')) {
+          console.error('[EnviaLead] ERRO: RESEND_API_KEY não configurado no Supabase. Configure em: https://supabase.com/dashboard/project/fuzkdrkhvmaimpgzvimq/settings/functions');
+        }
       }
     })
     .catch(error => {
-      console.error('[EnviaLead] Erro no envio de email:', error);
+      console.error('[EnviaLead] Erro na requisição de email:', error);
     });
   }
 
-  // Adicionar estilos de animação melhorados
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes typingDots {
-      0%, 60%, 100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-      }
-      30% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-    }
-    
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    @keyframes bounce {
-      0%, 80%, 100% {
-        transform: scale(0);
-      }
-      40% {
-        transform: scale(1);
-      }
-    }
-    
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-    
-    @keyframes slideInFromRight {
-      from {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-  `;
-  document.head.appendChild(style);
 
 })();

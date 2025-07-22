@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,22 +8,19 @@ const corsHeaders = {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('[test-email] Iniciando teste de email');
-
-    // Verificar se tem API key do Resend
+    // Verificar se RESEND_API_KEY está configurada
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     if (!resendApiKey) {
-      console.error('[test-email] RESEND_API_KEY não configurada');
       return new Response(JSON.stringify({
         success: false,
-        error: 'RESEND_API_KEY não configurada. Configure em: https://supabase.com/dashboard/project/fuzkdrkhvmaimpgzvimq/settings/functions'
+        error: 'RESEND_API_KEY não configurada',
+        message: 'Configure a chave da API do Resend nas configurações do projeto'
       }), {
         status: 500,
         headers: {
@@ -33,57 +30,52 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log('[test-email] RESEND_API_KEY encontrada, iniciando envio');
+    // Testar chamada para send-lead-email com dados de exemplo
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const resend = new Resend(resendApiKey);
+    const testData = {
+      flow_id: 'test-flow-id',
+      flow_name: 'Teste de Email',
+      attendant_name: 'Teste',
+      responses: {
+        'Nome': 'João Silva',
+        'Email': 'joao@teste.com',
+        'Telefone': '(11) 99999-9999',
+        'Mensagem': 'Teste de envio de email'
+      },
+      emails: ['teste@empresa.com'],
+      completed: true,
+      url: 'https://teste.com',
+      ip_address: '127.0.0.1',
+      user_agent: 'Test User Agent',
+      created_at: new Date().toISOString()
+    };
 
-    // Email de teste para alexandre@chromotech.com.br
-    const emailResponse = await resend.emails.send({
-      from: "Teste EnviaLead <leads@resend.dev>",
-      to: ["alexandre@chromotech.com.br"],
-      subject: "🧪 Teste de Email - EnviaLead",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #4CAF50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-            .content { background: #f8f9fa; padding: 20px; border-radius: 8px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🧪 Teste de Email - EnviaLead</h1>
-              <p>Este é um email de teste para verificar se o sistema está funcionando</p>
-            </div>
-            
-            <div class="content">
-              <h2>✅ Configuração Funcionando!</h2>
-              <p>Se você recebeu este email, significa que:</p>
-              <ul>
-                <li>✅ RESEND_API_KEY está configurada corretamente</li>
-                <li>✅ A função de envio de email está funcionando</li>
-                <li>✅ O sistema pode enviar emails para leads</li>
-              </ul>
-              
-              <p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
-              <p><strong>Domínio:</strong> ${Deno.env.get('SUPABASE_URL')}</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+    const emailResponse = await supabase.functions.invoke('send-lead-email', {
+      body: testData
     });
 
-    console.log('[test-email] Email enviado com sucesso:', emailResponse);
+    if (emailResponse.error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Erro ao chamar send-lead-email',
+        details: emailResponse.error
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      });
+    }
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Email de teste enviado com sucesso!',
-      data: emailResponse
+      message: 'Sistema de email funcionando corretamente',
+      resend_configured: true,
+      test_result: emailResponse.data
     }), {
       status: 200,
       headers: {
@@ -96,8 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.error('[test-email] Erro:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
-      details: error.stack
+      error: 'Erro interno do servidor',
+      message: error.message
     }), {
       status: 500,
       headers: {

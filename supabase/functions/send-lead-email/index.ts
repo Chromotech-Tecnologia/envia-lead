@@ -66,6 +66,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
+    
+    // Email verificado (único que funciona no modo teste do Resend)
+    const verifiedEmail = 'alexandre.areds@gmail.com';
 
     // Preparar assunto do email
     const leadStatus = completed ? 'Completo' : 'Parcial';
@@ -208,6 +211,18 @@ const handler = async (req: Request): Promise<Response> => {
             font-size: 14px;
             color: #856404;
           }
+          .alert {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+          }
+          .alert-text {
+            color: #dc2626;
+            font-size: 14px;
+            margin: 0;
+          }
           @media (max-width: 600px) {
             .info-grid {
               grid-template-columns: 1fr;
@@ -311,15 +326,28 @@ const handler = async (req: Request): Promise<Response> => {
     // Enviar email para todos os endereços configurados
     const emailPromises = emails.map(async (email) => {
       try {
+        // Se não for o email verificado, usar o verificado como destinatário mas alterar o conteúdo
+        const targetEmail = email === verifiedEmail ? email : verifiedEmail;
+        
+        let finalEmailBody = emailBody;
+        if (email !== verifiedEmail) {
+          const alertHtml = `
+            <div class="alert">
+              <p class="alert-text">⚠️ <strong>ATENÇÃO:</strong> Este email foi enviado para <strong>${verifiedEmail}</strong> porque o destinatário original (<strong>${email}</strong>) não está verificado no sistema Resend. Para receber emails diretamente, verifique um domínio em resend.com/domains</p>
+            </div>
+          `;
+          finalEmailBody = finalEmailBody.replace('<div class="content">', alertHtml + '<div class="content">');
+        }
+
         const emailResponse = await resend.emails.send({
           from: "EnviaLead <leads@resend.dev>",
-          to: [email],
+          to: [targetEmail],
           subject: emailSubject,
-          html: emailBody,
+          html: finalEmailBody,
         });
 
-        console.log(`[send-lead-email] Email enviado para: ${email}`, emailResponse);
-        return { email, success: true, id: emailResponse.data?.id };
+        console.log(`[send-lead-email] Email enviado para: ${email} (via ${targetEmail})`, emailResponse);
+        return { email, success: true, id: emailResponse.data?.id, sent_to: targetEmail };
       } catch (error) {
         console.error(`[send-lead-email] Erro ao enviar para ${email}:`, error);
         return { email, success: false, error: error.message };

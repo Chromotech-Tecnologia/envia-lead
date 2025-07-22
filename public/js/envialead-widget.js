@@ -1,3 +1,4 @@
+
 // EnviaLead Chat Widget - Design Idêntico ao Sistema
 (function() {
   // ====== ESTILOS CSS PARA ANIMAÇÕES ======
@@ -88,6 +89,7 @@
     .then(result => {
       if (result.success && result.data) {
         console.log('[EnviaLead] Dados do fluxo carregados:', result.data);
+        console.log('[EnviaLead] Emails configurados:', result.data.flow_emails);
         createChatWidget(result.data);
       } else {
         console.error('[EnviaLead] Erro ao carregar fluxo:', result.error);
@@ -393,6 +395,7 @@
     
     const messageDiv = document.createElement('div');
     messageDiv.className = `flex ${isBot ? 'justify-start' : 'justify-end'} mb-3`;
+    messageDiv.style.cssText = 'animation: fadeInUp 0.3s ease-out;';
     
     const bubble = document.createElement('div');
     bubble.className = 'max-w-xs px-3 py-2 text-sm';
@@ -432,7 +435,16 @@
 
   // Função para mostrar indicador de digitação com animação melhorada
   function showTypingIndicator(flowData) {
+    console.log('[EnviaLead] Mostrando typing indicator');
     const messagesContainer = document.getElementById('chat-messages');
+    
+    if (!messagesContainer) {
+      console.warn('[EnviaLead] Container de mensagens não encontrado');
+      return;
+    }
+    
+    // Remover indicador existente se houver
+    hideTypingIndicator();
     
     const typingDiv = document.createElement('div');
     typingDiv.id = 'typing-indicator';
@@ -479,45 +491,60 @@
       top: messagesContainer.scrollHeight,
       behavior: 'smooth'
     });
+    
+    console.log('[EnviaLead] Typing indicator adicionado ao DOM');
   }
 
   // Função para remover indicador de digitação
   function hideTypingIndicator() {
     const indicator = document.getElementById('typing-indicator');
     if (indicator) {
-      indicator.remove();
+      console.log('[EnviaLead] Removendo typing indicator');
+      indicator.style.animation = 'fadeOut 0.3s ease-out forwards';
+      setTimeout(() => {
+        if (indicator.parentNode) {
+          indicator.remove();
+        }
+      }, 300);
     }
   }
 
   // Função para iniciar a conversa
   function startConversation(flowData) {
+    console.log('[EnviaLead] Iniciando conversa');
+    
     // Mensagem de boas-vindas
-    addMessage(flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?', true, flowData);
+    addMessage(flowData.welcome_message || 'Olá! Como posso ajudá-lo?', true, flowData);
     
     // Mostrar primeira pergunta após delay
     if (flowData.questions && flowData.questions.length > 0) {
       setTimeout(() => {
+        console.log('[EnviaLead] Mostrando typing indicator antes da primeira pergunta');
         showTypingIndicator(flowData);
         setTimeout(() => {
           hideTypingIndicator();
           showNextQuestion(flowData);
-        }, 1500);
+        }, 2000); // Aumentado para 2 segundos
       }, 1000);
     } else {
       setTimeout(() => {
+        console.log('[EnviaLead] Mostrando typing indicator - sem perguntas');
         showTypingIndicator(flowData);
         setTimeout(() => {
           hideTypingIndicator();
           showNoQuestionsMessage(flowData);
-        }, 1500);
+        }, 2000);
       }, 1000);
     }
   }
 
   // Função para mostrar a próxima pergunta
   function showNextQuestion(flowData) {
+    console.log('[EnviaLead] Mostrando próxima pergunta, índice:', chatState.currentQuestionIndex);
+    
     const question = flowData.questions[chatState.currentQuestionIndex];
     if (!question) {
+      console.log('[EnviaLead] Não há mais perguntas, mostrando conclusão');
       showCompletionMessage(flowData);
       return;
     }
@@ -539,7 +566,11 @@
         addMessage('⚠️ Esta pergunta não possui opções configuradas.', true, flowData);
         setTimeout(() => {
           chatState.currentQuestionIndex++;
-          showNextQuestion(flowData);
+          showTypingIndicator(flowData);
+          setTimeout(() => {
+            hideTypingIndicator();
+            showNextQuestion(flowData);
+          }, 1500);
         }, 1000);
         return;
       }
@@ -702,6 +733,8 @@
 
   // Função para lidar com a resposta
   function handleAnswer(questionId, answer, flowData) {
+    console.log('[EnviaLead] Resposta recebida:', questionId, answer);
+    
     chatState.responses[questionId] = answer;
     
     // Mostrar resposta do usuário
@@ -715,11 +748,12 @@
     chatState.currentQuestionIndex++;
     
     setTimeout(() => {
+      console.log('[EnviaLead] Mostrando typing indicator após resposta');
       showTypingIndicator(flowData);
       setTimeout(() => {
         hideTypingIndicator();
         showNextQuestion(flowData);
-      }, 1200);
+      }, 1800); // Timing melhorado
     }, 500);
     
     // Salvar lead parcial no banco
@@ -728,6 +762,8 @@
 
   // Função para mostrar mensagem de conclusão
   function showCompletionMessage(flowData) {
+    console.log('[EnviaLead] Mostrando mensagem de conclusão');
+    
     const inputContainer = document.getElementById('chat-input-container');
 
     // Salvar lead completo no banco
@@ -887,9 +923,12 @@
       if (result.success) {
         console.log('[EnviaLead] Lead salvo com sucesso:', result.data);
         
-        // Enviar por email se lead completo
+        // Enviar por email se lead completo E há emails configurados
         if (completed && flowData.flow_emails && flowData.flow_emails.length > 0) {
+          console.log('[EnviaLead] Lead completo, enviando por email...');
           sendLeadByEmail(flowData, chatState.responses);
+        } else if (completed) {
+          console.log('[EnviaLead] Lead completo mas sem emails configurados');
         }
       } else {
         console.error('[EnviaLead] Erro ao salvar lead:', result.error);
@@ -902,14 +941,31 @@
 
   // Função para enviar lead por email
   function sendLeadByEmail(flowData, responses) {
-    console.log('[EnviaLead] Enviando lead por email:', responses);
+    console.log('[EnviaLead] ===== INICIANDO ENVIO DE EMAIL =====');
+    console.log('[EnviaLead] FlowData completo:', flowData);
+    console.log('[EnviaLead] Respostas:', responses);
     
-    // Verificar se há emails configurados
-    const emails = flowData.flow_emails ? flowData.flow_emails.map(e => e.email) : [];
+    // Verificar se há emails configurados - MÚLTIPLAS VERIFICAÇÕES
+    let emails = [];
+    
+    if (flowData.flow_emails && Array.isArray(flowData.flow_emails)) {
+      emails = flowData.flow_emails.map(e => e.email).filter(email => email && email.trim());
+      console.log('[EnviaLead] Emails de flow_emails:', emails);
+    }
+    
+    if (emails.length === 0 && flowData.emails && Array.isArray(flowData.emails)) {
+      emails = flowData.emails.filter(email => email && email.trim());
+      console.log('[EnviaLead] Emails de emails:', emails);
+    }
+    
     if (emails.length === 0) {
-      console.warn('[EnviaLead] Nenhum email configurado para receber leads');
+      console.warn('[EnviaLead] ❌ NENHUM EMAIL CONFIGURADO PARA RECEBER LEADS');
+      console.warn('[EnviaLead] FlowData.flow_emails:', flowData.flow_emails);
+      console.warn('[EnviaLead] FlowData.emails:', flowData.emails);
       return;
     }
+    
+    console.log('[EnviaLead] ✅ Emails encontrados:', emails);
     
     const emailData = {
       flow_id: flowData.id,
@@ -918,6 +974,8 @@
       emails: emails,
       url: window.location.href
     };
+
+    console.log('[EnviaLead] Dados para envio:', emailData);
 
     fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/send-lead-email', {
       method: 'POST',
@@ -928,23 +986,71 @@
       body: JSON.stringify(emailData)
     })
     .then(response => {
-      console.log('[EnviaLead] Status do envio de email:', response.status);
+      console.log('[EnviaLead] 📧 Status da resposta HTTP:', response.status);
+      console.log('[EnviaLead] 📧 Headers da resposta:', [...response.headers.entries()]);
       return response.json();
     })
     .then(result => {
+      console.log('[EnviaLead] 📧 Resposta completa da função:', result);
       if (result.success) {
-        console.log('[EnviaLead] Email enviado com sucesso:', result);
+        console.log('[EnviaLead] ✅ EMAIL ENVIADO COM SUCESSO!', result);
+        console.log('[EnviaLead] Detalhes do envio:', result.results);
       } else {
-        console.error('[EnviaLead] Erro ao enviar email:', result.error);
+        console.error('[EnviaLead] ❌ ERRO AO ENVIAR EMAIL:', result.error);
         if (result.error && result.error.includes('RESEND_API_KEY')) {
-          console.error('[EnviaLead] ERRO: RESEND_API_KEY não configurado no Supabase. Configure em: https://supabase.com/dashboard/project/fuzkdrkhvmaimpgzvimq/settings/functions');
+          console.error('[EnviaLead] 💡 SOLUÇÃO: Configure RESEND_API_KEY no Supabase');
+          console.error('[EnviaLead] 🔗 Link: https://supabase.com/dashboard/project/fuzkdrkhvmaimpgzvimq/settings/functions');
         }
       }
     })
     .catch(error => {
-      console.error('[EnviaLead] Erro na requisição de email:', error);
+      console.error('[EnviaLead] ❌ ERRO NA REQUISIÇÃO DE EMAIL:', error);
+      console.error('[EnviaLead] Stack trace:', error.stack);
+    });
+    
+    console.log('[EnviaLead] ===== FIM DO ENVIO DE EMAIL =====');
+  }
+
+  // Função para testar envio de email
+  function testEmail(flowData) {
+    console.log('[EnviaLead] 🧪 TESTE DE EMAIL INICIADO');
+    
+    const testData = {
+      flow_id: flowData.id,
+      flow_name: `TESTE - ${flowData.name}`,
+      responses: {
+        'teste': 'Este é um email de teste do EnviaLead',
+        'email': 'alexandre@chromotech.com.br',
+        'nome': 'Teste EnviaLead'
+      },
+      emails: ['alexandre@chromotech.com.br'],
+      url: window.location.href
+    };
+
+    fetch('https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/send-lead-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1emtkcmtodm1haW1wZ3p2aW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTQxNDcsImV4cCI6MjA2NTkzMDE0N30.W6NKS_KVV933V0TZm7hKWhdAaLmZs9XhaPvR49jUruA'
+      },
+      body: JSON.stringify(testData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('[EnviaLead] 🧪 RESULTADO DO TESTE:', result);
+    })
+    .catch(error => {
+      console.error('[EnviaLead] 🧪 ERRO NO TESTE:', error);
     });
   }
 
+  // Expor função de teste globalmente para debug
+  window.enviaLeadTestEmail = function() {
+    console.log('[EnviaLead] Executando teste de email via console...');
+    // Buscar dados do fluxo primeiro
+    loadFlowData(flowId).then(flowData => {
+      testEmail(flowData);
+    });
+  };
 
 })();

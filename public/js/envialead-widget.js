@@ -491,7 +491,11 @@
     // Iterar sobre as perguntas para mapear variáveis
     if (window.enviaLeadData.questions) {
       window.enviaLeadData.questions.forEach((question, index) => {
-        const answer = responses[question.title];
+        // Buscar resposta tanto pelo título quanto pelo ID da pergunta
+        const answerByTitle = responses[question.title];
+        const answerById = responses[question.id];
+        const answer = answerByTitle || answerById;
+        
         if (answer) {
           const questionLower = question.title.toLowerCase();
           
@@ -519,6 +523,8 @@
           // Mapear também por posição para templates genéricos
           variableMap[`#resposta${index + 1}`] = answer;
           variableMap[`#answer${index + 1}`] = answer;
+          
+          console.log(`[EnviaLead] Mapeando pergunta ${index + 1}: "${question.title}" = "${answer}"`);
         }
       });
     }
@@ -941,8 +947,9 @@
     
     console.log('[EnviaLead] Resposta válida:', answer);
     
-    // Armazenar resposta usando o título da pergunta
+    // Armazenar resposta usando tanto o título quanto o ID da pergunta
     window.enviaLeadResponses[currentQuestion.title] = answer;
+    window.enviaLeadResponses[currentQuestion.id] = answer;
     console.log('[EnviaLead] Respostas armazenadas:', window.enviaLeadResponses);
     
     // Mostrar resposta do usuário

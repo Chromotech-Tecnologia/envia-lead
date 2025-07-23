@@ -19,7 +19,7 @@ const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCar
         className="flex-1"
       >
         <Eye className="w-4 h-4 mr-2" />
-        {showPreview ? 'Ocultar Preview' : 'Preview'}
+        {showPreview ? 'Ocultar' : 'Visualizar'}
       </Button>
       
       <Button

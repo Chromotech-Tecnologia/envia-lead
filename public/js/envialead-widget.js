@@ -1,7 +1,6 @@
 
 (function() {
   console.log('[EnviaLead] Widget carregado');
-  console.log('[TESTE DIRETO] Enviando para console: WIDGET INICIADO COMPLETAMENTE!');
   
   // CSS MOVIDO PARA O TOPO - PRIMEIRA COISA A SER EXECUTADA
   const styles = `
@@ -592,7 +591,6 @@
   // SIMULAÇÃO DE DIGITAÇÃO CORRIGIDA DEFINITIVAMENTE
   function showTypingIndicator() {
     console.log('[EnviaLead] Iniciando simulação de digitação');
-    console.log('[TESTE DIRETO] Enviando para console: TRÊS PONTOS DE DIGITAÇÃO INICIADOS!');
     
     const messagesContainer = document.getElementById('envialead-messages');
     if (!messagesContainer) {
@@ -772,13 +770,11 @@
   // Função para mostrar botão do WhatsApp
   function showWhatsAppButton() {
     console.log('[EnviaLead] ==> MOSTRANDO BOTÃO WHATSAPP');
-    console.log('[TESTE DIRETO] Enviando para console: BOTÃO WHATSAPP APARECEU!');
     
     whatsAppButton.style.display = 'block';
     
     whatsAppButton.addEventListener('click', function() {
       console.log('[EnviaLead] ==> BOTÃO WHATSAPP CLICADO');
-      console.log('[TESTE DIRETO] Enviando para console: CLIQUE NO BOTÃO DETECTADO!');
       console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
       console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
       
@@ -829,9 +825,7 @@
   
   // Função para adicionar mensagem
   function addMessage(message, isBot = false) {
-    console.log('[TESTE DIRETO] Enviando para console: MENSAGEM SENDO ADICIONADA!');
-    console.log('[TESTE DIRETO] Conteúdo da mensagem:', message);
-    console.log('[TESTE DIRETO] É mensagem do bot?', isBot);
+    console.log('[EnviaLead] Adicionando mensagem:', message);
     
     const messagesContainer = document.getElementById('envialead-messages');
     if (!messagesContainer) {

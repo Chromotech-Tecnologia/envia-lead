@@ -1,3 +1,4 @@
+
 (function() {
   console.log('[EnviaLead] Widget carregado');
   
@@ -323,6 +324,7 @@
   // Variáveis globais
   window.enviaLeadData = {};
   window.enviaLeadCurrentQuestion = 0;
+  // INICIALIZAR VAZIO AQUI E REINICIALIZAR NO enviaLeadInit
   window.enviaLeadResponses = {};
   
   // MÁSCARAS E VALIDAÇÕES CORRIGIDAS
@@ -478,66 +480,111 @@
     }
   };
   
-  // FUNÇÃO DE SUBSTITUIÇÃO DE VARIÁVEIS MELHORADA
+  // FUNÇÃO DE SUBSTITUIÇÃO DE VARIÁVEIS COMPLETAMENTE CORRIGIDA
   function replaceVariables(text, responses) {
-    console.log('[EnviaLead] Substituindo variáveis no texto:', text);
-    console.log('[EnviaLead] Respostas disponíveis:', responses);
+    console.log('[EnviaLead] ==> INÍCIO replaceVariables');
+    console.log('[EnviaLead] Texto original:', text);
+    console.log('[EnviaLead] Respostas recebidas:', responses);
+    console.log('[EnviaLead] Perguntas disponíveis:', window.enviaLeadData.questions);
+    
+    if (!text || !responses || Object.keys(responses).length === 0) {
+      console.warn('[EnviaLead] Parâmetros inválidos para substituição');
+      return text;
+    }
     
     let result = text;
     
-    // Mapear respostas para variáveis comuns baseado no título da pergunta
-    const variableMap = {};
+    // ESTRATÉGIA 1: Mapear variáveis comuns baseado nas respostas diretas
+    const commonVariables = {
+      '#nome': null,
+      '#name': null,
+      '#email': null,
+      '#telefone': null,
+      '#phone': null,
+      '#empresa': null,
+      '#company': null,
+      '#cidade': null,
+      '#city': null
+    };
     
-    // Iterar sobre as perguntas para mapear variáveis
-    if (window.enviaLeadData.questions) {
+    // Procurar nas respostas por palavras-chave
+    Object.keys(responses).forEach(key => {
+      const value = responses[key];
+      if (!value) return;
+      
+      const keyLower = key.toLowerCase();
+      console.log(`[EnviaLead] Analisando resposta: ${key} = ${value}`);
+      
+      // Mapear por palavras-chave no título da pergunta
+      if (keyLower.includes('nome') || keyLower.includes('name')) {
+        commonVariables['#nome'] = value;
+        commonVariables['#name'] = value;
+        console.log(`[EnviaLead] Mapeado nome: ${value}`);
+      }
+      if (keyLower.includes('email') || keyLower.includes('e-mail')) {
+        commonVariables['#email'] = value;
+        console.log(`[EnviaLead] Mapeado email: ${value}`);
+      }
+      if (keyLower.includes('telefone') || keyLower.includes('celular') || keyLower.includes('phone')) {
+        commonVariables['#telefone'] = value;
+        commonVariables['#phone'] = value;
+        console.log(`[EnviaLead] Mapeado telefone: ${value}`);
+      }
+      if (keyLower.includes('empresa') || keyLower.includes('company')) {
+        commonVariables['#empresa'] = value;
+        commonVariables['#company'] = value;
+        console.log(`[EnviaLead] Mapeado empresa: ${value}`);
+      }
+      if (keyLower.includes('cidade') || keyLower.includes('city')) {
+        commonVariables['#cidade'] = value;
+        commonVariables['#city'] = value;
+        console.log(`[EnviaLead] Mapeado cidade: ${value}`);
+      }
+    });
+    
+    // ESTRATÉGIA 2: Se não encontrou pelas palavras-chave, usar primeira resposta para nome
+    if (!commonVariables['#nome'] && !commonVariables['#name']) {
+      const firstResponse = Object.values(responses)[0];
+      if (firstResponse) {
+        commonVariables['#nome'] = firstResponse;
+        commonVariables['#name'] = firstResponse;
+        console.log(`[EnviaLead] Usando primeira resposta como nome: ${firstResponse}`);
+      }
+    }
+    
+    // ESTRATÉGIA 3: Mapear por posição das perguntas
+    if (window.enviaLeadData.questions && Array.isArray(window.enviaLeadData.questions)) {
       window.enviaLeadData.questions.forEach((question, index) => {
-        // Buscar resposta tanto pelo título quanto pelo ID da pergunta
-        const answerByTitle = responses[question.title];
-        const answerById = responses[question.id];
-        const answer = answerByTitle || answerById;
+        const answerId = responses[question.id];
+        const answerTitle = responses[question.title];
+        const answer = answerId || answerTitle;
         
         if (answer) {
-          const questionLower = question.title.toLowerCase();
-          
-          // Mapear para variáveis comuns baseado no conteúdo da pergunta
-          if (questionLower.includes('nome') || questionLower.includes('name')) {
-            variableMap['#nome'] = answer;
-            variableMap['#name'] = answer;
-          }
-          if (questionLower.includes('email') || questionLower.includes('e-mail')) {
-            variableMap['#email'] = answer;
-          }
-          if (questionLower.includes('telefone') || questionLower.includes('celular') || questionLower.includes('phone')) {
-            variableMap['#telefone'] = answer;
-            variableMap['#phone'] = answer;
-          }
-          if (questionLower.includes('empresa') || questionLower.includes('company')) {
-            variableMap['#empresa'] = answer;
-            variableMap['#company'] = answer;
-          }
-          if (questionLower.includes('cidade') || questionLower.includes('city')) {
-            variableMap['#cidade'] = answer;
-            variableMap['#city'] = answer;
-          }
-          
-          // Mapear também por posição para templates genéricos
-          variableMap[`#resposta${index + 1}`] = answer;
-          variableMap[`#answer${index + 1}`] = answer;
-          
-          console.log(`[EnviaLead] Mapeando pergunta ${index + 1}: "${question.title}" = "${answer}"`);
+          commonVariables[`#resposta${index + 1}`] = answer;
+          commonVariables[`#answer${index + 1}`] = answer;
+          console.log(`[EnviaLead] Mapeado por posição ${index + 1}: ${answer}`);
         }
       });
     }
     
-    console.log('[EnviaLead] Mapeamento de variáveis:', variableMap);
+    console.log('[EnviaLead] Variáveis mapeadas:', commonVariables);
     
-    // Substituir as variáveis no texto
-    Object.keys(variableMap).forEach(variable => {
-      const regex = new RegExp(variable, 'gi');
-      result = result.replace(regex, variableMap[variable]);
+    // APLICAR SUBSTITUIÇÕES
+    Object.keys(commonVariables).forEach(variable => {
+      const value = commonVariables[variable];
+      if (value) {
+        const regex = new RegExp(variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const before = result;
+        result = result.replace(regex, value);
+        if (before !== result) {
+          console.log(`[EnviaLead] ✅ Substituído ${variable} por "${value}"`);
+        }
+      }
     });
     
-    console.log('[EnviaLead] Texto final:', result);
+    console.log('[EnviaLead] Resultado final:', result);
+    console.log('[EnviaLead] ==> FIM replaceVariables');
+    
     return result;
   }
   
@@ -608,9 +655,57 @@
     }
   }
   
+  // FUNÇÃO DE ARMAZENAMENTO DE RESPOSTA CORRIGIDA
+  function storeResponse(questionId, questionTitle, answer) {
+    console.log('[EnviaLead] ==> ARMAZENANDO RESPOSTA');
+    console.log('[EnviaLead] Question ID:', questionId);
+    console.log('[EnviaLead] Question Title:', questionTitle);
+    console.log('[EnviaLead] Answer:', answer);
+    
+    // Armazenar por ID e por título
+    window.enviaLeadResponses[questionId] = answer;
+    window.enviaLeadResponses[questionTitle] = answer;
+    
+    // MAPEAMENTO IMEDIATO PARA VARIÁVEIS COMUNS
+    const titleLower = questionTitle.toLowerCase();
+    
+    if (titleLower.includes('nome') || titleLower.includes('name')) {
+      window.enviaLeadResponses['#nome'] = answer;
+      window.enviaLeadResponses['#name'] = answer;
+      console.log('[EnviaLead] Mapeado imediatamente para #nome/#name');
+    }
+    if (titleLower.includes('email') || titleLower.includes('e-mail')) {
+      window.enviaLeadResponses['#email'] = answer;
+      console.log('[EnviaLead] Mapeado imediatamente para #email');
+    }
+    if (titleLower.includes('telefone') || titleLower.includes('celular') || titleLower.includes('phone')) {
+      window.enviaLeadResponses['#telefone'] = answer;
+      window.enviaLeadResponses['#phone'] = answer;
+      console.log('[EnviaLead] Mapeado imediatamente para #telefone/#phone');
+    }
+    if (titleLower.includes('empresa') || titleLower.includes('company')) {
+      window.enviaLeadResponses['#empresa'] = answer;
+      window.enviaLeadResponses['#company'] = answer;
+      console.log('[EnviaLead] Mapeado imediatamente para #empresa/#company');
+    }
+    if (titleLower.includes('cidade') || titleLower.includes('city')) {
+      window.enviaLeadResponses['#cidade'] = answer;
+      window.enviaLeadResponses['#city'] = answer;
+      console.log('[EnviaLead] Mapeado imediatamente para #cidade/#city');
+    }
+    
+    console.log('[EnviaLead] Estado atual do enviaLeadResponses:', window.enviaLeadResponses);
+    console.log('[EnviaLead] ==> FIM ARMAZENAMENTO');
+  }
+  
   // Função para inicializar o widget
   window.enviaLeadInit = function(flowId) {
-    console.log('[EnviaLead] Inicializando widget com flow ID:', flowId);
+    console.log('[EnviaLead] ==> INICIALIZANDO WIDGET');
+    console.log('[EnviaLead] Flow ID:', flowId);
+    
+    // REINICIALIZAR RESPOSTAS - CORREÇÃO CRÍTICA
+    window.enviaLeadResponses = {};
+    console.log('[EnviaLead] Respostas reinicializadas');
     
     // Obter dados do flow
     fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/flows?id=eq.${flowId}`, {
@@ -623,7 +718,7 @@
     .then(data => {
       if (data && data.length > 0) {
         window.enviaLeadData = data[0];
-        console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
+        console.log('[EnviaLead] Dados do flow carregados:', window.enviaLeadData);
         
         // Obter perguntas do flow
         fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/questions?flow_id=eq.${flowId}&order=order_index`, {
@@ -635,7 +730,7 @@
         .then(response => response.json())
         .then(questions => {
           window.enviaLeadData.questions = questions;
-          console.log('[EnviaLead] Perguntas do flow:', window.enviaLeadData.questions);
+          console.log('[EnviaLead] Perguntas carregadas:', window.enviaLeadData.questions);
           
           // Adicionar mensagem de boas-vindas
           addMessage(window.enviaLeadData.welcome_message || 'Olá! Como posso ajudá-lo?', true);
@@ -650,6 +745,8 @@
               }, 2000);
             }, 1000);
           }
+          
+          console.log('[EnviaLead] ==> WIDGET INICIALIZADO COM SUCESSO');
         })
         .catch(error => {
           console.error('[EnviaLead] Erro ao obter perguntas:', error);
@@ -672,44 +769,55 @@
   
   // Função para mostrar botão do WhatsApp
   function showWhatsAppButton() {
-    console.log('[EnviaLead] Mostrando botão WhatsApp');
+    console.log('[EnviaLead] ==> MOSTRANDO BOTÃO WHATSAPP');
     whatsAppButton.style.display = 'block';
     
     whatsAppButton.addEventListener('click', function() {
-      console.log('[EnviaLead] Botão WhatsApp clicado');
+      console.log('[EnviaLead] ==> BOTÃO WHATSAPP CLICADO');
       console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
-      console.log('[EnviaLead] Respostas armazenadas:', window.enviaLeadResponses);
+      console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
+      
+      // Verificar se temos template
+      if (!window.enviaLeadData.whatsapp_message_template) {
+        console.error('[EnviaLead] Template do WhatsApp não encontrado!');
+        return;
+      }
       
       // Usar o template configurado com substituição de variáveis
-      let message = window.enviaLeadData.whatsapp_message_template || 'Olá, gostaria de mais informações.';
+      let message = window.enviaLeadData.whatsapp_message_template;
       console.log('[EnviaLead] Template original:', message);
       
       // Substituir variáveis no template
       message = replaceVariables(message, window.enviaLeadResponses);
-      console.log('[EnviaLead] Template processado:', message);
+      console.log('[EnviaLead] Template após substituição:', message);
       
-      // Verificar se realmente houve substituição
+      // Verificar se houve substituição
       if (message === window.enviaLeadData.whatsapp_message_template) {
-        console.warn('[EnviaLead] AVISO: Nenhuma variável foi substituída!');
-        console.log('[EnviaLead] Tentando substituição manual...');
+        console.warn('[EnviaLead] ⚠️ NENHUMA VARIÁVEL FOI SUBSTITUÍDA!');
         
-        // Tentar substituição manual simples para debug
-        Object.keys(window.enviaLeadResponses).forEach(key => {
-          const value = window.enviaLeadResponses[key];
-          if (value) {
-            // Substituir variáveis comuns manualmente
-            message = message.replace(/#nome/gi, value);
-            message = message.replace(/#name/gi, value);
-            console.log(`[EnviaLead] Substituição manual ${key} = ${value}`);
+        // Fallback: usar primeira resposta como nome se template contém #nome
+        if (message.includes('#nome') || message.includes('#name')) {
+          const firstResponse = Object.values(window.enviaLeadResponses)[0];
+          if (firstResponse) {
+            message = message.replace(/#nome/gi, firstResponse);
+            message = message.replace(/#name/gi, firstResponse);
+            console.log('[EnviaLead] Aplicado fallback para nome:', firstResponse);
           }
-        });
+        }
+      } else {
+        console.log('[EnviaLead] ✅ Variáveis substituídas com sucesso!');
       }
       
+      // Preparar URL do WhatsApp
       const whatsappNumber = window.enviaLeadData.whatsapp ? window.enviaLeadData.whatsapp.replace(/\D/g, '') : '';
       const encodedMessage = encodeURIComponent(message);
       const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
       
-      console.log('[EnviaLead] URL final do WhatsApp:', whatsappURL);
+      console.log('[EnviaLead] Número WhatsApp:', whatsappNumber);
+      console.log('[EnviaLead] Mensagem final:', message);
+      console.log('[EnviaLead] URL final:', whatsappURL);
+      
+      // Abrir WhatsApp
       window.open(whatsappURL, '_blank');
     });
   }
@@ -734,7 +842,8 @@
   
   // Função para mostrar pergunta COM MÁSCARA APLICADA
   function showQuestion(question) {
-    console.log('[EnviaLead] Mostrando pergunta:', question);
+    console.log('[EnviaLead] ==> MOSTRANDO PERGUNTA');
+    console.log('[EnviaLead] Pergunta:', question);
     
     const inputContainer = document.getElementById('envialead-input-container');
     if (!inputContainer) {
@@ -901,7 +1010,7 @@
   
   // Função para processar resposta
   function handleSendAnswer() {
-    console.log('[EnviaLead] Processando resposta');
+    console.log('[EnviaLead] ==> PROCESSANDO RESPOSTA');
     
     const currentQuestion = window.enviaLeadData.questions[window.enviaLeadCurrentQuestion];
     if (!currentQuestion) {
@@ -966,10 +1075,8 @@
     
     console.log('[EnviaLead] Resposta válida:', answer);
     
-    // Armazenar resposta usando tanto o título quanto o ID da pergunta
-    window.enviaLeadResponses[currentQuestion.title] = answer;
-    window.enviaLeadResponses[currentQuestion.id] = answer;
-    console.log('[EnviaLead] Respostas armazenadas:', window.enviaLeadResponses);
+    // ARMAZENAR RESPOSTA COM FUNÇÃO CORRIGIDA
+    storeResponse(currentQuestion.id, currentQuestion.title, answer);
     
     // Mostrar resposta do usuário
     addMessage(answer, false);

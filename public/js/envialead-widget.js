@@ -677,6 +677,8 @@
     
     whatsAppButton.addEventListener('click', function() {
       console.log('[EnviaLead] Botão WhatsApp clicado');
+      console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
+      console.log('[EnviaLead] Respostas armazenadas:', window.enviaLeadResponses);
       
       // Usar o template configurado com substituição de variáveis
       let message = window.enviaLeadData.whatsapp_message_template || 'Olá, gostaria de mais informações.';
@@ -686,11 +688,28 @@
       message = replaceVariables(message, window.enviaLeadResponses);
       console.log('[EnviaLead] Template processado:', message);
       
+      // Verificar se realmente houve substituição
+      if (message === window.enviaLeadData.whatsapp_message_template) {
+        console.warn('[EnviaLead] AVISO: Nenhuma variável foi substituída!');
+        console.log('[EnviaLead] Tentando substituição manual...');
+        
+        // Tentar substituição manual simples para debug
+        Object.keys(window.enviaLeadResponses).forEach(key => {
+          const value = window.enviaLeadResponses[key];
+          if (value) {
+            // Substituir variáveis comuns manualmente
+            message = message.replace(/#nome/gi, value);
+            message = message.replace(/#name/gi, value);
+            console.log(`[EnviaLead] Substituição manual ${key} = ${value}`);
+          }
+        });
+      }
+      
       const whatsappNumber = window.enviaLeadData.whatsapp ? window.enviaLeadData.whatsapp.replace(/\D/g, '') : '';
       const encodedMessage = encodeURIComponent(message);
       const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
       
-      console.log('[EnviaLead] Abrindo WhatsApp:', whatsappURL);
+      console.log('[EnviaLead] URL final do WhatsApp:', whatsappURL);
       window.open(whatsappURL, '_blank');
     });
   }

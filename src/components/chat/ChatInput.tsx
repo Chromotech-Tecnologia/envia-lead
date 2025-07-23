@@ -1,4 +1,7 @@
+
 import { Send } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { applyMask, validateInput } from '@/utils/inputMasks';
 
 interface ChatInputProps {
   currentQuestion: any;
@@ -23,6 +26,49 @@ const ChatInput = ({
   onSendAnswer,
   replaceVariables 
 }: ChatInputProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current && currentQuestion) {
+      const input = inputRef.current;
+      
+      // Aplicar máscaras baseadas no tipo da pergunta
+      const handleInput = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+          const maskedValue = applyMask(target.value, currentQuestion.type);
+          if (maskedValue !== target.value) {
+            target.value = maskedValue;
+          }
+        }
+      };
+
+      const handleBlur = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+          const isValid = validateInput(target.value, currentQuestion.type);
+          
+          // Aplicar classes visuais
+          if (isValid) {
+            target.classList.remove('border-red-500', 'bg-red-50');
+            target.classList.add('border-green-500', 'bg-green-50');
+          } else {
+            target.classList.remove('border-green-500', 'bg-green-50');
+            target.classList.add('border-red-500', 'bg-red-50');
+          }
+        }
+      };
+
+      input.addEventListener('input', handleInput);
+      input.addEventListener('blur', handleBlur);
+
+      return () => {
+        input.removeEventListener('input', handleInput);
+        input.removeEventListener('blur', handleBlur);
+      };
+    }
+  }, [currentQuestion]);
+
   if (showCompletion) {
     return (
       <div className="p-4 text-center space-y-3">
@@ -87,21 +133,42 @@ const ChatInput = ({
         ) : (
           <div className="flex space-x-2">
             <input
+              ref={inputRef}
               type={currentQuestion.type}
               placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
-              className="flex-1 p-2 border rounded-lg"
+              className="flex-1 p-2 border rounded-lg transition-colors"
               style={{ borderColor: colors.primary }}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
-                  onSendAnswer((e.target as HTMLInputElement).value);
-                  (e.target as HTMLInputElement).value = '';
+                  const input = e.target as HTMLInputElement;
+                  
+                  // Validar antes de enviar se for phone ou email
+                  if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+                    const isValid = validateInput(input.value, currentQuestion.type);
+                    if (!isValid) {
+                      input.classList.add('border-red-500', 'bg-red-50');
+                      return;
+                    }
+                  }
+                  
+                  onSendAnswer(input.value);
+                  input.value = '';
                 }
               }}
             />
             <button
               onClick={() => {
-                const input = document.querySelector('input') as HTMLInputElement;
+                const input = inputRef.current;
                 if (input) {
+                  // Validar antes de enviar se for phone ou email
+                  if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+                    const isValid = validateInput(input.value, currentQuestion.type);
+                    if (!isValid) {
+                      input.classList.add('border-red-500', 'bg-red-50');
+                      return;
+                    }
+                  }
+                  
                   onSendAnswer(input.value);
                   input.value = '';
                 }

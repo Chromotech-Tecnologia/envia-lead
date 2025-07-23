@@ -30,31 +30,54 @@ export const useChatLogic = (flowData: any) => {
     }))
     .sort((a: any, b: any) => a.order - b.order) : [];
 
-  // Função para substituir variáveis no texto
+  // Função melhorada para substituir variáveis no texto
   const replaceVariables = (text: string, responses: Record<string, string>) => {
     let processedText = text;
     
     // Criar mapeamento de IDs de perguntas para labels mais amigáveis
     const variableMap: Record<string, string> = {};
     
-    questions.forEach((question: any) => {
+    questions.forEach((question: any, index: number) => {
       const questionTitle = question.title.toLowerCase();
+      const answer = responses[question.id] || '';
+      
+      // Mapear variáveis baseadas no conteúdo da pergunta
       if (questionTitle.includes('nome')) {
-        variableMap['#nome'] = responses[question.id] || '';
-      } else if (questionTitle.includes('telefone') || questionTitle.includes('celular')) {
-        variableMap['#telefone'] = responses[question.id] || '';
-      } else if (questionTitle.includes('email') || questionTitle.includes('e-mail')) {
-        variableMap['#email'] = responses[question.id] || '';
-      } else if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
-        variableMap['#empresa'] = responses[question.id] || '';
+        variableMap['#nome'] = answer;
+        variableMap['#name'] = answer;
+      }
+      if (questionTitle.includes('telefone') || questionTitle.includes('celular')) {
+        variableMap['#telefone'] = answer;
+        variableMap['#phone'] = answer;
+      }
+      if (questionTitle.includes('email') || questionTitle.includes('e-mail')) {
+        variableMap['#email'] = answer;
+      }
+      if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
+        variableMap['#empresa'] = answer;
+        variableMap['#company'] = answer;
+      }
+      if (questionTitle.includes('cidade') || questionTitle.includes('city')) {
+        variableMap['#cidade'] = answer;
+        variableMap['#city'] = answer;
+      }
+      
+      // Mapear também por posição para templates genéricos
+      variableMap[`#resposta${index + 1}`] = answer;
+      variableMap[`#answer${index + 1}`] = answer;
+    });
+    
+    // Substituir as variáveis no texto
+    Object.keys(variableMap).forEach(variable => {
+      if (variableMap[variable]) {
+        const regex = new RegExp(variable, 'gi');
+        processedText = processedText.replace(regex, variableMap[variable]);
       }
     });
     
-    // Substituir variáveis no texto
-    Object.keys(variableMap).forEach(variable => {
-      const regex = new RegExp(variable, 'gi');
-      processedText = processedText.replace(regex, variableMap[variable]);
-    });
+    console.log('[ChatLogic] Texto original:', text);
+    console.log('[ChatLogic] Variáveis mapeadas:', variableMap);
+    console.log('[ChatLogic] Texto processado:', processedText);
     
     return processedText;
   };
@@ -82,7 +105,8 @@ export const useChatLogic = (flowData: any) => {
         setWaitingForInput(true);
       } else {
         setShowCompletion(true);
-        addMessage('Obrigado pelas informações! Em breve entraremos em contato.', true);
+        const finalMessage = flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+        addMessage(finalMessage, true);
       }
     }, 1500);
   };

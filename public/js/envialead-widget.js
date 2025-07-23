@@ -1,4 +1,3 @@
-
 (function() {
   console.log('[EnviaLead] Widget carregado');
   
@@ -213,16 +212,22 @@
       transform: scale(1.2);
     }
     
-    .envialead-typing-indicator {
+    .envialead-typing-container {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 12px;
+    }
+    
+    .envialead-typing-bubble {
+      background-color: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px 18px 18px 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 12px 16px;
+      max-width: 85%;
       display: flex;
       align-items: center;
-      padding: 12px 16px;
-      background-color: white;
-      border-radius: 18px 18px 18px 4px;
-      margin-bottom: 12px;
-      width: fit-content;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      gap: 4px;
     }
     
     .envialead-typing-dot {
@@ -230,16 +235,12 @@
       height: 8px;
       background-color: #9ca3af;
       border-radius: 50%;
-      margin-right: 4px;
       animation: envialead-typing-bounce 1.4s infinite ease-in-out;
     }
     
     .envialead-typing-dot:nth-child(1) { animation-delay: -0.32s; }
     .envialead-typing-dot:nth-child(2) { animation-delay: -0.16s; }
-    .envialead-typing-dot:nth-child(3) { 
-      margin-right: 0;
-      animation-delay: 0s;
-    }
+    .envialead-typing-dot:nth-child(3) { animation-delay: 0s; }
     
     @keyframes envialead-typing-bounce {
       0%, 80%, 100% {
@@ -324,7 +325,7 @@
   window.enviaLeadCurrentQuestion = 0;
   window.enviaLeadResponses = {};
   
-  // MÁSCARAS E VALIDAÇÕES REESCRITAS COMPLETAMENTE
+  // MÁSCARAS E VALIDAÇÕES CORRIGIDAS
   const inputMasks = {
     // Máscara de telefone brasileira rigorosa
     applyPhoneMask: function(input) {
@@ -477,7 +478,7 @@
     }
   };
   
-  // FUNÇÃO DE SUBSTITUIÇÃO DE VARIÁVEIS CORRIGIDA
+  // FUNÇÃO DE SUBSTITUIÇÃO DE VARIÁVEIS MELHORADA
   function replaceVariables(text, responses) {
     console.log('[EnviaLead] Substituindo variáveis no texto:', text);
     console.log('[EnviaLead] Respostas disponíveis:', responses);
@@ -489,7 +490,7 @@
     
     // Iterar sobre as perguntas para mapear variáveis
     if (window.enviaLeadData.questions) {
-      window.enviaLeadData.questions.forEach(question => {
+      window.enviaLeadData.questions.forEach((question, index) => {
         const answer = responses[question.title];
         if (answer) {
           const questionLower = question.title.toLowerCase();
@@ -514,6 +515,10 @@
             variableMap['#cidade'] = answer;
             variableMap['#city'] = answer;
           }
+          
+          // Mapear também por posição para templates genéricos
+          variableMap[`#resposta${index + 1}`] = answer;
+          variableMap[`#answer${index + 1}`] = answer;
         }
       });
     }
@@ -530,7 +535,7 @@
     return result;
   }
   
-  // SIMULAÇÃO DE DIGITAÇÃO CORRIGIDA
+  // SIMULAÇÃO DE DIGITAÇÃO CORRIGIDA DEFINITIVAMENTE
   function showTypingIndicator() {
     console.log('[EnviaLead] Iniciando simulação de digitação');
     
@@ -547,24 +552,24 @@
       console.log('[EnviaLead] Indicador anterior removido');
     }
     
-    // Criar container da mensagem de digitação (SEM sobrescrever CSS!)
-    const typingMessage = document.createElement('div');
-    typingMessage.id = 'envialead-typing-indicator';
-    typingMessage.className = 'envialead-message envialead-bot-message';
+    // Criar container principal do typing indicator
+    const typingContainer = document.createElement('div');
+    typingContainer.id = 'envialead-typing-indicator';
+    typingContainer.className = 'envialead-typing-container';
     
-    // Criar o indicador de digitação (SEM sobrescrever os estilos CSS!)
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'envialead-typing-indicator';
+    // Criar bolha de digitação
+    const typingBubble = document.createElement('div');
+    typingBubble.className = 'envialead-typing-bubble';
     
     // Criar os três pontos animados
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('div');
       dot.className = 'envialead-typing-dot';
-      typingIndicator.appendChild(dot);
+      typingBubble.appendChild(dot);
     }
     
-    typingMessage.appendChild(typingIndicator);
-    messagesContainer.appendChild(typingMessage);
+    typingContainer.appendChild(typingBubble);
+    messagesContainer.appendChild(typingContainer);
     
     // Scroll para o final
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -702,7 +707,7 @@
     console.log('[EnviaLead] Mensagem adicionada:', { message, isBot });
   }
   
-  // Função para mostrar pergunta
+  // Função para mostrar pergunta COM MÁSCARA APLICADA
   function showQuestion(question) {
     console.log('[EnviaLead] Mostrando pergunta:', question);
     
@@ -818,12 +823,14 @@
     
     inputContainer.innerHTML = inputHTML;
     
-    // Aplicar máscaras baseadas no tipo
+    // Aplicar máscaras baseadas no tipo IMEDIATAMENTE
     const input = inputContainer.querySelector('input, textarea');
     if (input) {
       if (question.type === 'phone') {
+        console.log('[EnviaLead] Aplicando máscara telefone ao input');
         inputMasks.applyPhoneMask(input);
       } else if (question.type === 'email') {
+        console.log('[EnviaLead] Aplicando máscara email ao input');
         inputMasks.applyEmailMask(input);
       }
       

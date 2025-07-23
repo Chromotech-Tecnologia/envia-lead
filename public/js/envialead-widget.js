@@ -530,7 +530,7 @@
     return result;
   }
   
-  // SIMULAÇÃO DE DIGITAÇÃO MELHORADA
+  // SIMULAÇÃO DE DIGITAÇÃO CORRIGIDA
   function showTypingIndicator() {
     console.log('[EnviaLead] Iniciando simulação de digitação');
     
@@ -547,20 +547,14 @@
       console.log('[EnviaLead] Indicador anterior removido');
     }
     
-    // Criar container da mensagem de digitação
+    // Criar container da mensagem de digitação (SEM sobrescrever CSS!)
     const typingMessage = document.createElement('div');
     typingMessage.id = 'envialead-typing-indicator';
     typingMessage.className = 'envialead-message envialead-bot-message';
-    typingMessage.style.float = 'left';
-    typingMessage.style.clear = 'both';
     
-    // Criar o indicador de digitação
+    // Criar o indicador de digitação (SEM sobrescrever os estilos CSS!)
     const typingIndicator = document.createElement('div');
     typingIndicator.className = 'envialead-typing-indicator';
-    typingIndicator.style.background = 'transparent';
-    typingIndicator.style.border = 'none';
-    typingIndicator.style.padding = '0';
-    typingIndicator.style.boxShadow = 'none';
     
     // Criar os três pontos animados
     for (let i = 0; i < 3; i++) {
@@ -577,13 +571,16 @@
     
     console.log('[EnviaLead] Indicador de digitação criado e exibido');
     
-    // Verificar se foi criado corretamente
+    // Verificar se foi criado corretamente e as animações estão funcionando
     setTimeout(() => {
       const createdIndicator = document.getElementById('envialead-typing-indicator');
-      if (createdIndicator) {
-        console.log('[EnviaLead] Indicador de digitação confirmado no DOM');
+      const dots = createdIndicator ? createdIndicator.querySelectorAll('.envialead-typing-dot') : [];
+      console.log('[EnviaLead] Indicador criado:', !!createdIndicator, 'Pontos criados:', dots.length);
+      
+      if (dots.length === 3) {
+        console.log('[EnviaLead] ✅ Simulação de digitação funcionando no site destino');
       } else {
-        console.error('[EnviaLead] Indicador de digitação não encontrado após criação');
+        console.error('[EnviaLead] ❌ Problema na criação dos pontos de digitação');
       }
     }, 100);
   }

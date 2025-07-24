@@ -10,16 +10,21 @@ interface FlowCardActionsProps {
 }
 
 const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCardActionsProps) => {
+  const handleVisualizarClick = () => {
+    // Abre o chat diretamente na rota do editor
+    window.open(`/flow-editor/${flow.id}`, '_blank');
+  };
+
   return (
     <div className="flex gap-2">
       <Button
-        onClick={onPreviewToggle}
+        onClick={handleVisualizarClick}
         variant="outline"
         size="sm"
         className="flex-1"
       >
         <Eye className="w-4 h-4 mr-2" />
-        {showPreview ? 'Ocultar' : 'Visualizar'}
+        Visualizar
       </Button>
       
       <Button

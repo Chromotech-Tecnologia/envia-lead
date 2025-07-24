@@ -778,19 +778,24 @@
       console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
       console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
       
-      // Verificar se temos template
-      if (!window.enviaLeadData.whatsapp_message_template) {
-        console.error('[EnviaLead] Template do WhatsApp não encontrado!');
-        return;
-      }
+      // Corrigir mensagem do WhatsApp - usar whatsapp_text em vez de whatsapp_message_template
+      console.log('[EnviaLead] Dados do flow completos:', window.enviaLeadData);
       
-      // Usar o template configurado com substituição de variáveis
-      let message = window.enviaLeadData.whatsapp_message_template;
-      console.log('[EnviaLead] Template original:', message);
+      let message = '';
+      if (window.enviaLeadData.whatsapp_text) {
+        message = window.enviaLeadData.whatsapp_text;
+        console.log('[EnviaLead] Usando whatsapp_text:', message);
+      } else if (window.enviaLeadData.whatsapp_message_template) {
+        message = window.enviaLeadData.whatsapp_message_template;
+        console.log('[EnviaLead] Fallback para whatsapp_message_template:', message);
+      } else {
+        message = 'Olá! Gostaria de saber mais informações.';
+        console.log('[EnviaLead] Usando mensagem padrão');
+      }
       
       // Substituir variáveis no template
       message = replaceVariables(message, window.enviaLeadResponses);
-      console.log('[EnviaLead] Template após substituição:', message);
+      console.log('[EnviaLead] Mensagem final após substituição:', message);
       
       // Verificar se houve substituição
       if (message === window.enviaLeadData.whatsapp_message_template) {
@@ -873,8 +878,8 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button">
-            ➤
+          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
+            
           </button>
         `;
         break;
@@ -888,8 +893,8 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button">
-            ➤
+          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
+            
           </button>
         `;
         break;
@@ -903,8 +908,8 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button">
-            ➤
+          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
+            
           </button>
         `;
         break;
@@ -918,8 +923,8 @@
             rows="3"
             ${question.required ? 'required' : ''}
           ></textarea>
-          <button id="envialead-send-button" class="envialead-send-button">
-            ➤
+          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
+            
           </button>
         `;
         break;
@@ -952,8 +957,8 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button">
-            ➤
+          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
+            
           </button>
         `;
     }

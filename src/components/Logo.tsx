@@ -6,9 +6,11 @@ interface LogoProps {
 
 const Logo = ({ className = "h-8 w-8", isCollapsed }: LogoProps) => {
   return (
-    <div className={`${className} bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center`}>
-      <span className="text-white font-bold text-sm">EL</span>
-    </div>
+    <img 
+      src="/lovable-uploads/3cb5528a-9cae-44e6-8078-9c3cfd533e2d.png" 
+      alt="EnviaLead Logo" 
+      className={className}
+    />
   );
 };
 

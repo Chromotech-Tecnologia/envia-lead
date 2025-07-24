@@ -150,6 +150,12 @@
       font-size: 16px;
     }
     
+    .envialead-send-button::before {
+      content: "▶";
+      font-size: 12px;
+      margin-left: 2px;
+    }
+    
     .envialead-send-button:hover {
       transform: scale(1.1);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
@@ -778,28 +784,28 @@
       console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
       console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
       
-      // Corrigir mensagem do WhatsApp - usar whatsapp_text em vez de whatsapp_message_template
+      // Corrigir mensagem do WhatsApp - usar whatsapp_text que é o campo correto
       console.log('[EnviaLead] Dados do flow completos:', window.enviaLeadData);
       
       let message = '';
-      if (window.enviaLeadData.whatsapp_text) {
+      if (window.enviaLeadData.whatsapp_text && window.enviaLeadData.whatsapp_text.trim()) {
         message = window.enviaLeadData.whatsapp_text;
-        console.log('[EnviaLead] Usando whatsapp_text:', message);
-      } else if (window.enviaLeadData.whatsapp_message_template) {
-        message = window.enviaLeadData.whatsapp_message_template;
-        console.log('[EnviaLead] Fallback para whatsapp_message_template:', message);
+        console.log('[EnviaLead] Usando whatsapp_text configurado:', message);
       } else {
         message = 'Olá! Gostaria de saber mais informações.';
-        console.log('[EnviaLead] Usando mensagem padrão');
+        console.log('[EnviaLead] Usando mensagem padrão pois whatsapp_text está vazio');
       }
       
       // Substituir variáveis no template
       message = replaceVariables(message, window.enviaLeadResponses);
       console.log('[EnviaLead] Mensagem final após substituição:', message);
       
-      // Verificar se houve substituição
-      if (message === window.enviaLeadData.whatsapp_message_template) {
-        console.warn('[EnviaLead] ⚠️ NENHUMA VARIÁVEL FOI SUBSTITUÍDA!');
+      // Verificar se ainda há variáveis não substituídas
+      const originalMessage = window.enviaLeadData.whatsapp_text || message;
+      if (originalMessage !== message) {
+        console.log('[EnviaLead] ✅ Variáveis substituídas com sucesso!');
+      } else if (message.includes('#')) {
+        console.warn('[EnviaLead] ⚠️ Ainda há variáveis não substituídas');
         
         // Fallback: usar primeira resposta como nome se template contém #nome
         if (message.includes('#nome') || message.includes('#name')) {
@@ -810,8 +816,6 @@
             console.log('[EnviaLead] Aplicado fallback para nome:', firstResponse);
           }
         }
-      } else {
-        console.log('[EnviaLead] ✅ Variáveis substituídas com sucesso!');
       }
       
       // Preparar URL do WhatsApp
@@ -878,9 +882,7 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
-            
-          </button>
+          <button id="envialead-send-button" class="envialead-send-button"></button>
         `;
         break;
         
@@ -893,9 +895,7 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
-            
-          </button>
+          <button id="envialead-send-button" class="envialead-send-button"></button>
         `;
         break;
         
@@ -908,9 +908,7 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
-            
-          </button>
+          <button id="envialead-send-button" class="envialead-send-button"></button>
         `;
         break;
         
@@ -923,9 +921,7 @@
             rows="3"
             ${question.required ? 'required' : ''}
           ></textarea>
-          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
-            
-          </button>
+          <button id="envialead-send-button" class="envialead-send-button"></button>
         `;
         break;
         
@@ -957,9 +953,7 @@
             class="envialead-input-field"
             ${question.required ? 'required' : ''}
           />
-          <button id="envialead-send-button" class="envialead-send-button" style="background-image: url('/lovable-uploads/2cf5bfaa-1cc5-41f3-a3f4-19b19b70cd20.png'); background-size: 20px 20px; background-repeat: no-repeat; background-position: center;">
-            
-          </button>
+          <button id="envialead-send-button" class="envialead-send-button"></button>
         `;
     }
     

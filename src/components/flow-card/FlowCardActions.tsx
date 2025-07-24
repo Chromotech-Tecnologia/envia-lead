@@ -11,8 +11,8 @@ interface FlowCardActionsProps {
 
 const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCardActionsProps) => {
   const handleVisualizarClick = () => {
-    // Abre o chat diretamente na rota do editor
-    window.open(`/flow-editor/${flow.id}`, '_blank');
+    // Redireciona para a página do editor e ativa o preview automaticamente
+    window.location.href = `/flow-editor/${flow.id}?preview=true`;
   };
 
   return (

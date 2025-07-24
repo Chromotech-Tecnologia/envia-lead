@@ -10,11 +10,11 @@ interface WelcomeBubbleProps {
 const WelcomeBubble = ({ showWelcomeBubble, position, colors, flowData, onClose }: WelcomeBubbleProps) => {
   const getWelcomeBubblePosition = () => {
     if (position.includes('right')) {
-      return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
+      return 'bottom: 80px; right: 80px; left: auto; max-width: 250px; width: max-content;';
     } else if (position.includes('left')) {
-      return 'bottom: 70px; left: 0; right: auto; max-width: 300px; width: max-content;';
+      return 'bottom: 80px; left: 80px; right: auto; max-width: 250px; width: max-content;';
     }
-    return 'bottom: 70px; right: 0; left: auto; max-width: 300px; width: max-content;';
+    return 'bottom: 80px; right: 80px; left: auto; max-width: 250px; width: max-content;';
   };
 
   if (!showWelcomeBubble) return null;

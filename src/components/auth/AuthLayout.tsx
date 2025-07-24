@@ -41,24 +41,6 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
               </div>
             </div>
           </div>
-
-          {/* Chat widget flutuante */}
-          <div className="fixed bottom-8 left-8 flex items-center gap-4 z-50">
-            {/* Mensagem de saudação vertical */}
-            <div className="bg-white rounded-lg p-3 shadow-lg border max-w-xs">
-              <div className="text-gray-800 text-sm">
-                Olá! Como posso ajudá-lo?
-              </div>
-              <div className="absolute top-4 -right-2 w-0 h-0 border-l-8 border-l-white border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
-            </div>
-            
-            {/* Ícone do chat */}
-            <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
 

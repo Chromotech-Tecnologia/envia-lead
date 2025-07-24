@@ -11,8 +11,8 @@ interface FlowCardActionsProps {
 
 const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCardActionsProps) => {
   const handleVisualizarClick = () => {
-    // Redireciona para a página do editor e ativa o preview automaticamente
-    window.location.href = `/flow-editor/${flow.id}?preview=true`;
+    // Usar a mesma função de preview do FlowCard
+    onPreviewToggle();
   };
 
   return (

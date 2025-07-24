@@ -14,8 +14,8 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
           <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Logo className="h-12 w-12" />
+            <div className="flex flex-col items-center justify-center mb-8">
+              <Logo className="h-32 w-32 mb-4" />
               <h1 className="text-5xl font-bold">Envia Lead</h1>
             </div>
             <p className="text-xl opacity-90 max-w-md">

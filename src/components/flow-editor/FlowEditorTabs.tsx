@@ -6,6 +6,7 @@ import EmailSettings from './EmailSettings';
 import QuestionEditor from './QuestionEditor';
 import DesignSettings from './DesignSettings';
 import IntegrationCode from './IntegrationCode';
+import WelcomeMessageSettings from './WelcomeMessageSettings';
 
 interface FlowEditorTabsProps {
   flow?: any;
@@ -24,6 +25,7 @@ const FlowEditorTabs = ({ flow, flowData, setFlowData }: FlowEditorTabsProps) =>
       </TabsList>
 
       <TabsContent value="basic" className="space-y-6">
+        <WelcomeMessageSettings flowData={flowData} setFlowData={setFlowData} />
         <BasicSettings flowData={flowData} setFlowData={setFlowData} />
         <UrlSettings flowData={flowData} setFlowData={setFlowData} />
         <EmailSettings flowData={flowData} setFlowData={setFlowData} />

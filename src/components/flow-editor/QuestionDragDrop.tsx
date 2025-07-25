@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import WelcomeMessageSettings from './WelcomeMessageSettings';
 import QuestionTypeButtons from './QuestionTypeButtons';
 import EmptyQuestionsState from './EmptyQuestionsState';
 import QuestionsList from './QuestionsList';
@@ -82,8 +81,6 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
 
   return (
     <div className="space-y-6">
-      <WelcomeMessageSettings flowData={flowData} setFlowData={setFlowData} />
-
       <Card>
         <CardHeader>
           <CardTitle>Perguntas do Fluxo</CardTitle>

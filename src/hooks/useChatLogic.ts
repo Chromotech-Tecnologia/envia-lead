@@ -16,19 +16,22 @@ export const useChatLogic = (flowData: any) => {
   const [showCompletion, setShowCompletion] = useState(false);
   const [waitingForInput, setWaitingForInput] = useState(false);
 
-  // Processar perguntas do fluxo
-  const questions = flowData?.questions ? flowData.questions
-    .filter((q: any) => q.type !== 'bot_message')
+  // Processar perguntas e mensagens do bot do fluxo
+  const allItems = flowData?.questions ? flowData.questions
     .map((q: any) => ({
       id: q.id,
       type: q.type,
       title: q.title,
       placeholder: q.placeholder,
       required: q.required,
-      order: q.order_index || 0,
+      order: q.order_index || q.order || 0,
       options: q.options || []
     }))
     .sort((a: any, b: any) => a.order - b.order) : [];
+
+  // Separar perguntas e mensagens do bot
+  const questions = allItems.filter((item: any) => item.type !== 'bot_message');
+  const botMessages = allItems.filter((item: any) => item.type === 'bot_message');
 
   // Função melhorada para substituir variáveis no texto
   const replaceVariables = (text: string, responses: Record<string, string>) => {
@@ -99,13 +102,27 @@ export const useChatLogic = (flowData: any) => {
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
+      
+      // Verificar se há mensagens do bot para mostrar antes da próxima pergunta
+      const nextBotMessage = botMessages.find((msg: any) => 
+        msg.order === currentQuestionIndex && msg.order < questions.length
+      );
+      
+      if (nextBotMessage) {
+        addMessage(nextBotMessage.title, true);
+        setTimeout(() => {
+          showTypingIndicator();
+        }, 1000);
+        return;
+      }
+      
       if (currentQuestionIndex < questions.length) {
         const question = questions[currentQuestionIndex];
         addMessage(question.title, true);
         setWaitingForInput(true);
       } else {
         setShowCompletion(true);
-        const finalMessage = flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+        const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
         addMessage(finalMessage, true);
       }
     }, 1500);
@@ -135,7 +152,7 @@ export const useChatLogic = (flowData: any) => {
       // Finalizar conversa
       setTimeout(() => {
         setShowCompletion(true);
-        const finalMessage = flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+        const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
         addMessage(finalMessage, true);
       }, 1000);
     }

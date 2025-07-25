@@ -26,12 +26,12 @@ const WelcomeMessageSettings = ({ flowData, setFlowData }: WelcomeMessageSetting
           <Label htmlFor="welcomeMessage">Mensagem de Boas-vindas</Label>
           <Textarea
             id="welcomeMessage"
-            value={flowData?.welcomeMessage || 'Olá! Como posso ajudá-lo?'}
+            value={flowData?.welcome_message || 'Olá! Como posso ajudá-lo?'}
             onChange={(e) => setFlowData((prev: any) => {
               const currentData = prev || {};
               return {
                 ...currentData,
-                welcomeMessage: e.target.value
+                welcome_message: e.target.value
               };
             })}
             placeholder="Ex: Olá! Bem-vindo ao nosso atendimento. Como posso ajudá-lo hoje?"

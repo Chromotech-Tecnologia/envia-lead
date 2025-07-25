@@ -1,12 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatMessage from './chat/ChatMessage';
 import ChatPreviewInput from './chat/ChatPreviewInput';
-import ChatQuestionsList from './chat/ChatQuestionsList';
 import ChatEndMessage from './chat/ChatEndMessage';
-import { useChatPreview } from '@/hooks/useChatPreview';
-import { defaultQuestions } from '@/data/defaultQuestions';
+import { useChatLogic } from '@/hooks/useChatLogic';
 import { MessageCircle, X } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface ChatPreviewProps {
   device: 'desktop' | 'mobile';
@@ -15,18 +14,37 @@ interface ChatPreviewProps {
 }
 
 const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
   const {
-    isOpen,
-    setIsOpen,
-    currentStep,
-    responses,
-    inputValue,
-    setInputValue,
+    messages,
     isTyping,
-    handleResponse,
-    handleSendText,
-    resetChat
-  } = useChatPreview();
+    showCompletion,
+    waitingForInput,
+    currentQuestion,
+    handleSendAnswer,
+    startConversation
+  } = useChatLogic(flowData);
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      startConversation();
+    }
+  }, [isOpen, messages.length, startConversation]);
+
+  const handleSendText = () => {
+    if (inputValue.trim() && waitingForInput) {
+      handleSendAnswer(inputValue.trim());
+      setInputValue('');
+    }
+  };
+
+  const handleOptionClick = (option: string) => {
+    if (waitingForInput) {
+      handleSendAnswer(option);
+    }
+  };
 
   // Aplicar configurações de posição e tamanho
   const getButtonPosition = () => {
@@ -134,35 +152,63 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
             className="flex-1 p-4 overflow-y-auto space-y-4"
             style={{ backgroundColor: flowData?.colors?.background || '#F9FAFB' }}
           >
-            <ChatMessage
-              message={flowData?.welcomeMessage || "Olá! Sou seu assistente virtual da Envia Lead. Vou te ajudar a encontrar a melhor solução para você! 😊"}
-              isBot={true}
-              time="09:00"
-            />
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                message={message.text}
+                isBot={message.isBot}
+                time={new Date(message.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              />
+            ))}
 
-            <ChatQuestionsList
-              currentStep={currentStep}
-              responses={responses}
-              isTyping={isTyping}
-              onResponse={handleResponse}
-            />
+            {/* Opções para perguntas de múltipla escolha */}
+            {waitingForInput && currentQuestion?.type === 'single' && currentQuestion.options && (
+              <div className="space-y-2">
+                {currentQuestion.options.map((option: string, index: number) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className="block w-fit text-orange-600 border-orange-200 hover:bg-orange-50"
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+            )}
 
-            {currentStep >= defaultQuestions.length && (
+            {/* Indicador de digitação */}
+            {isTyping && (
+              <div className="flex items-center space-x-2 p-3 bg-gray-100 rounded-lg w-fit">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span className="text-xs text-gray-500">Digitando...</span>
+              </div>
+            )}
+
+            {showCompletion && (
               <ChatEndMessage
                 flowData={flowData}
-                onResetChat={resetChat}
+                onResetChat={() => {
+                  setIsOpen(false);
+                  window.location.reload();
+                }}
               />
             )}
           </div>
 
           {/* Input */}
-          {currentStep < defaultQuestions.length && defaultQuestions[currentStep]?.type !== 'single' && (
+          {waitingForInput && currentQuestion?.type !== 'single' && (
             <ChatPreviewInput
               value={inputValue}
               onChange={setInputValue}
               onSend={handleSendText}
-              placeholder={defaultQuestions[currentStep]?.placeholder || 'Digite sua resposta...'}
-              type={defaultQuestions[currentStep]?.type as 'text' | 'email' | 'number'}
+              placeholder={currentQuestion?.placeholder || 'Digite sua resposta...'}
+              type={currentQuestion?.type as 'text' | 'email' | 'number'}
             />
           )}
         </div>

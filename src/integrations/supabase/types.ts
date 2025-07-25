@@ -149,6 +149,36 @@ export type Database = {
           },
         ]
       }
+      flow_visits: {
+        Row: {
+          created_at: string
+          flow_id: string
+          id: string
+          ip_address: unknown | null
+          session_id: string | null
+          url: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          flow_id: string
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          url: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          flow_id?: string
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          url?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       flows: {
         Row: {
           attendant_name: string | null

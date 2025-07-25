@@ -115,11 +115,36 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Registrar ou atualizar conexão
+    // Registrar visita (audiência) e atualizar conexão (sessão ativa)
     if (currentUrl) {
-      console.log(`[get-flow-data] Registrando conexão para URL: ${currentUrl}`);
+      console.log(`[get-flow-data] Registrando visita para URL: ${currentUrl}`);
       
-      // Primeiro tentar atualizar conexão existente
+      const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                      req.headers.get('x-real-ip') || 
+                      '0.0.0.0';
+      const userAgent = req.headers.get('user-agent');
+      
+      // Gerar session_id único baseado em IP + User Agent + timestamp (simplificado)
+      const sessionId = `${clientIp}-${Date.now()}`;
+      
+      // Sempre registrar uma nova visita (para medir audiência)
+      const { error: visitError } = await supabase
+        .from('flow_visits')
+        .insert({
+          flow_id: actualFlowId,
+          url: currentUrl,
+          ip_address: clientIp,
+          user_agent: userAgent,
+          session_id: sessionId
+        });
+        
+      if (visitError) {
+        console.error('[get-flow-data] Erro ao registrar visita:', visitError);
+      } else {
+        console.log(`[get-flow-data] Visita registrada com sucesso`);
+      }
+      
+      // Atualizar ou criar conexão (para medir sessões ativas)
       const { data: existingConnection, error: connectionSelectError } = await supabase
         .from('flow_connections')
         .select('id')
@@ -139,10 +164,8 @@ Deno.serve(async (req) => {
           .update({
             last_ping: new Date().toISOString(),
             is_active: true,
-            user_agent: req.headers.get('user-agent'),
-            ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 
-                       req.headers.get('x-real-ip') || 
-                       '0.0.0.0'
+            user_agent: userAgent,
+            ip_address: clientIp
           })
           .eq('id', existingConnection.id);
           
@@ -157,10 +180,8 @@ Deno.serve(async (req) => {
           .insert({
             flow_id: actualFlowId,
             url: currentUrl,
-            user_agent: req.headers.get('user-agent'),
-            ip_address: req.headers.get('x-forwarded-for')?.split(',')[0] || 
-                       req.headers.get('x-real-ip') || 
-                       '0.0.0.0',
+            user_agent: userAgent,
+            ip_address: clientIp,
             last_ping: new Date().toISOString(),
             is_active: true
           });

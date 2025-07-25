@@ -90,7 +90,34 @@ const DashboardMetrics = () => {
 
       const { data: leads } = await leadsQuery;
 
-      // Get connections data
+      // Get visits (audiência)
+      let visitsQuery = supabase
+        .from('flow_visits')
+        .select('*')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (deviceFilter !== 'all') {
+        if (deviceFilter === 'mobile') {
+          visitsQuery = visitsQuery.or('user_agent.ilike.%mobile%,user_agent.ilike.%android%,user_agent.ilike.%iphone%');
+        } else if (deviceFilter === 'desktop') {
+          visitsQuery = visitsQuery.not('user_agent', 'ilike', '%mobile%')
+                                   .not('user_agent', 'ilike', '%android%')
+                                   .not('user_agent', 'ilike', '%iphone%')
+                                   .not('user_agent', 'ilike', '%tablet%')
+                                   .not('user_agent', 'ilike', '%ipad%');
+        } else if (deviceFilter === 'tablet') {
+          visitsQuery = visitsQuery.or('user_agent.ilike.%tablet%,user_agent.ilike.%ipad%');
+        }
+      }
+
+      if (flowFilter !== 'all') {
+        visitsQuery = visitsQuery.eq('flow_id', flowFilter);
+      }
+
+      const { data: visits } = await visitsQuery;
+
+      // Get connections data (sessões ativas)
       let connectionsQuery = supabase
         .from('flow_connections')
         .select('*, created_at, url, user_agent')
@@ -109,14 +136,15 @@ const DashboardMetrics = () => {
         .select('*');
 
       // Calculate metrics
-      const totalConnections = connections?.length || 0;
-      const totalLeads = leads?.length || 0;
+      const totalVisits = visits?.length || 0;  // Audiência total
+      const totalConnections = connections?.length || 0;  // Sessões ativas
+      const totalLeads = leads?.length || 0;  // Leads gerados
       const completedLeads = leads?.filter(l => l.completed)?.length || 0;
-      const conversionRate = totalConnections > 0 ? (totalLeads / totalConnections) * 100 : 0;
+      const conversionRate = totalVisits > 0 ? (totalLeads / totalVisits) * 100 : 0;  // Taxa baseada em visitas
 
-      // Device analysis
-      const deviceStats = connections?.reduce((acc, conn) => {
-        const userAgent = conn.user_agent?.toLowerCase() || '';
+      // Device analysis baseado em visitas (audiência)
+      const deviceStats = visits?.reduce((acc, visit) => {
+        const userAgent = visit.user_agent?.toLowerCase() || '';
         let device = 'desktop';
         
         if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
@@ -129,27 +157,27 @@ const DashboardMetrics = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // URL analysis
-      const urlStats = connections?.reduce((acc, conn) => {
-        const url = new URL(conn.url).pathname;
+      // URL analysis baseado em visitas
+      const urlStats = visits?.reduce((acc, visit) => {
+        const url = new URL(visit.url).pathname;
         acc[url] = (acc[url] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // Hourly analysis
-      const hourlyStats = connections?.reduce((acc, conn) => {
-        const hour = new Date(conn.created_at).getHours();
+      // Hourly analysis baseado em visitas
+      const hourlyStats = visits?.reduce((acc, visit) => {
+        const hour = new Date(visit.created_at).getHours();
         acc[hour] = (acc[hour] || 0) + 1;
         return acc;
       }, {} as Record<number, number>) || {};
 
       setRealMetrics({
-        totalConnections,
+        totalConnections: totalVisits,  // Agora representa visitas (audiência)
         totalLeads,
         completedLeads,
         conversionRate: conversionRate.toFixed(1),
         leads: leads || [],
-        connections: connections || [],
+        connections: visits || [],  // Armazena visitas para análises
         deviceStats,
         urlStats,
         hourlyStats
@@ -161,12 +189,12 @@ const DashboardMetrics = () => {
   };
   const metrics = realMetrics ? [
     {
-      title: "Total de Acessos",
+      title: "Total de Visitas",
       value: realMetrics.totalConnections.toLocaleString(),
       change: "+12.5%",
       changeType: "positive",
       icon: MessageSquare,
-      description: "Sessões no chat"
+      description: "Audiência do site"
     },
     {
       title: "Leads Gerados",
@@ -182,7 +210,7 @@ const DashboardMetrics = () => {
       change: "+2.3%",
       changeType: "positive", 
       icon: Target,
-      description: "Leads por acessos"
+      description: "Leads por visitas"
     },
     {
       title: "Leads Completos",

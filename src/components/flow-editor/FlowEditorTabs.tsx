@@ -25,13 +25,13 @@ const FlowEditorTabs = ({ flow, flowData, setFlowData }: FlowEditorTabsProps) =>
       </TabsList>
 
       <TabsContent value="basic" className="space-y-6">
-        <WelcomeMessageSettings flowData={flowData} setFlowData={setFlowData} />
         <BasicSettings flowData={flowData} setFlowData={setFlowData} />
         <UrlSettings flowData={flowData} setFlowData={setFlowData} />
         <EmailSettings flowData={flowData} setFlowData={setFlowData} />
       </TabsContent>
 
       <TabsContent value="questions" className="space-y-6">
+        <WelcomeMessageSettings flowData={flowData} setFlowData={setFlowData} />
         <QuestionEditor flowData={flowData} setFlowData={setFlowData} />
       </TabsContent>
 

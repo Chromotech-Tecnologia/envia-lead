@@ -52,7 +52,7 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="primaryColor">Cor Primária</Label>
               <Input
@@ -90,14 +90,26 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
               />
             </div>
             <div>
-              <Label htmlFor="backgroundColor">Cor de Fundo</Label>
+              <Label htmlFor="backgroundColor">Cor de Fundo do Chat</Label>
               <Input
                 id="backgroundColor"
                 type="color"
-                value={flowData.colors?.background || '#FFFFFF'}
+                value={flowData.colors?.background || '#F9FAFB'}
                 onChange={(e) => setFlowData(prev => ({
                   ...prev,
                   colors: { ...prev.colors, background: e.target.value }
+                }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="headerTextColor">Cor do Texto do Cabeçalho</Label>
+              <Input
+                id="headerTextColor"
+                type="color"
+                value={flowData.colors?.headerText || '#FFFFFF'}
+                onChange={(e) => setFlowData(prev => ({
+                  ...prev,
+                  colors: { ...prev.colors, headerText: e.target.value }
                 }))}
               />
             </div>
@@ -131,7 +143,7 @@ const DesignSettings = ({ flowData, setFlowData }: DesignSettingsProps) => {
         <CardContent>
           {userCompanyId && (
             <AvatarUploader
-              onAvatarSelect={handleAvatarSelect}
+              onAvatarSelect={(url) => setFlowData(prev => ({...prev, avatar_url: url}))}
               selectedAvatar={flowData.avatar_url}
               companyId={userCompanyId}
             />

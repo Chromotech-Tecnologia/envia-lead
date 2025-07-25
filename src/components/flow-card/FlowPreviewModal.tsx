@@ -1,6 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import FloatingChatButton from '../FloatingChatButton';
+import ChatPreview from '../ChatPreview';
+import WelcomeBubble from '../chat/WelcomeBubble';
+import { useState } from 'react';
 
 interface FlowPreviewModalProps {
   isOpen: boolean;
@@ -9,63 +11,53 @@ interface FlowPreviewModalProps {
 }
 
 const FlowPreviewModal = ({ isOpen, flow, onClose }: FlowPreviewModalProps) => {
+  const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
+
   if (!isOpen) return null;
 
-  // Preparar dados do fluxo para o FloatingChatButton com todas as configurações reais
+  // Preparar dados do fluxo para o ChatPreview
   const prepareFlowDataForPreview = () => {
-    console.log('[FlowPreviewModal] Dados do fluxo original:', flow);
-    
-    const flowData = {
+    return {
       id: flow.id,
       name: flow.name,
       description: flow.description,
       welcome_message: flow.welcome_message || 'Olá! Como posso ajudá-lo hoje?',
+      welcomeMessage: flow.welcome_message || 'Olá! Como posso ajudá-lo hoje?',
       avatar_url: flow.avatar_url,
+      button_avatar_url: flow.button_avatar_url,
       whatsapp: flow.whatsapp,
       show_whatsapp_button: flow.show_whatsapp_button,
-      buttonPosition: flow.position || 'bottom-right',
-      chatPosition: flow.position || 'bottom-right',
+      position: flow.position || 'bottom-right',
+      button_position: flow.button_position || 'bottom-right',
+      chat_position: flow.chat_position || 'bottom-right',
+      attendant_name: flow.attendant_name || 'Atendimento',
       colors: flow.colors || {
-        primary: flow.primary_color || '#FF6B35',
-        secondary: flow.secondary_color || '#3B82F6',
-        text: flow.text_color || '#1F2937',
-        background: '#FFFFFF'
+        primary: '#FF6B35',
+        secondary: '#3B82F6',
+        text: '#1F2937',
+        background: '#FFFFFF',
+        headerText: '#FFFFFF'
       },
-      questions: flow.questions ? flow.questions
-        .filter((q: any) => q.type !== 'bot_message')
-        .map((q: any) => ({
-          id: q.id,
-          type: q.type,
-          title: q.title,
-          placeholder: q.placeholder,
-          required: q.required,
-          order_index: q.order_index || 0,
-          options: q.options || []
-        }))
-        .sort((a: any, b: any) => a.order_index - b.order_index) : [
-          {
-            id: 1,
-            type: 'text',
-            title: 'Qual é o seu nome?',
-            placeholder: 'Digite seu nome completo',
-            required: true,
-            order_index: 0
-          }
-        ]
+      // Aplicar offsets e dimensões
+      button_offset_x: flow.button_offset_x || 0,
+      button_offset_y: flow.button_offset_y || 0,
+      chat_offset_x: flow.chat_offset_x || 0,
+      chat_offset_y: flow.chat_offset_y || 0,
+      button_size: flow.button_size || 60,
+      chat_width: flow.chat_width || 400,
+      chat_height: flow.chat_height || 500,
+      questions: flow.questions || []
     };
-    
-    console.log('[FlowPreviewModal] Dados preparados para preview:', flowData);
-    return flowData;
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full h-[600px] relative">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full h-[600px] relative">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold">Preview - {flow.name}</h3>
+            <h3 className="text-lg font-semibold">Preview do Chat - {flow.name}</h3>
             <p className="text-sm text-gray-600">
-              Visualização com as configurações reais do fluxo
+              Visualização do chat com suas configurações
             </p>
           </div>
           <Button
@@ -77,25 +69,19 @@ const FlowPreviewModal = ({ isOpen, flow, onClose }: FlowPreviewModalProps) => {
           </Button>
         </div>
         
-        <div className="relative bg-gradient-to-b from-blue-50 to-white rounded-lg h-full overflow-hidden">
-          <div className="p-6 text-center">
-            <h4 className="text-xl font-bold text-gray-800 mb-2">Seu Site</h4>
-            <p className="text-gray-600 text-sm">
-              Preview de como o chat aparecerá com suas configurações
-            </p>
-            <div className="mt-4 text-xs text-gray-500 space-y-1">
-              <p>• Cores: {flow.colors?.primary || '#FF6B35'} / {flow.colors?.secondary || '#3B82F6'}</p>
-              <p>• Posição: {flow.position || 'bottom-right'}</p>
-              <p>• Perguntas: {flow.questions?.length || 0}</p>
-              {flow.avatar_url && <p>• Avatar configurado</p>}
-            </div>
-          </div>
-          
-          <FloatingChatButton
+        <div className="relative bg-gradient-to-b from-gray-50 to-white rounded-lg h-full overflow-hidden border">
+          <ChatPreview 
+            device="desktop" 
             flowData={prepareFlowDataForPreview()}
             position={flow.position || 'bottom-right'}
-            onHidePreview={onClose}
-            isPreview={true}
+          />
+          
+          <WelcomeBubble
+            showWelcomeBubble={showWelcomeBubble}
+            position={flow.position || 'bottom-right'}
+            colors={flow.colors || { text: '#1F2937' }}
+            flowData={prepareFlowDataForPreview()}
+            onClose={() => setShowWelcomeBubble(false)}
           />
         </div>
       </div>

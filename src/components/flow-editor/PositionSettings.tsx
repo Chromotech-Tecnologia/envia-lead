@@ -107,7 +107,7 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
             
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label htmlFor="button-offset-x">Offset X</Label>
+                <Label htmlFor="button-offset-x">Horizontal</Label>
                 <Input
                   id="button-offset-x"
                   type="number"
@@ -117,7 +117,7 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
                 />
               </div>
               <div>
-                <Label htmlFor="button-offset-y">Offset Y</Label>
+                <Label htmlFor="button-offset-y">Vertical</Label>
                 <Input
                   id="button-offset-y"
                   type="number"
@@ -152,7 +152,7 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
             
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <Label htmlFor="chat-offset-x">Offset X</Label>
+                <Label htmlFor="chat-offset-x">Horizontal</Label>
                 <Input
                   id="chat-offset-x"
                   type="number"
@@ -162,7 +162,7 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
                 />
               </div>
               <div>
-                <Label htmlFor="chat-offset-y">Offset Y</Label>
+                <Label htmlFor="chat-offset-y">Vertical</Label>
                 <Input
                   id="chat-offset-y"
                   type="number"
@@ -195,7 +195,7 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
           </div>
           
           <div className="text-sm text-muted-foreground">
-            <strong>Dica:</strong> Use offset negativo para mover para esquerda/cima e positivo para direita/baixo.
+            <strong>Dica:</strong> Use valores negativos para mover para esquerda/cima e positivos para direita/baixo.
           </div>
         </CardContent>
       </Card>

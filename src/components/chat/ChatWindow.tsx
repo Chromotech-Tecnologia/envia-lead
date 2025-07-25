@@ -62,9 +62,10 @@ const ChatWindow = ({
     >
       {/* Header */}
       <div 
-        className="p-4 text-white flex items-center justify-between"
+        className="p-4 flex items-center justify-between"
         style={{ 
-          background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
+          background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})`,
+          color: colors.headerText || '#FFFFFF'
         }}
       >
         <div className="flex items-center space-x-3">
@@ -92,7 +93,10 @@ const ChatWindow = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+      <div 
+        className="flex-1 p-4 overflow-y-auto"
+        style={{ backgroundColor: colors.background || '#F9FAFB' }}
+      >
         <ChatMessages messages={messages} colors={colors} isTyping={isTyping} />
       </div>
 

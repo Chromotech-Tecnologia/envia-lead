@@ -115,9 +115,10 @@ export const useFlows = () => {
 
   const fetchFlows = async () => {
     try {
+      console.log('🔍 useFlows: Iniciando fetchFlows...');
       const profile = await fetchUserProfile();
       if (!profile) {
-        console.log('useFlows: Sem perfil, não é possível carregar fluxos');
+        console.log('❌ useFlows: Sem perfil, não é possível carregar fluxos');
         setFlows([]);
         setLoading(false);
         // Vamos mostrar um toast para informar o usuário
@@ -129,7 +130,8 @@ export const useFlows = () => {
         return;
       }
 
-      console.log('useFlows: Buscando fluxos para empresa:', profile.company_id);
+      console.log('✅ useFlows: Perfil encontrado:', profile);
+      console.log('🏢 useFlows: Buscando fluxos para empresa:', profile.company_id);
 
       const { data, error } = await supabase
         .from('flows')
@@ -138,7 +140,7 @@ export const useFlows = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('useFlows: Erro ao buscar fluxos:', error);
+        console.error('❌ useFlows: Erro ao buscar fluxos:', error);
         toast({
           variant: "destructive",
           title: "Erro",

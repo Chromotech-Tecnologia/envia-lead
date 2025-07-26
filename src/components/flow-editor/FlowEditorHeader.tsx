@@ -30,10 +30,10 @@ const FlowEditorHeader = ({
         <Button
           variant="ghost"
           onClick={handleBackToFlows}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 p-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Fluxos
+          <span className="font-medium">Fluxos</span>
         </Button>
         <h1 className="text-xl font-semibold text-gray-900">
           {flowName || 'Novo Fluxo'}

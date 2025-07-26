@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Eye, Edit } from 'lucide-react';
+import { Eye, EyeOff, Edit } from 'lucide-react';
 import { useState } from 'react';
 import FloatingButtonPreview from './FloatingButtonPreview';
 
@@ -15,7 +15,7 @@ const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCar
   const [showFloatingPreview, setShowFloatingPreview] = useState(false);
 
   const handleVisualizarClick = () => {
-    setShowFloatingPreview(true);
+    setShowFloatingPreview(!showFloatingPreview);
   };
 
   return (
@@ -27,8 +27,17 @@ const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCar
           size="sm"
           className="flex-1"
         >
-          <Eye className="w-4 h-4 mr-2" />
-          Visualizar
+          {showFloatingPreview ? (
+            <>
+              <EyeOff className="w-4 h-4 mr-2" />
+              Ocultar
+            </>
+          ) : (
+            <>
+              <Eye className="w-4 h-4 mr-2" />
+              Visualizar
+            </>
+          )}
         </Button>
         
         <Button

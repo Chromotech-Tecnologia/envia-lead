@@ -120,6 +120,12 @@ export const useFlows = () => {
         console.log('useFlows: Sem perfil, não é possível carregar fluxos');
         setFlows([]);
         setLoading(false);
+        // Vamos mostrar um toast para informar o usuário
+        toast({
+          variant: "destructive",
+          title: "Perfil não encontrado",
+          description: "Seu perfil não foi encontrado. Tente fazer logout e login novamente.",
+        });
         return;
       }
 

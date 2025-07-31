@@ -10,7 +10,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 flex">
       {/* Lado esquerdo - Imagem institucional */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-500 to-blue-500 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-300 to-blue-300 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10 flex flex-col justify-center items-center p-16 text-white h-full">
           {/* Logo centralizado */}

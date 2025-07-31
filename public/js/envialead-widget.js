@@ -448,9 +448,18 @@
     
     // Validação rigorosa de email
     validateEmail: function(email) {
-      // Regex rigorosa que exige domínio válido
+      if (!email || email.trim() === '') {
+        return false;
+      }
+      // Regex ainda mais rigorosa
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      const isValid = emailRegex.test(email);
+      const isValid = emailRegex.test(email) && 
+                     email.length >= 5 && 
+                     email.includes('.') && 
+                     email.split('@').length === 2 &&
+                     !email.includes('..') &&
+                     !email.startsWith('.') &&
+                     !email.endsWith('.');
       console.log('[EnviaLead] Validando email:', email, 'Válido:', isValid);
       return isValid;
     },

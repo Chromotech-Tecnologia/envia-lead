@@ -632,9 +632,25 @@ Deno.serve(async (req) => {
         });
         
         input.addEventListener('blur', (e) => {
+          const email = e.target.value;
           const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;
-          const isValid = emailRegex.test(e.target.value);
+          const isValid = emailRegex.test(email) && 
+                         email.length >= 5 && 
+                         email.includes('.') && 
+                         email.split('@').length === 2 &&
+                         !email.includes('..') &&
+                         !email.startsWith('.') &&
+                         !email.endsWith('.');
           e.target.style.borderColor = isValid ? '#10b981' : '#ef4444';
+          
+          if (!isValid && email.length > 0) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.color = '#ef4444';
+            errorDiv.style.fontSize = '12px';
+            errorDiv.style.marginTop = '4px';
+            errorDiv.textContent = 'Digite um email válido (ex: nome@dominio.com)';
+            e.target.parentNode.appendChild(errorDiv);
+          }
         });
       }
       
@@ -768,8 +784,8 @@ Deno.serve(async (req) => {
       });
       
       whatsappButton.addEventListener('click', () => {
-        // Usar o template configurado e substituir variáveis
-        let message = flowData.whatsapp_message_template || 'Olá! Vim através do chat do site.';
+        // Usar EXATAMENTE o template configurado
+        let message = flowData.whatsapp_message_template;
         
         // Substituir variáveis no template
         Object.entries(userResponses).forEach(([questionId, answer]) => {

@@ -84,9 +84,15 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
 
   useEffect(() => {
     console.log('AuthWrapper: Configurando listener de autenticação');
+    let mounted = true;
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) {
+          console.log('AuthWrapper: Componente desmontado, ignorando evento');
+          return;
+        }
+        
         console.log('AuthWrapper: Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
@@ -137,6 +143,7 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
 
     return () => {
       console.log('AuthWrapper: Removendo listener de autenticação');
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);

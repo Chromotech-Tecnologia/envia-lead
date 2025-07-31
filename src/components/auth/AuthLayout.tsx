@@ -12,33 +12,41 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       {/* Lado esquerdo - Imagem institucional */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 to-blue-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 flex flex-col items-center p-12 text-white h-full">
-          {/* Logo e título mais acima e centralizados */}
-          <div className="text-center mt-16 mb-12">
-            <div className="flex flex-col items-center justify-center mb-8">
-              <Logo className="h-48 w-48 mb-6" />
-              <h1 className="text-5xl font-bold text-center">Envia Lead</h1>
-            </div>
-          </div>
-          
-          {/* Conteúdo principal centralizado */}
-          <div className="flex-1 flex flex-col justify-center text-center space-y-6 max-w-md">
-            <p className="text-xl opacity-90">
+        <div className="relative z-10 flex flex-col justify-center items-start p-16 text-white h-full">
+          {/* Logo no topo */}
+          <div className="mb-8">
+            <Logo className="h-16 w-16 mb-4" />
+            <h1 className="text-4xl font-bold mb-2">Envia Lead</h1>
+            <p className="text-lg opacity-90 mb-8">
               Plataforma completa de geração e envio de leads via chat inteligente
             </p>
-            <div className="grid grid-cols-1 gap-4 mt-8">
-              <div className="flex items-center gap-3 text-sm justify-center">
+          </div>
+          
+          {/* Lista de benefícios */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
-                <span>Capte leads qualificados automaticamente</span>
               </div>
-              <div className="flex items-center gap-3 text-sm justify-center">
+              <span className="text-base">Capte leads qualificados automaticamente</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
-                <span>Integre facilmente em qualquer site</span>
               </div>
-              <div className="flex items-center gap-3 text-sm justify-center">
+              <span className="text-base">Integre facilmente em qualquer site</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
-                <span>Aumente suas conversões com chat inteligente</span>
               </div>
+              <span className="text-base">Aumente suas conversões com chat inteligente</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <span className="text-base">Suporte 24/7</span>
             </div>
           </div>
         </div>
@@ -48,14 +56,14 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4 lg:hidden">
-              <Logo className="h-10 w-10" />
+            <div className="flex items-center justify-center gap-3 mb-6 lg:hidden">
+              <Logo className="h-12 w-12" />
               <h2 className="text-2xl font-bold text-gray-900">Envia Lead</h2>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2 hidden lg:block">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 hidden lg:block">
               Bem-vindo ao Envia Lead
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm">
               Acesse sua conta ou crie uma nova
             </p>
           </div>

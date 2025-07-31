@@ -13,41 +13,15 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let mounted = true;
-    let authSubscription: any = null;
-    
-    const setupAuth = async () => {
-      try {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (!mounted) return;
-            
-            if (session && mounted) {
-              navigate('/');
-            }
-          }
-        );
-        
-        if (mounted) {
-          authSubscription = subscription;
-        }
-      } catch (error) {
-        // Silently handle auth setup errors
+    // Verificar se já está autenticado ao montar o componente
+    const checkInitialAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/');
       }
     };
 
-    setupAuth();
-
-    return () => {
-      mounted = false;
-      if (authSubscription) {
-        try {
-          authSubscription.unsubscribe();
-        } catch (error) {
-          // Silently handle cleanup errors
-        }
-      }
-    };
+    checkInitialAuth();
   }, [navigate]);
 
   const handleForgotPassword = () => {

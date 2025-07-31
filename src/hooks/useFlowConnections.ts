@@ -81,12 +81,19 @@ export const useFlowConnections = (flowId?: string) => {
     return () => clearInterval(interval);
   }, [flowId]);
 
-  // Real-time subscription for connection updates
+  // Real-time subscription temporariamente desabilitado
+  // para evitar problemas de múltiplas conexões WebSocket
+  /*
   useEffect(() => {
     if (!flowId) return;
 
+    // Create a unique channel name to avoid conflicts
+    const channelName = `flow-connections-${flowId}-${Date.now()}`;
+    
+    console.log('Criando canal realtime:', channelName);
+    
     const channel = supabase
-      .channel('flow-connections-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -96,16 +103,23 @@ export const useFlowConnections = (flowId?: string) => {
           filter: `flow_id=eq.${flowId}`
         },
         (payload) => {
-          console.log('Conexão atualizada:', payload);
-          fetchConnections();
+          console.log('Conexão atualizada via realtime:', payload);
+          // Aguardar um pouco antes de refetch para evitar múltiplas chamadas
+          setTimeout(() => {
+            fetchConnections();
+          }, 100);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status do canal realtime:', status);
+      });
 
     return () => {
+      console.log('Removendo canal realtime:', channelName);
       supabase.removeChannel(channel);
     };
   }, [flowId]);
+  */
 
   return {
     connections,

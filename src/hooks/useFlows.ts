@@ -536,7 +536,19 @@ export const useFlows = () => {
   };
 
   useEffect(() => {
-    fetchFlows();
+    let mounted = true;
+    
+    const loadFlows = async () => {
+      if (mounted) {
+        await fetchFlows();
+      }
+    };
+    
+    loadFlows();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return {

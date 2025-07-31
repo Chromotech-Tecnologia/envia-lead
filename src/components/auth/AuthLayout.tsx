@@ -13,11 +13,10 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 to-blue-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-start p-16 text-white h-full">
-          {/* Logo no topo */}
-          <div className="mb-8">
-            <Logo className="h-16 w-16 mb-4" />
-            <h1 className="text-4xl font-bold mb-2">Envia Lead</h1>
-            <p className="text-lg opacity-90 mb-8">
+          {/* Logo centralizado */}
+          <div className="mb-8 flex flex-col items-center text-center">
+            <Logo className="h-32 w-32 mb-6" />
+            <p className="text-lg opacity-90">
               Plataforma completa de geração e envio de leads via chat inteligente
             </p>
           </div>

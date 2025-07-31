@@ -138,6 +138,7 @@ const FlowManager = () => {
               onEdit={() => handleEditFlow(flow)}
               onDelete={() => handleDeleteFlow(flow.id)}
               onDuplicate={() => handleDuplicateFlow(flow.id)}
+              onFlowUpdate={() => window.location.reload()}
             />
           ))}
         </div>

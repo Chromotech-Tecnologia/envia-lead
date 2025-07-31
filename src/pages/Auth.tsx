@@ -12,17 +12,6 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Verificar se já está autenticado ao montar o componente
-    const checkInitialAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-
-    checkInitialAuth();
-  }, [navigate]);
 
   const handleForgotPassword = () => {
     setActiveTab('reset');

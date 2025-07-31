@@ -114,7 +114,7 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
               </div>
             </div>
             <Switch
-              checked={flow?.is_active || false}
+              checked={Boolean(flow?.is_active)}
               onCheckedChange={handleActiveToggle}
               disabled={!flow?.id}
             />

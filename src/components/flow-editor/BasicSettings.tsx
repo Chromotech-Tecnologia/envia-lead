@@ -56,7 +56,7 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
             </div>
             <Switch
               id="isActive"
-              checked={flowData.is_active !== false}
+              checked={Boolean(flowData.is_active)}
               onCheckedChange={(checked) => setFlowData(prev => ({...prev, is_active: checked}))}
             />
           </div>
@@ -82,8 +82,8 @@ const BasicSettings = ({ flowData, setFlowData }: BasicSettingsProps) => {
           </div>
           <Switch
             id="showWhatsappButton"
-            checked={flowData.showWhatsappButton !== false}
-            onCheckedChange={(checked) => setFlowData(prev => ({...prev, showWhatsappButton: checked}))}
+            checked={Boolean(flowData.show_whatsapp_button)}
+            onCheckedChange={(checked) => setFlowData(prev => ({...prev, show_whatsapp_button: checked}))}
           />
         </div>
       </CardContent>

@@ -47,12 +47,6 @@ const FlowCardStats = ({ flow }: FlowCardStatsProps) => {
           )}
         </Badge>
         
-        <Badge 
-          variant={flow.is_active ? "default" : "secondary"}
-          className={flow.is_active ? "bg-blue-500" : ""}
-        >
-          {flow.is_active ? "Ativo" : "Inativo"}
-        </Badge>
       </div>
 
       {/* WhatsApp */}

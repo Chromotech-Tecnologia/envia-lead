@@ -11,9 +11,10 @@ interface FlowCardProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onFlowUpdate?: () => void;
 }
 
-const FlowCard = ({ flow, onEdit, onDelete, onDuplicate }: FlowCardProps) => {
+const FlowCard = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: FlowCardProps) => {
   const [showPreview, setShowPreview] = useState(false);
 
   const handlePreviewToggle = () => {
@@ -29,6 +30,7 @@ const FlowCard = ({ flow, onEdit, onDelete, onDuplicate }: FlowCardProps) => {
             onEdit={onEdit}
             onDelete={onDelete}
             onDuplicate={onDuplicate}
+            onFlowUpdate={onFlowUpdate}
           />
         </CardHeader>
         

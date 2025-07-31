@@ -103,23 +103,12 @@ export const useChatLogic = (flowData: any) => {
     setTimeout(() => {
       setIsTyping(false);
       
-      // Verificar se há mensagens do bot para mostrar antes da próxima pergunta
-      const nextBotMessage = botMessages.find((msg: any) => 
-        msg.order === currentQuestionIndex && msg.order < questions.length
-      );
-      
-      if (nextBotMessage) {
-        addMessage(nextBotMessage.title, true);
-        setTimeout(() => {
-          showTypingIndicator();
-        }, 1000);
-        return;
-      }
-      
       if (currentQuestionIndex < questions.length) {
         const question = questions[currentQuestionIndex];
-        addMessage(question.title, true);
-        setWaitingForInput(true);
+        if (question) {
+          addMessage(question.title, true);
+          setWaitingForInput(true);
+        }
       } else {
         setShowCompletion(true);
         const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';

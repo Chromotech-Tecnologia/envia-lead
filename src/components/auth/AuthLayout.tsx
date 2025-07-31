@@ -55,12 +55,14 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-6 lg:hidden">
-              <Logo className="h-12 w-12" />
-              <h2 className="text-2xl font-bold text-gray-900">Envia Lead</h2>
+            <div className="flex items-center justify-center mb-6 lg:hidden">
+              <Logo className="h-36 w-36" />
+            </div>
+            <div className="hidden lg:flex justify-center mb-6">
+              <Logo className="h-36 w-36" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2 hidden lg:block">
-              Bem-vindo ao Envia Lead
+              Bem-vindo
             </h2>
             <p className="text-gray-600 text-sm">
               Acesse sua conta ou crie uma nova

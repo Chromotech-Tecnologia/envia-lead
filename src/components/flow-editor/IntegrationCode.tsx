@@ -74,12 +74,19 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
 
     try {
       await updateFlow(flow.id, { is_active: checked });
+      
+      // Forçar atualização do estado local
+      flow.is_active = checked;
+      
       toast({
         title: checked ? "Fluxo ativado!" : "Fluxo desativado!",
         description: checked ? 
           "O fluxo agora aparecerá nos sites onde foi instalado." :
           "O fluxo foi desativado e não aparecerá mais nos sites.",
       });
+      
+      // Recarregar a página para atualizar o estado
+      window.location.reload();
     } catch (error) {
       toast({
         variant: "destructive",

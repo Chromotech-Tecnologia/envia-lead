@@ -134,7 +134,7 @@ const ChatInput = ({
           <div className="flex space-x-2">
             <input
               ref={inputRef}
-              type={currentQuestion.type}
+              type={currentQuestion.type === 'phone' ? 'tel' : currentQuestion.type}
               placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
               className="flex-1 p-2 border rounded-lg transition-colors"
               style={{ borderColor: colors.primary }}

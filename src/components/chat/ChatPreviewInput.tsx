@@ -1,10 +1,12 @@
 
+import { applyMask } from '@/utils/inputMasks';
+
 interface ChatPreviewInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
   placeholder: string;
-  type: 'text' | 'email' | 'number';
+  type: 'text' | 'email' | 'number' | 'phone';
 }
 
 const ChatPreviewInput = ({ value, onChange, onSend, placeholder, type }: ChatPreviewInputProps) => {
@@ -18,9 +20,12 @@ const ChatPreviewInput = ({ value, onChange, onSend, placeholder, type }: ChatPr
     <div className="p-4 border-t bg-white">
       <div className="flex space-x-2">
         <input
-          type={type}
+          type={type === 'phone' ? 'tel' : type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const maskedValue = applyMask(e.target.value, type);
+            onChange(maskedValue);
+          }}
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
           className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"

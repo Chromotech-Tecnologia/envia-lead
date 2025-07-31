@@ -16,10 +16,10 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/30"></div>
         
         {/* Conteúdo principal */}
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white h-full">
+        <div className="relative z-10 flex flex-col justify-center items-start pl-16 pr-8 text-white h-full max-w-2xl">
           {/* Logo centralizado */}
           <div className="mb-12 flex flex-col items-center text-center animate-fade-in">
-            <div className="mb-8 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl">
+            <div className="mb-8 p-4 bg-white/30 backdrop-blur-md rounded-2xl border border-white/30 shadow-2xl">
               <Logo className="h-40 w-40" />
             </div>
             <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent drop-shadow-lg">

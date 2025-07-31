@@ -161,7 +161,8 @@ Deno.serve(async (req) => {
         order: q.order_index
       })),
       welcome_message: flow.welcome_message || 'Olá! Como posso ajudá-lo?',
-      show_whatsapp_button: flow.show_whatsapp_button !== false
+      show_whatsapp_button: flow.show_whatsapp_button !== false,
+      whatsapp_message_template: flow.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.'
     };
 
     // Gerar o código JavaScript do widget
@@ -573,6 +574,70 @@ Deno.serve(async (req) => {
         input.style.borderColor = '#e2e8f0';
       });
       
+      // Aplicar máscaras baseadas no tipo
+      if (question.type === 'phone') {
+        input.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\\D/g, '');
+          if (value.length > 11) value = value.substring(0, 11);
+          
+          if (value.length <= 2) {
+            value = value.replace(/(\\d{0,2})/, '($1');
+          } else if (value.length <= 6) {
+            value = value.replace(/(\\d{2})(\\d{0,4})/, '($1) $2');
+          } else if (value.length <= 10) {
+            value = value.replace(/(\\d{2})(\\d{4})(\\d{0,4})/, '($1) $2-$3');
+          } else {
+            value = value.replace(/(\\d{2})(\\d{5})(\\d{0,4})/, '($1) $2-$3');
+          }
+          
+          e.target.value = value;
+        });
+        
+        input.addEventListener('blur', (e) => {
+          const cleanPhone = e.target.value.replace(/\\D/g, '');
+          const isValid = cleanPhone.length >= 10 && cleanPhone.length <= 11;
+          
+          if (isValid && cleanPhone.length >= 2) {
+            const ddd = parseInt(cleanPhone.substring(0, 2));
+            const isValidDDD = ddd >= 11 && ddd <= 99;
+            
+            if (isValidDDD) {
+              if (cleanPhone.length === 11) {
+                const firstDigit = cleanPhone.substring(2, 3);
+                if (firstDigit === '9') {
+                  e.target.style.borderColor = '#10b981';
+                } else {
+                  e.target.style.borderColor = '#ef4444';
+                }
+              } else if (cleanPhone.length === 10) {
+                const firstDigit = cleanPhone.substring(2, 3);
+                if (['2', '3', '4', '5'].includes(firstDigit)) {
+                  e.target.style.borderColor = '#10b981';
+                } else {
+                  e.target.style.borderColor = '#ef4444';
+                }
+              } else {
+                e.target.style.borderColor = '#ef4444';
+              }
+            } else {
+              e.target.style.borderColor = '#ef4444';
+            }
+          } else {
+            e.target.style.borderColor = '#ef4444';
+          }
+        });
+      } else if (question.type === 'email') {
+        input.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\\s/g, '').toLowerCase();
+        });
+        
+        input.addEventListener('blur', (e) => {
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;
+          const isValid = emailRegex.test(e.target.value);
+          e.target.style.borderColor = isValid ? '#10b981' : '#ef4444';
+        });
+      }
+      
       const sendButton = document.createElement('button');
       sendButton.innerHTML = '→';
       sendButton.style.cssText = \`
@@ -703,8 +768,39 @@ Deno.serve(async (req) => {
       });
       
       whatsappButton.addEventListener('click', () => {
-        const message = encodeURIComponent('Olá! Vim através do chat do site.');
-        const whatsappUrl = \`https://wa.me/\${flowData.whatsapp.replace(/\\D/g, '')}?text=\${message}\`;
+        // Usar o template configurado e substituir variáveis
+        let message = flowData.whatsapp_message_template || 'Olá! Vim através do chat do site.';
+        
+        // Substituir variáveis no template
+        Object.entries(userResponses).forEach(([questionId, answer]) => {
+          const question = flowData.questions.find(q => q.id === questionId);
+          if (question) {
+            const questionTitle = question.title.toLowerCase();
+            
+            // Mapear para variáveis conhecidas
+            if (questionTitle.includes('nome') || questionTitle.includes('name')) {
+              message = message.replace(/#nome/gi, answer);
+              message = message.replace(/#name/gi, answer);
+            }
+            if (questionTitle.includes('email')) {
+              message = message.replace(/#email/gi, answer);
+            }
+            if (questionTitle.includes('telefone') || questionTitle.includes('phone')) {
+              message = message.replace(/#telefone/gi, answer);
+              message = message.replace(/#phone/gi, answer);
+            }
+            if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
+              message = message.replace(/#empresa/gi, answer);
+              message = message.replace(/#company/gi, answer);
+            }
+            if (questionTitle.includes('cidade') || questionTitle.includes('city')) {
+              message = message.replace(/#cidade/gi, answer);
+              message = message.replace(/#city/gi, answer);
+            }
+          }
+        });
+        
+        const whatsappUrl = \`https://wa.me/\${flowData.whatsapp.replace(/\\D/g, '')}?text=\${encodeURIComponent(message)}\`;
         window.open(whatsappUrl, '_blank');
       });
       

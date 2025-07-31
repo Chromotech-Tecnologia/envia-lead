@@ -784,16 +784,16 @@
       console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
       console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
       
-      // Corrigir mensagem do WhatsApp - usar whatsapp_text que é o campo correto
+      // Corrigir mensagem do WhatsApp - usar whatsapp_message_template que é o campo correto
       console.log('[EnviaLead] Dados do flow completos:', window.enviaLeadData);
       
       let message = '';
-      if (window.enviaLeadData.whatsapp_text && window.enviaLeadData.whatsapp_text.trim()) {
-        message = window.enviaLeadData.whatsapp_text;
-        console.log('[EnviaLead] Usando whatsapp_text configurado:', message);
+      if (window.enviaLeadData.whatsapp_message_template && window.enviaLeadData.whatsapp_message_template.trim()) {
+        message = window.enviaLeadData.whatsapp_message_template;
+        console.log('[EnviaLead] Usando whatsapp_message_template configurado:', message);
       } else {
         message = 'Olá! Gostaria de saber mais informações.';
-        console.log('[EnviaLead] Usando mensagem padrão pois whatsapp_text está vazio');
+        console.log('[EnviaLead] Usando mensagem padrão pois whatsapp_message_template está vazio');
       }
       
       // Substituir variáveis no template
@@ -801,7 +801,7 @@
       console.log('[EnviaLead] Mensagem final após substituição:', message);
       
       // Verificar se ainda há variáveis não substituídas
-      const originalMessage = window.enviaLeadData.whatsapp_text || message;
+      const originalMessage = window.enviaLeadData.whatsapp_message_template || message;
       if (originalMessage !== message) {
         console.log('[EnviaLead] ✅ Variáveis substituídas com sucesso!');
       } else if (message.includes('#')) {

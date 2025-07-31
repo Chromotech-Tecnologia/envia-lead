@@ -10,12 +10,12 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 flex">
       {/* Lado esquerdo - Imagem institucional */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 to-blue-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 flex flex-col justify-center items-start p-16 text-white h-full">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-500 to-blue-500 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10 flex flex-col justify-center items-center p-16 text-white h-full">
           {/* Logo centralizado */}
           <div className="mb-8 flex flex-col items-center text-center">
-            <Logo className="h-32 w-32 mb-6" />
+            <Logo className="h-48 w-48 mb-6" />
             <p className="text-lg opacity-90">
               Plataforma completa de geração e envio de leads via chat inteligente
             </p>
@@ -58,10 +58,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
             <div className="flex items-center justify-center mb-6 lg:hidden">
               <Logo className="h-36 w-36" />
             </div>
-            <div className="hidden lg:flex justify-center mb-6">
-              <Logo className="h-36 w-36" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 hidden lg:block">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Bem-vindo
             </h2>
             <p className="text-gray-600 text-sm">

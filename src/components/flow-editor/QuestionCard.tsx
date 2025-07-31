@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,26 @@ interface QuestionCardProps {
   onDelete: () => void;
   onUpdate: (updates: any) => void;
 }
+
+const getPlaceholderText = (type: string, title: string) => {
+  if (!title || title === 'Nova Pergunta') {
+    switch (type) {
+      case 'text':
+        return 'Ex: Qual é o seu nome completo?';
+      case 'email':
+        return 'Ex: Digite seu melhor e-mail para contato';
+      case 'phone':
+        return 'Ex: Qual o seu melhor número de telefone, prometo não incomodar';
+      case 'select':
+        return 'Ex: Selecione uma opção que melhor se adequa ao seu perfil';
+      case 'radio':
+        return 'Ex: Escolha a opção que mais te interessa';
+      default:
+        return 'Digite sua pergunta...';
+    }
+  }
+  return title;
+};
 
 const QuestionCard = ({ question, index, isEditing, onEdit, onSave, onDelete, onUpdate }: QuestionCardProps) => {
   const [localQuestion, setLocalQuestion] = useState(question);
@@ -88,7 +107,7 @@ const QuestionCard = ({ question, index, isEditing, onEdit, onSave, onDelete, on
               <Textarea
                 value={localQuestion.title}
                 onChange={(e) => setLocalQuestion({ ...localQuestion, title: e.target.value })}
-                placeholder={localQuestion.type === 'bot_message' ? 'Digite a mensagem que será exibida...' : 'Digite sua pergunta...'}
+                placeholder={localQuestion.type === 'bot_message' ? 'Digite a mensagem que será exibida...' : getPlaceholderText(localQuestion.type, localQuestion.title)}
                 className="min-h-[80px]"
               />
             </div>
@@ -100,7 +119,7 @@ const QuestionCard = ({ question, index, isEditing, onEdit, onSave, onDelete, on
                   <Input
                     value={localQuestion.placeholder || ''}
                     onChange={(e) => setLocalQuestion({ ...localQuestion, placeholder: e.target.value })}
-                    placeholder="Ex: Digite seu nome completo..."
+                    placeholder={getPlaceholderText(localQuestion.type, localQuestion.title)}
                   />
                 </div>
 
@@ -183,7 +202,7 @@ const QuestionCard = ({ question, index, isEditing, onEdit, onSave, onDelete, on
             </div>
             
             <p className="text-sm font-medium text-gray-900 mb-1">
-              {question.title}
+              {question.title || getPlaceholderText(question.type, question.title)}
             </p>
             
             {question.placeholder && question.type !== 'bot_message' && (

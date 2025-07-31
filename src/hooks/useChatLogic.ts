@@ -123,7 +123,9 @@ export const useChatLogic = (flowData: any) => {
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) return;
 
-    setResponses(prev => ({ ...prev, [currentQuestion.id]: answer }));
+    // Atualizar respostas com nova resposta
+    const newResponses = { ...responses, [currentQuestion.id]: answer };
+    setResponses(newResponses);
     
     // Adicionar resposta do usuário
     addMessage(answer, false);

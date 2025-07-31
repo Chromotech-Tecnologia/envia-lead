@@ -60,16 +60,16 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     <div
       className={`flex flex-col h-screen bg-gray-100 border-r border-gray-200 ${
         isCollapsed ? 'w-20' : 'w-64'
-      } transition-width duration-300 ease-in-out`}
+      } transition-width duration-300 ease-in-out overflow-y-auto`}
     >
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 flex-shrink-0">
         <Logo isCollapsed={isCollapsed} />
         <Button variant="ghost" size="icon" onClick={toggleCollapse}>
           {isCollapsed ? <Menu /> : <ChevronLeft />}
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </div>
-      <nav className="flex-1 px-2 py-4 space-y-1">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => (
           <NavLink
             key={item.label}
@@ -88,7 +88,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
         ))}
       </nav>
       
-      <div className="px-2 pb-4">
+      <div className="px-2 pb-4 flex-shrink-0">
         <Button
           variant="ghost"
           onClick={handleLogout}

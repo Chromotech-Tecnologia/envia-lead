@@ -1,0 +1,2 @@
+-- Criar a tabela flow_visits se não existir (removendo a referência incorreta)
+-- Esta tabela será usada para contabilizar visitas às URLs de exibição dos fluxos

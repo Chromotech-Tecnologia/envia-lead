@@ -30,6 +30,60 @@
   let waitingForInput = false;
   let questions = [];
   let botMessages = [];
+  let isTyping = false;
+  let showCompletion = false;
+
+  // Função para substituir variáveis no texto
+  function replaceVariables(text, responses) {
+    let processedText = text;
+    
+    // Criar mapeamento de IDs de perguntas para labels mais amigáveis
+    const variableMap = {};
+    
+    questions.forEach((question, index) => {
+      const questionTitle = question.title.toLowerCase();
+      const answer = responses[question.id] || '';
+      
+      // Mapear variáveis baseadas no conteúdo da pergunta
+      if (questionTitle.includes('nome')) {
+        variableMap['#nome'] = answer;
+        variableMap['#name'] = answer;
+      }
+      if (questionTitle.includes('telefone') || questionTitle.includes('celular')) {
+        variableMap['#telefone'] = answer;
+        variableMap['#phone'] = answer;
+      }
+      if (questionTitle.includes('email') || questionTitle.includes('e-mail')) {
+        variableMap['#email'] = answer;
+      }
+      if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
+        variableMap['#empresa'] = answer;
+        variableMap['#company'] = answer;
+      }
+      if (questionTitle.includes('cidade') || questionTitle.includes('city')) {
+        variableMap['#cidade'] = answer;
+        variableMap['#city'] = answer;
+      }
+      
+      // Mapear também por posição para templates genéricos
+      variableMap[`#resposta${index + 1}`] = answer;
+      variableMap[`#answer${index + 1}`] = answer;
+    });
+    
+    // Substituir as variáveis no texto
+    Object.keys(variableMap).forEach(variable => {
+      if (variableMap[variable]) {
+        const regex = new RegExp(variable, 'gi');
+        processedText = processedText.replace(regex, variableMap[variable]);
+      }
+    });
+    
+    console.log('[EnviaLead] Texto original:', text);
+    console.log('[EnviaLead] Variáveis mapeadas:', variableMap);
+    console.log('[EnviaLead] Texto processado:', processedText);
+    
+    return processedText;
+  }
 
   // Carregar dados do flow
   async function loadFlowData() {
@@ -38,7 +92,7 @@
       const data = await response.json();
       flowData = data;
       
-      // Processar perguntas e mensagens
+      // Processar perguntas e mensagens com a mesma lógica do preview
       if (flowData.questions) {
         const allItems = flowData.questions
           .map(q => ({
@@ -52,8 +106,12 @@
           }))
           .sort((a, b) => a.order - b.order);
         
+        // Separar perguntas e mensagens do bot
         questions = allItems.filter(item => item.type !== 'bot_message');
         botMessages = allItems.filter(item => item.type === 'bot_message');
+        
+        console.log('[EnviaLead] Perguntas processadas:', questions);
+        console.log('[EnviaLead] Mensagens do bot:', botMessages);
       }
       
       console.log('[EnviaLead] Dados do flow carregados:', flowData);
@@ -199,7 +257,11 @@
     `;
     
     const sendButton = document.createElement('button');
-    sendButton.innerHTML = '→';
+    sendButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90 12 12)"/>
+      </svg>
+    `;
     sendButton.style.cssText = `
       position: absolute;
       right: 24px;
@@ -210,11 +272,13 @@
       height: 32px;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.3s ease;
     `;
+    sendButton.onmouseover = () => sendButton.style.transform = 'scale(1.1)';
+    sendButton.onmouseout = () => sendButton.style.transform = 'scale(1)';
     sendButton.onclick = sendMessage;
     
     inputArea.style.position = 'relative';
@@ -253,16 +317,10 @@
     }
   }
 
-  function startConversation() {
-    setTimeout(() => {
-      addMessage(flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?', true);
-      setTimeout(() => {
-        showNextQuestion();
-      }, 1000);
-    }, 500);
-  }
-
   function addMessage(text, isBot) {
+    // Se for mensagem do bot, processar variáveis
+    const processedText = isBot ? replaceVariables(text, responses) : text;
+    
     const messagesArea = document.getElementById('envialead-messages');
     const messageDiv = document.createElement('div');
     messageDiv.style.cssText = `
@@ -283,29 +341,120 @@
         : `background: ${flowData?.colors?.primary || '#FF6B35'}; color: white; border-bottom-right-radius: 4px;`
       }
     `;
-    messageBubble.textContent = text;
+    messageBubble.textContent = processedText;
     
     messageDiv.appendChild(messageBubble);
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    messages.push({ text, isBot });
+    messages.push({ text: processedText, isBot });
+  }
+
+  function showTypingIndicator() {
+    const messagesArea = document.getElementById('envialead-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.style.cssText = `
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: flex-start;
+    `;
+    
+    const typingBubble = document.createElement('div');
+    typingBubble.style.cssText = `
+      background: #f3f4f6;
+      padding: 12px 16px;
+      border-radius: 18px 18px 18px 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    `;
+    
+    // Criar pontos de digitação
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.style.cssText = `
+        width: 6px;
+        height: 6px;
+        background: #9ca3af;
+        border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out;
+        animation-delay: ${i * 0.2}s;
+      `;
+      typingBubble.appendChild(dot);
+    }
+    
+    // Adicionar animação de digitação
+    if (!document.getElementById('typing-animation-style')) {
+      const style = document.createElement('style');
+      style.id = 'typing-animation-style';
+      style.textContent = `
+        @keyframes typing {
+          0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.5;
+          }
+          30% {
+            transform: translateY(-10px);
+            opacity: 1;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    typingDiv.appendChild(typingBubble);
+    messagesArea.appendChild(typingDiv);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+    
+    isTyping = true;
+  }
+
+  function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+      typingIndicator.remove();
+    }
+    isTyping = false;
+  }
+
+  function startConversation() {
+    setTimeout(() => {
+      addMessage(flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?', true);
+      setTimeout(() => {
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          showNextQuestion();
+        }, 1500);
+      }, 1000);
+    }, 500);
   }
 
   function showNextQuestion() {
-    if (currentQuestionIndex >= questions.length) {
-      showCompletion();
-      return;
-    }
-
-    const question = questions[currentQuestionIndex];
-    addMessage(question.title, true);
+    showTypingIndicator();
     
-    if (question.type === 'single' && question.options) {
-      showOptions(question.options);
-    } else {
-      showInput(question);
-    }
+    setTimeout(() => {
+      hideTypingIndicator();
+      
+      if (currentQuestionIndex < questions.length) {
+        const question = questions[currentQuestionIndex];
+        if (question) {
+          addMessage(question.title, true);
+          waitingForInput = true;
+          
+          if (question.type === 'single' && question.options && question.options.length > 0) {
+            showOptions(question.options);
+          } else if (question.type === 'multiple' && question.options && question.options.length > 0) {
+            showOptions(question.options);
+          } else {
+            showInput(question);
+          }
+        }
+      } else {
+        showCompletion();
+      }
+    }, 1500);
   }
 
   function showOptions(options) {
@@ -388,10 +537,73 @@
     const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
     addMessage(finalMessage, true);
     
+    // Mostrar botão do WhatsApp se configurado
+    if (flowData?.whatsapp && flowData?.show_whatsapp_button !== false) {
+      setTimeout(() => {
+        showWhatsappButton();
+      }, 1000);
+    }
+    
     // Salvar lead
     setTimeout(() => {
       saveLead();
     }, 1000);
+  }
+
+  function showWhatsappButton() {
+    const messagesArea = document.getElementById('envialead-messages');
+    const whatsappDiv = document.createElement('div');
+    whatsappDiv.style.cssText = `
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: center;
+      padding: 0 20px;
+    `;
+    
+    const whatsappButton = document.createElement('button');
+    whatsappButton.innerHTML = '💬 Continuar no WhatsApp';
+    whatsappButton.style.cssText = `
+      padding: 12px 24px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 250px;
+    `;
+    
+    whatsappButton.onmouseover = () => {
+      whatsappButton.style.backgroundColor = '#128C7E';
+      whatsappButton.style.transform = 'scale(1.05)';
+    };
+    whatsappButton.onmouseout = () => {
+      whatsappButton.style.backgroundColor = '#25D366';
+      whatsappButton.style.transform = 'scale(1)';
+    };
+    
+    whatsappButton.onclick = () => {
+      // Usar template personalizado com variáveis substituídas
+      let messageText = flowData?.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.';
+      
+      // Substituir variáveis no template
+      messageText = replaceVariables(messageText, responses);
+      
+      const whatsappNumber = flowData.whatsapp.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageText)}`;
+      
+      console.log('[EnviaLead] Abrindo WhatsApp:', whatsappUrl);
+      console.log('[EnviaLead] Mensagem processada:', messageText);
+      
+      window.open(whatsappUrl, '_blank');
+    };
+    
+    whatsappDiv.appendChild(whatsappButton);
+    messagesArea.appendChild(whatsappDiv);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
   }
 
   async function saveLead() {

@@ -180,6 +180,69 @@ Deno.serve(async (req) => {
   let currentQuestionIndex = 0;
   let userResponses = {};
   let isModalOpen = false;
+  let isTyping = false;
+  let waitingForInput = false;
+  let allQuestions = [];
+  let botMessages = [];
+  
+  // Processar perguntas usando a mesma lógica do preview
+  if (flowData.questions) {
+    const allItems = flowData.questions.map(q => ({
+      id: q.id,
+      type: q.type,
+      title: q.title,
+      placeholder: q.placeholder,
+      required: q.required,
+      order: q.order || 0,
+      options: q.options || []
+    })).sort((a, b) => a.order - b.order);
+    
+    allQuestions = allItems.filter(item => item.type !== 'bot_message');
+    botMessages = allItems.filter(item => item.type === 'bot_message');
+  }
+  
+  // Função para substituir variáveis no texto
+  function replaceVariables(text, responses) {
+    let processedText = text;
+    const variableMap = {};
+    
+    allQuestions.forEach((question, index) => {
+      const questionTitle = question.title.toLowerCase();
+      const answer = responses[question.id] || '';
+      
+      if (questionTitle.includes('nome')) {
+        variableMap['#nome'] = answer;
+        variableMap['#name'] = answer;
+      }
+      if (questionTitle.includes('telefone') || questionTitle.includes('celular')) {
+        variableMap['#telefone'] = answer;
+        variableMap['#phone'] = answer;
+      }
+      if (questionTitle.includes('email') || questionTitle.includes('e-mail')) {
+        variableMap['#email'] = answer;
+      }
+      if (questionTitle.includes('empresa') || questionTitle.includes('company')) {
+        variableMap['#empresa'] = answer;
+        variableMap['#company'] = answer;
+      }
+      if (questionTitle.includes('cidade') || questionTitle.includes('city')) {
+        variableMap['#cidade'] = answer;
+        variableMap['#city'] = answer;
+      }
+      
+      variableMap[\`#resposta\${index + 1}\`] = answer;
+      variableMap[\`#answer\${index + 1}\`] = answer;
+    });
+    
+    Object.keys(variableMap).forEach(variable => {
+      if (variableMap[variable]) {
+        const regex = new RegExp(variable, 'gi');
+        processedText = processedText.replace(regex, variableMap[variable]);
+      }
+    });
+    
+    return processedText;
+  }
 
   // Função para criar o botão do chat
   function createChatButton() {

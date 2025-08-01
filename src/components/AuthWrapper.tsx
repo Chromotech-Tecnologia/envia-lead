@@ -100,16 +100,15 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('AuthWrapper: Usuário logado, verificando/criando perfil...');
           
-          // Aguardar um pouco e tentar criar perfil se necessário
-          setTimeout(() => {
-            createProfileIfNotExists(session.user).catch(error => {
-              console.error('Erro ao criar perfil:', error);
-            });
-          }, 1000);
+          // Criar perfil se necessário - sem aguardar para evitar problemas de timing
+          createProfileIfNotExists(session.user).catch(error => {
+            console.error('Erro ao criar perfil:', error);
+          });
           
           if (location.pathname === '/auth') {
             console.log('AuthWrapper: Redirecionando para dashboard');
-            navigate('/');
+            // Usar timeout para evitar problemas de navegação
+            setTimeout(() => navigate('/'), 100);
           }
         } else if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
           console.log('AuthWrapper: Usuário deslogado, redirecionando para auth');

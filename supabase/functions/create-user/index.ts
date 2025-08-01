@@ -16,6 +16,29 @@ serve(async (req: Request) => {
   try {
     const { email, password, full_name, role, company_id } = await req.json();
 
+    // Validar entrada
+    if (!email || !password || !full_name || !role) {
+      return new Response(
+        JSON.stringify({ error: "Todos os campos são obrigatórios" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Formato de email inválido" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",

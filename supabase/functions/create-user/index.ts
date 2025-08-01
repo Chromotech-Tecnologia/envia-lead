@@ -62,24 +62,41 @@ serve(async (req: Request) => {
     });
 
     if (authError) {
+      console.error('Erro ao criar usuário no auth:', authError);
       throw authError;
     }
 
-    // Atualizar perfil com a role correta
-    if (authData.user) {
-      const { error: updateError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          full_name,
-          role,
-          company_id,
-        })
-        .eq('id', authData.user.id);
-
-      if (updateError) {
-        console.error('Erro ao atualizar perfil:', updateError);
-      }
+    if (!authData.user) {
+      throw new Error('Usuário não foi criado corretamente');
     }
+
+    console.log('Usuário criado no auth:', authData.user.id);
+
+    // Criar perfil usando a função do banco de dados
+    const { data: profileResult, error: profileError } = await supabaseAdmin
+      .rpc('create_user_profile', {
+        user_id: authData.user.id,
+        user_email: email,
+        user_full_name: full_name,
+        user_role: role,
+        user_company_id: company_id,
+      });
+
+    if (profileError) {
+      console.error('Erro ao criar perfil:', profileError);
+      // Tentar deletar o usuário criado no auth se não conseguiu criar o perfil
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw new Error(`Erro ao criar perfil do usuário: ${profileError.message}`);
+    }
+
+    if (!profileResult) {
+      console.error('Função create_user_profile retornou false');
+      // Tentar deletar o usuário criado no auth se não conseguiu criar o perfil
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw new Error('Falha ao criar perfil do usuário');
+    }
+
+    console.log('Perfil criado com sucesso para:', email);
 
     return new Response(
       JSON.stringify({ success: true, user: authData.user }),

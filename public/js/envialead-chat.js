@@ -432,29 +432,28 @@
   }
 
   function showNextQuestion() {
-    showTypingIndicator();
+    // Não mostrar digitação se já estamos mostrando
+    if (isTyping) {
+      return;
+    }
     
-    setTimeout(() => {
-      hideTypingIndicator();
-      
-      if (currentQuestionIndex < questions.length) {
-        const question = questions[currentQuestionIndex];
-        if (question) {
-          addMessage(question.title, true);
-          waitingForInput = true;
-          
-          if (question.type === 'single' && question.options && question.options.length > 0) {
-            showOptions(question.options);
-          } else if (question.type === 'multiple' && question.options && question.options.length > 0) {
-            showOptions(question.options);
-          } else {
-            showInput(question);
-          }
+    if (currentQuestionIndex < questions.length) {
+      const question = questions[currentQuestionIndex];
+      if (question) {
+        addMessage(question.title, true);
+        waitingForInput = true;
+        
+        if (question.type === 'single' && question.options && question.options.length > 0) {
+          showOptions(question.options);
+        } else if (question.type === 'multiple' && question.options && question.options.length > 0) {
+          showOptions(question.options);
+        } else {
+          showInput(question);
         }
-      } else {
-        showCompletion();
       }
-    }, 1500);
+    } else {
+      showCompletion();
+    }
   }
 
   function showOptions(options) {
@@ -494,7 +493,12 @@
     responses[question.id] = option;
     currentQuestionIndex++;
     
-    setTimeout(showNextQuestion, 1000);
+    // Mostrar digitação antes da próxima pergunta
+    showTypingIndicator();
+    setTimeout(() => {
+      hideTypingIndicator();
+      setTimeout(showNextQuestion, 500);
+    }, 1500);
   }
 
   function showInput(question) {
@@ -530,7 +534,12 @@
     document.getElementById('envialead-input-area').style.display = 'none';
     waitingForInput = false;
     
-    setTimeout(showNextQuestion, 1000);
+    // Mostrar digitação antes da próxima pergunta
+    showTypingIndicator();
+    setTimeout(() => {
+      hideTypingIndicator();
+      setTimeout(showNextQuestion, 500);
+    }, 1500);
   }
 
   function showCompletion() {

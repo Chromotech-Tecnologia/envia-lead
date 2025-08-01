@@ -206,12 +206,14 @@ const LeadsTable = () => {
   });
 
   const generateWhatsAppLink = (lead: any) => {
-    const respostasTexto = Object.entries(lead.respostas)
+    const respostas = lead.responses || lead.respostas || {};
+    const respostasTexto = Object.entries(respostas)
       .map(([pergunta, resposta]) => `${pergunta}: ${resposta}`)
       .join('\n');
     
+    const nome = lead.responses?.nome || lead.nome || 'Cliente';
     const mensagem = encodeURIComponent(
-      `Olá! Sou ${lead.nome} e estou interessado(a) em seus produtos/serviços.\n\nMinhas informações:\n${respostasTexto}\n\nAguardo contato!`
+      `Olá! Sou ${nome} e estou interessado(a) em seus produtos/serviços.\n\nMinhas informações:\n${respostasTexto}\n\nAguardo contato!`
     );
     
     return `https://api.whatsapp.com/send/?phone=5511999999999&text=${mensagem}`;

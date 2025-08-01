@@ -87,7 +87,7 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     let mounted = true;
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) {
           console.log('AuthWrapper: Componente desmontado, ignorando evento');
           return;
@@ -101,8 +101,10 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
           console.log('AuthWrapper: Usuário logado, verificando/criando perfil...');
           
           // Aguardar um pouco e tentar criar perfil se necessário
-          setTimeout(async () => {
-            await createProfileIfNotExists(session.user);
+          setTimeout(() => {
+            createProfileIfNotExists(session.user).catch(error => {
+              console.error('Erro ao criar perfil:', error);
+            });
           }, 1000);
           
           if (location.pathname === '/auth') {

@@ -23,11 +23,12 @@ interface MenuItem {
 interface SidebarProps {
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
 }
 
-const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = async () => {
     if (window.confirm('Tem certeza que deseja sair?')) {
@@ -53,14 +54,16 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   ];
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    if (setIsCollapsed) {
+      setIsCollapsed(!isCollapsed);
+    }
   };
 
   return (
     <div
-      className={`flex flex-col h-screen bg-gray-100 border-r border-gray-200 ${
+      className={`flex flex-col h-screen bg-white border-r border-gray-200 shadow-lg ${
         isCollapsed ? 'w-20' : 'w-64'
-      } transition-width duration-300 ease-in-out overflow-y-auto`}
+      } transition-all duration-300 ease-in-out overflow-y-auto`}
     >
       <div className="flex items-center justify-between p-4 flex-shrink-0">
         <Logo isCollapsed={isCollapsed} />

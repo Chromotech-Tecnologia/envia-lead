@@ -370,11 +370,14 @@ const UserManagement = () => {
                 Adicionar Usuário
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent aria-describedby="user-dialog-description">
               <DialogHeader>
                 <DialogTitle>
                   {editingUser ? 'Editar Usuário' : 'Criar Novo Usuário'}
                 </DialogTitle>
+                <p id="user-dialog-description" className="text-sm text-gray-600">
+                  {editingUser ? 'Edite as informações do usuário abaixo.' : 'Preencha os dados para criar um novo usuário.'}
+                </p>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">

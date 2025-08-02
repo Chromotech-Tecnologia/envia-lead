@@ -99,7 +99,15 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
         onClick={() => setIsOpen(!isOpen)}
       >
         {flowData?.button_avatar_url ? (
-          <img src={flowData.button_avatar_url} alt="Chat" className="w-full h-full rounded-full object-cover" />
+          <img 
+            src={flowData.button_avatar_url} 
+            alt="Chat" 
+            className="w-full h-full rounded-full object-cover"
+            onError={(e) => {
+              console.error('Erro ao carregar avatar do botão no preview:', flowData.button_avatar_url);
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         ) : (
           <MessageCircle className="text-white" size={buttonSize * 0.4} />
         )}
@@ -125,7 +133,15 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
           >
             <div className="flex items-center space-x-3">
               {flowData?.avatar_url ? (
-                <img src={flowData.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                <img 
+                  src={flowData.avatar_url} 
+                  alt="Avatar" 
+                  className="w-8 h-8 rounded-full object-cover"
+                  onError={(e) => {
+                    console.error('Erro ao carregar avatar do chat no preview:', flowData.avatar_url);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-sm">
                   👤

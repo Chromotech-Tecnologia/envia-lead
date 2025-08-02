@@ -44,15 +44,20 @@ const ChatButton = ({ isOpen, colors, flowData, position, onClick }: ChatButtonP
       {isOpen ? (
         <X size={Math.min(24, buttonSize * 0.4)} />
       ) : flowData?.button_avatar_url ? (
-        <img 
-          src={flowData.button_avatar_url} 
-          alt="Avatar" 
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            console.error('Erro ao carregar avatar do botão:', flowData.button_avatar_url);
-            e.currentTarget.style.display = 'none';
-          }}
-        />
+        // Check if it's an emoji (single character that's not a URL)
+        flowData.button_avatar_url.length <= 2 && !flowData.button_avatar_url.startsWith('http') ? (
+          <span className="text-2xl">{flowData.button_avatar_url}</span>
+        ) : (
+          <img 
+            src={flowData.button_avatar_url} 
+            alt="Avatar" 
+            className="w-full h-full object-cover rounded-full"
+            onError={(e) => {
+              console.error('Erro ao carregar avatar do botão:', flowData.button_avatar_url);
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        )
       ) : (
         <MessageCircle size={Math.min(24, buttonSize * 0.4)} />
       )}

@@ -79,15 +79,22 @@ const ChatWindow = ({
       >
         <div className="flex items-center space-x-3">
           {flowData?.avatar_url ? (
-            <img 
-              src={flowData.avatar_url} 
-              alt="Avatar" 
-              className="w-8 h-8 rounded-full object-cover" 
-              onError={(e) => {
-                console.error('Erro ao carregar avatar do chat:', flowData.avatar_url);
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+            // Check if it's an emoji (single character that's not a URL)
+            flowData.avatar_url.length <= 2 && !flowData.avatar_url.startsWith('http') ? (
+              <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-lg">
+                {flowData.avatar_url}
+              </div>
+            ) : (
+              <img 
+                src={flowData.avatar_url} 
+                alt="Avatar" 
+                className="w-8 h-8 rounded-full object-cover" 
+                onError={(e) => {
+                  console.error('Erro ao carregar avatar do chat:', flowData.avatar_url);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )
           ) : (
             <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-sm">
               👤

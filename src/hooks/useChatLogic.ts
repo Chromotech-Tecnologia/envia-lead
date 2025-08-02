@@ -29,9 +29,16 @@ export const useChatLogic = (flowData: any) => {
     }))
     .sort((a: any, b: any) => a.order - b.order) : [];
 
+  console.log('[ChatLogic] FlowData recebido:', flowData);
+  console.log('[ChatLogic] Todas as perguntas processadas:', allItems);
+
   // Separar perguntas e mensagens do bot
   const questions = allItems.filter((item: any) => item.type !== 'bot_message');
   const botMessages = allItems.filter((item: any) => item.type === 'bot_message');
+
+  console.log('[ChatLogic] Perguntas filtradas:', questions);
+  console.log('[ChatLogic] Mensagens do bot:', botMessages);
+  console.log('[ChatLogic] Índice atual da pergunta:', currentQuestionIndex);
 
   // Função melhorada para substituir variáveis no texto
   const replaceVariables = (text: string, responses: Record<string, string>) => {
@@ -100,11 +107,15 @@ export const useChatLogic = (flowData: any) => {
 
   const showTypingIndicator = () => {
     setIsTyping(true);
+    console.log('[ChatLogic] showTypingIndicator - currentQuestionIndex:', currentQuestionIndex);
+    console.log('[ChatLogic] showTypingIndicator - questions.length:', questions.length);
+    
     setTimeout(() => {
       setIsTyping(false);
       
       if (currentQuestionIndex < questions.length) {
         const question = questions[currentQuestionIndex];
+        console.log('[ChatLogic] Pergunta atual a ser exibida:', question);
         if (question) {
           addMessage(question.title, true);
           setWaitingForInput(true);
@@ -121,6 +132,10 @@ export const useChatLogic = (flowData: any) => {
     if (!answer.trim() || !waitingForInput) return;
 
     const currentQuestion = questions[currentQuestionIndex];
+    console.log('[ChatLogic] handleSendAnswer - currentQuestionIndex:', currentQuestionIndex);
+    console.log('[ChatLogic] handleSendAnswer - currentQuestion:', currentQuestion);
+    console.log('[ChatLogic] handleSendAnswer - answer:', answer);
+    
     if (!currentQuestion) return;
 
     // Atualizar respostas com nova resposta
@@ -131,11 +146,17 @@ export const useChatLogic = (flowData: any) => {
     addMessage(answer, false);
     
     // Próxima pergunta
-    setCurrentQuestionIndex(prev => prev + 1);
+    setCurrentQuestionIndex(prev => {
+      console.log('[ChatLogic] Atualizando índice de', prev, 'para', prev + 1);
+      return prev + 1;
+    });
     setWaitingForInput(false);
     
     // Mostrar próxima pergunta após delay
-    if (currentQuestionIndex + 1 < questions.length) {
+    const nextIndex = currentQuestionIndex + 1;
+    console.log('[ChatLogic] Verificando próxima pergunta - nextIndex:', nextIndex, 'questions.length:', questions.length);
+    
+    if (nextIndex < questions.length) {
       setTimeout(() => {
         showTypingIndicator();
       }, 1000);

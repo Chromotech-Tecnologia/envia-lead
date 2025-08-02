@@ -81,7 +81,7 @@ const ChatWindow = ({
           {flowData?.avatar_url ? (
             // Check if it's an emoji (single character that's not a URL)
             flowData.avatar_url.length <= 2 && !flowData.avatar_url.startsWith('http') ? (
-              <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-lg">
+              <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center" style={{ fontSize: '20px' }}>
                 {flowData.avatar_url}
               </div>
             ) : (

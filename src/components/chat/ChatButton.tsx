@@ -46,7 +46,7 @@ const ChatButton = ({ isOpen, colors, flowData, position, onClick }: ChatButtonP
       ) : flowData?.button_avatar_url ? (
         // Check if it's an emoji (single character that's not a URL)
         flowData.button_avatar_url.length <= 2 && !flowData.button_avatar_url.startsWith('http') ? (
-          <span className="text-2xl">{flowData.button_avatar_url}</span>
+          <span style={{ fontSize: `${buttonSize * 0.5}px` }}>{flowData.button_avatar_url}</span>
         ) : (
           <img 
             src={flowData.button_avatar_url} 

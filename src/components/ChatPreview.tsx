@@ -101,7 +101,7 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
         {flowData?.button_avatar_url ? (
           // Check if it's an emoji (single character that's not a URL)
           flowData.button_avatar_url.length <= 2 && !flowData.button_avatar_url.startsWith('http') ? (
-            <span className="text-white text-2xl">{flowData.button_avatar_url}</span>
+            <span className="text-white" style={{ fontSize: `${buttonSize * 0.5}px` }}>{flowData.button_avatar_url}</span>
           ) : (
             <img 
               src={flowData.button_avatar_url} 
@@ -140,7 +140,7 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
               {flowData?.avatar_url ? (
                 // Check if it's an emoji (single character that's not a URL)
                 flowData.avatar_url.length <= 2 && !flowData.avatar_url.startsWith('http') ? (
-                  <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-lg">
+                  <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center" style={{ fontSize: '20px' }}>
                     {flowData.avatar_url}
                   </div>
                 ) : (

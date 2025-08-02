@@ -48,17 +48,13 @@ export const validatePhone = (phone: string): boolean => {
   }
   
   if (cleanPhone.length === 11) {
-    // Celular: DDD + 9 + 8 dígitos
-    const firstDigit = cleanPhone.substring(2, 3);
-    const isValid = firstDigit === '9';
-    console.log('[InputMasks] Celular válido:', isValid);
-    return isValid;
+    // Celular: DDD + qualquer primeiro dígito + 8 dígitos
+    console.log('[InputMasks] Celular válido: 11 dígitos');
+    return true;
   } else if (cleanPhone.length === 10) {
-    // Fixo: DDD + 8 dígitos (deve começar com 2, 3, 4 ou 5)
-    const firstDigit = cleanPhone.substring(2, 3);
-    const isValid = ['2', '3', '4', '5'].includes(firstDigit);
-    console.log('[InputMasks] Fixo válido:', isValid);
-    return isValid;
+    // Fixo: DDD + qualquer primeiro dígito + 7 dígitos
+    console.log('[InputMasks] Fixo válido: 10 dígitos');
+    return true;
   }
   
   return false;

@@ -1,6 +1,6 @@
 
 import { Send } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { applyMask, validateInput } from '@/utils/inputMasks';
 
 interface ChatInputProps {
@@ -27,6 +27,7 @@ const ChatInput = ({
   replaceVariables 
 }: ChatInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showEmailError, setShowEmailError] = useState(false);
 
   useEffect(() => {
     if (inputRef.current && currentQuestion) {
@@ -52,9 +53,13 @@ const ChatInput = ({
           if (isValid) {
             target.classList.remove('border-red-500', 'bg-red-50');
             target.classList.add('border-green-500', 'bg-green-50');
+            setShowEmailError(false);
           } else {
             target.classList.remove('border-green-500', 'bg-green-50');
             target.classList.add('border-red-500', 'bg-red-50');
+            if (currentQuestion.type === 'email') {
+              setShowEmailError(true);
+            }
           }
         }
       };
@@ -131,55 +136,66 @@ const ChatInput = ({
             ))}
           </div>
         ) : (
-          <div className="flex space-x-2">
-            <input
-              ref={inputRef}
-              type={currentQuestion.type === 'phone' ? 'tel' : currentQuestion.type}
-              placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
-              className="flex-1 p-2 border rounded-lg transition-colors"
-              style={{ borderColor: colors.primary }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  const input = e.target as HTMLInputElement;
-                  
-                  // Validar antes de enviar se for phone ou email
-                  if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
-                    const isValid = validateInput(input.value, currentQuestion.type);
-                    if (!isValid) {
-                      input.classList.add('border-red-500', 'bg-red-50');
-                      return;
+          <div className="space-y-2">
+            <div className="flex space-x-2">
+              <input
+                ref={inputRef}
+                type={currentQuestion.type === 'phone' ? 'tel' : currentQuestion.type}
+                placeholder={currentQuestion.placeholder || "Digite sua resposta..."}
+                className="flex-1 p-2 border rounded-lg transition-colors"
+                style={{ borderColor: colors.primary }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const input = e.target as HTMLInputElement;
+                    
+                    // Validar antes de enviar se for phone ou email
+                    if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+                      const isValid = validateInput(input.value, currentQuestion.type);
+                      if (!isValid) {
+                        input.classList.add('border-red-500', 'bg-red-50');
+                        if (currentQuestion.type === 'email') {
+                          setShowEmailError(true);
+                        }
+                        return;
+                      }
                     }
+                    
+                    onSendAnswer(input.value);
+                    input.value = '';
                   }
-                  
-                  onSendAnswer(input.value);
-                  input.value = '';
-                }
-              }}
-            />
-            <button
-              onClick={() => {
-                const input = inputRef.current;
-                if (input) {
-                  // Validar antes de enviar se for phone ou email
-                  if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
-                    const isValid = validateInput(input.value, currentQuestion.type);
-                    if (!isValid) {
-                      input.classList.add('border-red-500', 'bg-red-50');
-                      return;
+                }}
+              />
+              <button
+                onClick={() => {
+                  const input = inputRef.current;
+                  if (input) {
+                    // Validar antes de enviar se for phone ou email
+                    if (currentQuestion.type === 'phone' || currentQuestion.type === 'email') {
+                      const isValid = validateInput(input.value, currentQuestion.type);
+                      if (!isValid) {
+                        input.classList.add('border-red-500', 'bg-red-50');
+                        if (currentQuestion.type === 'email') {
+                          setShowEmailError(true);
+                        }
+                        return;
+                      }
                     }
+                    
+                    onSendAnswer(input.value);
+                    input.value = '';
                   }
-                  
-                  onSendAnswer(input.value);
-                  input.value = '';
-                }
-              }}
-              className="p-2 text-white rounded-lg transition-colors flex items-center justify-center"
-              style={{ 
-                background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
-              }}
-            >
-              <Send className="w-4 h-4" />
-            </button>
+                }}
+                className="p-2 text-white rounded-lg transition-colors flex items-center justify-center"
+                style={{ 
+                  background: `linear-gradient(45deg, ${colors.primary}, ${colors.secondary})` 
+                }}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+            {currentQuestion.type === 'email' && showEmailError && (
+              <p className="text-red-500 text-sm">Por favor, digite um email válido</p>
+            )}
           </div>
         )}
       </div>

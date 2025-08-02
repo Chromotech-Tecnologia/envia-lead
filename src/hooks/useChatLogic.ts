@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface Message {
   id: string;
@@ -92,7 +92,7 @@ export const useChatLogic = (flowData: any) => {
     return processedText;
   };
 
-  const addMessage = (text: string, isBot: boolean) => {
+  const addMessage = useCallback((text: string, isBot: boolean) => {
     // Se for mensagem do bot, processar variáveis
     const processedText = isBot ? replaceVariables(text, responses) : text;
     
@@ -103,9 +103,9 @@ export const useChatLogic = (flowData: any) => {
       timestamp: Date.now()
     };
     setMessages(prev => [...prev, newMessage]);
-  };
+  }, [responses, questions]);
 
-  const showTypingIndicator = () => {
+  const showTypingIndicator = useCallback(() => {
     setIsTyping(true);
     console.log('[ChatLogic] showTypingIndicator - currentQuestionIndex:', currentQuestionIndex);
     console.log('[ChatLogic] showTypingIndicator - questions.length:', questions.length);
@@ -113,62 +113,75 @@ export const useChatLogic = (flowData: any) => {
     setTimeout(() => {
       setIsTyping(false);
       
-      if (currentQuestionIndex < questions.length) {
-        const question = questions[currentQuestionIndex];
-        console.log('[ChatLogic] Pergunta atual a ser exibida:', question);
-        if (question) {
-          addMessage(question.title, true);
-          setWaitingForInput(true);
+      // Capturar o índice atual no momento da execução
+      setCurrentQuestionIndex(currentIndex => {
+        console.log('[ChatLogic] showTypingIndicator - índice capturado:', currentIndex);
+        
+        if (currentIndex < questions.length) {
+          const question = questions[currentIndex];
+          console.log('[ChatLogic] Pergunta atual a ser exibida:', question);
+          if (question) {
+            setTimeout(() => {
+              addMessage(question.title, true);
+              setWaitingForInput(true);
+            }, 100);
+          }
+        } else {
+          setShowCompletion(true);
+          const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+          setTimeout(() => {
+            addMessage(finalMessage, true);
+          }, 100);
         }
-      } else {
-        setShowCompletion(true);
-        const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
-        addMessage(finalMessage, true);
-      }
+        
+        return currentIndex;
+      });
     }, 1500);
-  };
+  }, [questions, flowData, addMessage]);
 
-  const handleSendAnswer = (answer: string) => {
+  const handleSendAnswer = useCallback((answer: string) => {
     if (!answer.trim() || !waitingForInput) return;
 
-    const currentQuestion = questions[currentQuestionIndex];
-    console.log('[ChatLogic] handleSendAnswer - currentQuestionIndex:', currentQuestionIndex);
-    console.log('[ChatLogic] handleSendAnswer - currentQuestion:', currentQuestion);
-    console.log('[ChatLogic] handleSendAnswer - answer:', answer);
-    
-    if (!currentQuestion) return;
+    setCurrentQuestionIndex(currentIndex => {
+      const currentQuestion = questions[currentIndex];
+      console.log('[ChatLogic] handleSendAnswer - currentQuestionIndex:', currentIndex);
+      console.log('[ChatLogic] handleSendAnswer - currentQuestion:', currentQuestion);
+      console.log('[ChatLogic] handleSendAnswer - answer:', answer);
+      
+      if (!currentQuestion) return currentIndex;
 
-    // Atualizar respostas com nova resposta
-    const newResponses = { ...responses, [currentQuestion.id]: answer };
-    setResponses(newResponses);
-    
-    // Adicionar resposta do usuário
-    addMessage(answer, false);
-    
-    // Próxima pergunta
-    setCurrentQuestionIndex(prev => {
-      console.log('[ChatLogic] Atualizando índice de', prev, 'para', prev + 1);
-      return prev + 1;
+      // Atualizar respostas com nova resposta
+      setResponses(prevResponses => {
+        const newResponses = { ...prevResponses, [currentQuestion.id]: answer };
+        return newResponses;
+      });
+      
+      // Adicionar resposta do usuário
+      addMessage(answer, false);
+      
+      const nextIndex = currentIndex + 1;
+      console.log('[ChatLogic] Atualizando índice de', currentIndex, 'para', nextIndex);
+      console.log('[ChatLogic] Verificando próxima pergunta - nextIndex:', nextIndex, 'questions.length:', questions.length);
+      
+      setWaitingForInput(false);
+      
+      // Mostrar próxima pergunta após delay
+      if (nextIndex < questions.length) {
+        setTimeout(() => {
+          showTypingIndicator();
+        }, 1000);
+      } else {
+        // Finalizar conversa
+        setTimeout(() => {
+          setShowCompletion(true);
+          const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+          addMessage(finalMessage, true);
+        }, 1000);
+      }
+      
+      return nextIndex;
     });
-    setWaitingForInput(false);
-    
-    // Mostrar próxima pergunta após delay
-    const nextIndex = currentQuestionIndex + 1;
-    console.log('[ChatLogic] Verificando próxima pergunta - nextIndex:', nextIndex, 'questions.length:', questions.length);
-    
-    if (nextIndex < questions.length) {
-      setTimeout(() => {
-        showTypingIndicator();
-      }, 1000);
-    } else {
-      // Finalizar conversa
-      setTimeout(() => {
-        setShowCompletion(true);
-        const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
-        addMessage(finalMessage, true);
-      }, 1000);
-    }
-  };
+  }, [questions, flowData, waitingForInput, addMessage, showTypingIndicator]);
 
   const startConversation = () => {
     if (messages.length === 0 && questions.length > 0) {

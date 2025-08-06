@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import ChatMessage from './chat/ChatMessage';
 import ChatPreviewInput from './chat/ChatPreviewInput';
 import ChatEndMessage from './chat/ChatEndMessage';
+import WelcomeBubble from './chat/WelcomeBubble';
 import { useChatLogic } from '@/hooks/useChatLogic';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -16,6 +17,7 @@ interface ChatPreviewProps {
 const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
 
   const {
     messages,
@@ -117,6 +119,15 @@ const ChatPreview = ({ device, flowData, position }: ChatPreviewProps) => {
           <MessageCircle className="text-white" size={buttonSize * 0.4} />
         )}
       </button>
+
+      {/* Balão de Boas-vindas */}
+      <WelcomeBubble
+        showWelcomeBubble={!isOpen && showWelcomeBubble}
+        position={flowData?.button_position || 'bottom-right'}
+        colors={flowData?.colors || {}}
+        flowData={flowData}
+        onClose={() => setShowWelcomeBubble(false)}
+      />
 
       {/* Janela do Chat */}
       {isOpen && (

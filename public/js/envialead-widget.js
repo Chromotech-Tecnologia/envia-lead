@@ -2,68 +2,186 @@
 (function() {
   console.log('[EnviaLead] Widget carregado');
   
-  // CSS MOVIDO PARA O TOPO - PRIMEIRA COISA A SER EXECUTADA
-  const styles = `
-    #envialead-widget-container {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+  // CSS DINÂMICO BASEADO NO FLOW DATA
+  const createDynamicStyles = (flowData) => {
+    const buttonSize = flowData?.button_size || 60;
+    const chatWidth = flowData?.chat_width || 360;
+    const chatHeight = flowData?.chat_height || 520;
+    const primaryColor = flowData?.colors?.primary || '#FF6B35';
+    const secondaryColor = flowData?.colors?.secondary || '#3B82F6';
+    const backgroundColor = flowData?.colors?.background || '#F9FAFB';
+    const textColor = flowData?.colors?.text || '#374151';
+    const headerTextColor = flowData?.colors?.headerText || '#FFFFFF';
     
-    #envialead-button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
+    return `
+      #envialead-widget-container {
+        position: fixed;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      
+      #envialead-button {
+        background-color: ${primaryColor};
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: ${buttonSize}px;
+        height: ${buttonSize}px;
+        font-size: ${buttonSize * 0.5}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: fixed;
+      }
+      
+      #envialead-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      }
+      
+      #envialead-button img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      
+      #envialead-welcome-bubble {
+        position: fixed;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 16px;
+        max-width: 250px;
+        width: max-content;
+        word-wrap: break-word;
+        z-index: 9998;
+        display: none;
+      }
+      
+      #envialead-welcome-bubble .close-button {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 20px;
+        height: 20px;
+        background-color: #f3f4f6;
+        border: none;
+        border-radius: 50%;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+      }
+      
+      #envialead-welcome-bubble .close-button:hover {
+        background-color: #e5e7eb;
+      }
+      
+      #envialead-chat-window {
+        position: fixed;
+        width: ${chatWidth}px;
+        height: ${chatHeight}px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        overflow: hidden;
+        display: none;
+        z-index: 10000;
+        border: 1px solid #e5e7eb;
+      }
+      
+      #envialead-header {
+        background: linear-gradient(45deg, ${primaryColor}, ${secondaryColor});
+        color: ${headerTextColor};
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      #envialead-header .header-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      #envialead-header .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        font-size: 20px;
+      }
+      
+      #envialead-header .avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      
+      #envialead-header .attendant-info .name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+      
+      #envialead-header .attendant-info .status {
+        font-size: 12px;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      
+      #envialead-header .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+      
+      #envialead-header .close-button {
+        background: none;
+        border: none;
+        color: ${headerTextColor};
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+      
+      #envialead-header .close-button:hover {
+        background: rgba(255,255,255,0.2);
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
     
-    #envialead-button:hover {
-      background-color: #3b82f6;
-      transform: scale(1.1);
-    }
-    
-    #envialead-chat-window {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 360px;
-      height: 520px;
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      overflow: hidden;
-      display: none;
-      z-index: 10000;
-      border: 1px solid #e5e7eb;
-    }
-    
-    #envialead-header {
-      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-      color: white;
-      padding: 16px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    #envialead-messages {
-      padding: 16px;
-      overflow-y: auto;
-      height: 360px;
-      background-color: #f9fafb;
-    }
+      #envialead-messages {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+        background-color: ${backgroundColor};
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
     
     .envialead-message {
       margin-bottom: 12px;
@@ -150,11 +268,11 @@
       font-size: 16px;
     }
     
-    .envialead-send-button::before {
-      content: "▶";
-      font-size: 12px;
-      margin-left: 2px;
-    }
+      .envialead-send-button::before {
+        content: "→";
+        font-size: 16px;
+        font-weight: bold;
+      }
     
     .envialead-send-button:hover {
       transform: scale(1.1);
@@ -192,32 +310,25 @@
       margin: 8px 0;
     }
     
-    .envialead-radio-option {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-      padding: 12px;
-      background: white;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .envialead-radio-option:hover {
-      border-color: #2563eb;
-      background-color: #f8fafc;
-    }
-    
-    .envialead-radio-option.selected {
-      border-color: #2563eb;
-      background-color: #eff6ff;
-    }
-    
-    .envialead-radio-option input[type="radio"] {
-      margin-right: 8px;
-      transform: scale(1.2);
-    }
+      .envialead-option-button {
+        display: block;
+        width: fit-content;
+        padding: 8px 16px;
+        margin: 4px 0;
+        background: white;
+        border: 2px solid ${primaryColor}20;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        color: ${primaryColor};
+        text-align: left;
+      }
+      
+      .envialead-option-button:hover {
+        background-color: ${primaryColor}10;
+        border-color: ${primaryColor}40;
+      }
     
     .envialead-typing-container {
       display: flex;
@@ -237,28 +348,30 @@
       gap: 4px;
     }
     
-    .envialead-typing-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #9ca3af;
-      border-radius: 50%;
-      animation: envialead-typing-bounce 1.4s infinite ease-in-out;
-    }
-    
-    .envialead-typing-dot:nth-child(1) { animation-delay: -0.32s; }
-    .envialead-typing-dot:nth-child(2) { animation-delay: -0.16s; }
-    .envialead-typing-dot:nth-child(3) { animation-delay: 0s; }
-    
-    @keyframes envialead-typing-bounce {
-      0%, 80%, 100% {
-        transform: scale(0.8);
-        opacity: 0.5;
+      .envialead-typing-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        animation: envialead-typing-bounce 1.4s infinite ease-in-out;
       }
-      40% {
-        transform: scale(1.2);
-        opacity: 1;
+      
+      .envialead-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+      .envialead-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+      .envialead-typing-dot:nth-child(3) { animation-delay: 0s; }
+      
+      @keyframes envialead-typing-bounce {
+        0%, 80%, 100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        40% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
       }
-    }
+    `;
+  };
     
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
@@ -283,49 +396,128 @@
     }
   `;
   
-  // INJETAR CSS IMEDIATAMENTE
-  const styleSheet = document.createElement("style");
-  styleSheet.type = "text/css";
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-  console.log('[EnviaLead] CSS injetado com sucesso');
-  
-  // Criar elementos do widget
-  const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'envialead-widget-container';
-  
-  const chatButton = document.createElement('button');
-  chatButton.id = 'envialead-button';
-  chatButton.innerHTML = '💬';
-  
-  const chatWindow = document.createElement('div');
-  chatWindow.id = 'envialead-chat-window';
-  
-  const chatHeader = document.createElement('div');
-  chatHeader.id = 'envialead-header';
-  chatHeader.innerText = 'EnviaLead Chat';
-  
-  const messagesContainer = document.createElement('div');
-  messagesContainer.id = 'envialead-messages';
-  
-  const inputContainer = document.createElement('div');
-  inputContainer.id = 'envialead-input-container';
-  
-  const whatsAppButton = document.createElement('button');
-  whatsAppButton.id = 'envialead-whatsapp-button';
-  whatsAppButton.innerHTML = '💬 Continuar no WhatsApp';
-  
-  // Adicionar elementos ao DOM
-  chatWindow.appendChild(chatHeader);
-  chatWindow.appendChild(messagesContainer);
-  chatWindow.appendChild(inputContainer);
-  chatWindow.appendChild(whatsAppButton);
-  
-  widgetContainer.appendChild(chatButton);
-  widgetContainer.appendChild(chatWindow);
-  
-  document.body.appendChild(widgetContainer);
-  console.log('[EnviaLead] Elementos DOM criados');
+  // Função para criar elementos DOM dinamicamente
+  const createWidgetElements = (flowData) => {
+    console.log('[EnviaLead] Criando elementos DOM com flowData:', flowData);
+    
+    // Criar container principal
+    const widgetContainer = document.createElement('div');
+    widgetContainer.id = 'envialead-widget-container';
+    
+    // Criar botão flutuante
+    const chatButton = document.createElement('button');
+    chatButton.id = 'envialead-button';
+    
+    // Aplicar avatar ou ícone no botão
+    if (flowData?.button_avatar_url) {
+      if (flowData.button_avatar_url.length <= 2 && !flowData.button_avatar_url.startsWith('http')) {
+        // É um emoji
+        chatButton.innerHTML = flowData.button_avatar_url;
+      } else {
+        // É uma URL de imagem
+        const img = document.createElement('img');
+        img.src = flowData.button_avatar_url;
+        img.alt = 'Chat';
+        img.onerror = () => {
+          console.error('Erro ao carregar avatar do botão:', flowData.button_avatar_url);
+          chatButton.innerHTML = '💬';
+        };
+        chatButton.appendChild(img);
+      }
+    } else {
+      chatButton.innerHTML = '💬';
+    }
+    
+    // Criar balão de boas-vindas
+    const welcomeBubble = document.createElement('div');
+    welcomeBubble.id = 'envialead-welcome-bubble';
+    welcomeBubble.innerHTML = `
+      <button class="close-button">×</button>
+      <p style="margin: 0; padding-right: 16px; font-size: 14px; color: ${flowData?.colors?.text || '#374151'};">
+        ${flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?'}
+      </p>
+    `;
+    
+    // Criar janela do chat
+    const chatWindow = document.createElement('div');
+    chatWindow.id = 'envialead-chat-window';
+    
+    // Criar header do chat
+    const chatHeader = document.createElement('div');
+    chatHeader.id = 'envialead-header';
+    
+    const headerContent = document.createElement('div');
+    headerContent.className = 'header-content';
+    
+    // Avatar no header
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    if (flowData?.avatar_url) {
+      if (flowData.avatar_url.length <= 2 && !flowData.avatar_url.startsWith('http')) {
+        // É um emoji
+        avatar.innerHTML = flowData.avatar_url;
+      } else {
+        // É uma URL de imagem
+        const img = document.createElement('img');
+        img.src = flowData.avatar_url;
+        img.alt = 'Avatar';
+        img.onerror = () => {
+          console.error('Erro ao carregar avatar do chat:', flowData.avatar_url);
+          avatar.innerHTML = '👤';
+        };
+        avatar.appendChild(img);
+      }
+    } else {
+      avatar.innerHTML = '👤';
+    }
+    
+    // Info do atendente
+    const attendantInfo = document.createElement('div');
+    attendantInfo.className = 'attendant-info';
+    attendantInfo.innerHTML = `
+      <div class="name">${flowData?.attendant_name || 'Atendimento'}</div>
+      <div class="status">
+        <div class="status-dot"></div>
+        Online agora
+      </div>
+    `;
+    
+    headerContent.appendChild(avatar);
+    headerContent.appendChild(attendantInfo);
+    
+    // Botão de fechar
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.innerHTML = '×';
+    
+    chatHeader.appendChild(headerContent);
+    chatHeader.appendChild(closeButton);
+    
+    // Container de mensagens
+    const messagesContainer = document.createElement('div');
+    messagesContainer.id = 'envialead-messages';
+    
+    // Container de input
+    const inputContainer = document.createElement('div');
+    inputContainer.id = 'envialead-input-container';
+    
+    // Botão do WhatsApp
+    const whatsAppButton = document.createElement('button');
+    whatsAppButton.id = 'envialead-whatsapp-button';
+    whatsAppButton.innerHTML = '💬 Continuar no WhatsApp';
+    
+    // Montar estrutura
+    chatWindow.appendChild(chatHeader);
+    chatWindow.appendChild(messagesContainer);
+    chatWindow.appendChild(inputContainer);
+    chatWindow.appendChild(whatsAppButton);
+    
+    widgetContainer.appendChild(chatButton);
+    widgetContainer.appendChild(welcomeBubble);
+    widgetContainer.appendChild(chatWindow);
+    
+    return { widgetContainer, chatButton, welcomeBubble, chatWindow, chatHeader, messagesContainer, inputContainer, whatsAppButton, closeButton };
+  };
   
   // Variáveis globais
   window.enviaLeadData = {};
@@ -713,6 +905,48 @@
     console.log('[EnviaLead] ==> FIM ARMAZENAMENTO');
   }
   
+  // Função para calcular posicionamento dinâmico
+  const calculatePosition = (basePosition, offsetX = 0, offsetY = 0) => {
+    const positions = {
+      'bottom-right': { bottom: `${20 + offsetY}px`, right: `${20 + offsetX}px` },
+      'bottom-left': { bottom: `${20 + offsetY}px`, left: `${20 + offsetX}px` },
+      'bottom-center': { bottom: `${20 + offsetY}px`, left: '50%', transform: `translateX(calc(-50% + ${offsetX}px))` },
+      'top-right': { top: `${20 + offsetY}px`, right: `${20 + offsetX}px` },
+      'top-left': { top: `${20 + offsetY}px`, left: `${20 + offsetX}px` },
+      'top-center': { top: `${20 + offsetY}px`, left: '50%', transform: `translateX(calc(-50% + ${offsetX}px))` },
+    };
+    return positions[basePosition] || positions['bottom-right'];
+  };
+
+  // Função para aplicar posicionamento aos elementos
+  const applyPositioning = (flowData, elements) => {
+    const { chatButton, welcomeBubble, chatWindow } = elements;
+    
+    // Posicionar botão
+    const buttonPosition = calculatePosition(
+      flowData?.button_position || 'bottom-right',
+      flowData?.button_offset_x || 0,
+      flowData?.button_offset_y || 0
+    );
+    Object.assign(chatButton.style, buttonPosition);
+    
+    // Posicionar balão de boas-vindas
+    const bubblePosition = calculatePosition(
+      flowData?.button_position || 'bottom-right',
+      (flowData?.button_offset_x || 0) + (flowData?.button_position?.includes('right') ? -80 : 80),
+      (flowData?.button_offset_y || 0) + 80
+    );
+    Object.assign(welcomeBubble.style, bubblePosition);
+    
+    // Posicionar janela do chat
+    const chatPosition = calculatePosition(
+      flowData?.chat_position || flowData?.button_position || 'bottom-right',
+      flowData?.chat_offset_x || flowData?.button_offset_x || 0,
+      (flowData?.chat_offset_y || flowData?.button_offset_y || 0) + (flowData?.button_size || 60) + 20
+    );
+    Object.assign(chatWindow.style, chatPosition);
+  };
+
   // Função para inicializar o widget
   window.enviaLeadInit = function(flowId) {
     console.log('[EnviaLead] ==> INICIALIZANDO WIDGET');
@@ -720,6 +954,7 @@
     
     // REINICIALIZAR RESPOSTAS - CORREÇÃO CRÍTICA
     window.enviaLeadResponses = {};
+    window.enviaLeadCurrentQuestion = 0;
     console.log('[EnviaLead] Respostas reinicializadas');
     
     // Obter dados do flow
@@ -735,6 +970,62 @@
         window.enviaLeadData = data[0];
         console.log('[EnviaLead] Dados do flow carregados:', window.enviaLeadData);
         
+        // Criar elementos DOM com dados do flow
+        const elements = createWidgetElements(window.enviaLeadData);
+        
+        // Injetar CSS dinâmico
+        const dynamicStyles = createDynamicStyles(window.enviaLeadData);
+        const styleSheet = document.createElement("style");
+        styleSheet.type = "text/css";
+        styleSheet.innerText = dynamicStyles;
+        document.head.appendChild(styleSheet);
+        
+        // Aplicar posicionamento
+        applyPositioning(window.enviaLeadData, elements);
+        
+        // Adicionar elementos ao DOM
+        document.body.appendChild(elements.widgetContainer);
+        
+        // Configurar eventos
+        let welcomeBubbleVisible = true;
+        
+        // Evento do botão principal
+        elements.chatButton.addEventListener('click', function() {
+          const isVisible = elements.chatWindow.style.display === 'block';
+          elements.chatWindow.style.display = isVisible ? 'none' : 'block';
+          
+          // Esconder/mostrar balão de boas-vindas
+          if (!isVisible) {
+            elements.welcomeBubble.style.display = 'none';
+            // Iniciar conversa se ainda não começou
+            startConversation();
+          } else if (welcomeBubbleVisible) {
+            elements.welcomeBubble.style.display = 'block';
+          }
+          
+          console.log('[EnviaLead] Chat window toggled:', !isVisible);
+        });
+        
+        // Evento do botão de fechar do chat
+        elements.closeButton.addEventListener('click', function() {
+          elements.chatWindow.style.display = 'none';
+          if (welcomeBubbleVisible) {
+            elements.welcomeBubble.style.display = 'block';
+          }
+        });
+        
+        // Evento do botão de fechar do balão
+        const bubbleCloseButton = elements.welcomeBubble.querySelector('.close-button');
+        if (bubbleCloseButton) {
+          bubbleCloseButton.addEventListener('click', function() {
+            elements.welcomeBubble.style.display = 'none';
+            welcomeBubbleVisible = false;
+          });
+        }
+        
+        // Mostrar balão de boas-vindas inicialmente
+        elements.welcomeBubble.style.display = 'block';
+        
         // Obter perguntas do flow
         fetch(`https://fuzkdrkhvmaimpgzvimq.supabase.co/rest/v1/questions?flow_id=eq.${flowId}&order=order_index`, {
           headers: {
@@ -744,22 +1035,21 @@
         })
         .then(response => response.json())
         .then(questions => {
-          window.enviaLeadData.questions = questions;
-          console.log('[EnviaLead] Perguntas carregadas:', window.enviaLeadData.questions);
+          // Processar perguntas incluindo mensagens de bot
+          const processedQuestions = questions
+            .map(q => ({
+              id: q.id,
+              type: q.type,
+              title: q.title,
+              placeholder: q.placeholder,
+              required: q.required,
+              order: q.order_index || q.order || 0,
+              options: q.options || []
+            }))
+            .sort((a, b) => a.order - b.order);
           
-          // Adicionar mensagem de boas-vindas
-          addMessage(window.enviaLeadData.welcome_message || 'Olá! Como posso ajudá-lo?', true);
-          
-          // Mostrar primeira pergunta com delay
-          if (window.enviaLeadData.questions.length > 0) {
-            setTimeout(() => {
-              showTypingIndicator();
-              setTimeout(() => {
-                hideTypingIndicator();
-                showQuestion(window.enviaLeadData.questions[0]);
-              }, 2000);
-            }, 1000);
-          }
+          window.enviaLeadData.questions = processedQuestions;
+          console.log('[EnviaLead] Perguntas processadas:', window.enviaLeadData.questions);
           
           console.log('[EnviaLead] ==> WIDGET INICIALIZADO COM SUCESSO');
         })
@@ -775,23 +1065,52 @@
     });
   };
   
-  // Evento de clique no botão
-  chatButton.addEventListener('click', function() {
-    const isVisible = chatWindow.style.display === 'block';
-    chatWindow.style.display = isVisible ? 'none' : 'block';
-    console.log('[EnviaLead] Chat window toggled:', !isVisible);
-  });
+  // Função para iniciar conversa quando o chat for aberto
+  const startConversation = () => {
+    const messagesContainer = document.getElementById('envialead-messages');
+    if (!messagesContainer || messagesContainer.children.length > 0) return;
+    
+    // Adicionar mensagem de boas-vindas
+    setTimeout(() => {
+      addMessage(window.enviaLeadData.welcome_message || 'Olá! Como posso ajudá-lo?', true);
+      
+      // Filtrar apenas perguntas (não mensagens de bot)
+      const realQuestions = window.enviaLeadData.questions.filter(q => q.type !== 'bot_message');
+      
+      if (realQuestions.length > 0) {
+        setTimeout(() => {
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            showQuestion(realQuestions[0]);
+          }, 2000);
+        }, 1000);
+      }
+    }, 500);
+  };
   
   // Função para mostrar botão do WhatsApp
   function showWhatsAppButton() {
     console.log('[EnviaLead] ==> MOSTRANDO BOTÃO WHATSAPP');
     
-    whatsAppButton.style.display = 'block';
+    const whatsAppButton = document.getElementById('envialead-whatsapp-button');
+    if (!whatsAppButton) return;
     
-    whatsAppButton.addEventListener('click', function() {
-      console.log('[EnviaLead] ==> BOTÃO WHATSAPP CLICADO');
-      console.log('[EnviaLead] Dados do flow:', window.enviaLeadData);
-      console.log('[EnviaLead] Respostas disponíveis:', window.enviaLeadResponses);
+    // Preparar mensagem do WhatsApp com substituição de variáveis
+    let whatsappMessage = window.enviaLeadData.whatsapp_message_template || 
+      window.enviaLeadData.whatsapp_message ||
+      'Olá! Vim através do seu site e gostaria de saber mais informações.';
+    
+    whatsappMessage = replaceVariables(whatsappMessage, window.enviaLeadResponses);
+    
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappNumber = (window.enviaLeadData.whatsapp || '').replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodedMessage}`;
+    
+    whatsAppButton.style.display = 'block';
+    whatsAppButton.onclick = function() {
+      window.open(whatsappUrl, '_blank');
+    };
       
       // Corrigir mensagem do WhatsApp - usar whatsapp_message_template que é o campo correto
       console.log('[EnviaLead] Dados do flow completos:', window.enviaLeadData);
@@ -934,22 +1253,42 @@
         `;
         break;
         
+      case 'single':
+        inputHTML = '<div class="envialead-options-group">';
+        if (question.options && question.options.length > 0) {
+          question.options.forEach((option, index) => {
+            inputHTML += `
+              <button 
+                class="envialead-option-button" 
+                data-value="${option}"
+                type="button"
+              >
+                ${option}
+              </button>
+            `;
+          });
+        }
+        inputHTML += '</div>';
+        break;
+        
       case 'radio':
         inputHTML = '<div class="envialead-radio-group">';
-        question.options.forEach((option, index) => {
-          inputHTML += `
-            <div class="envialead-radio-option" data-value="${option}">
-              <input 
-                type="radio" 
-                id="envialead-radio-${index}" 
-                name="envialead-radio" 
-                value="${option}"
-                ${question.required ? 'required' : ''}
-              />
-              <label for="envialead-radio-${index}">${option}</label>
-            </div>
-          `;
-        });
+        if (question.options && question.options.length > 0) {
+          question.options.forEach((option, index) => {
+            inputHTML += `
+              <div class="envialead-radio-option" data-value="${option}">
+                <input 
+                  type="radio" 
+                  id="envialead-radio-${index}" 
+                  name="envialead-radio" 
+                  value="${option}"
+                  ${question.required ? 'required' : ''}
+                />
+                <label for="envialead-radio-${index}">${option}</label>
+              </div>
+            `;
+          });
+        }
         inputHTML += '</div>';
         break;
         
@@ -997,6 +1336,25 @@
       sendButton.addEventListener('click', handleSendAnswer);
     }
     
+    // Adicionar eventos para botões de opção (single choice)
+    const optionButtons = inputContainer.querySelectorAll('.envialead-option-button');
+    optionButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        console.log('[EnviaLead] Opção selecionada:', value);
+        
+        // Simular seleção visual
+        optionButtons.forEach(btn => btn.style.opacity = '0.5');
+        this.style.opacity = '1';
+        
+        // Armazenar resposta temporariamente
+        window.tempAnswer = value;
+        
+        // Enviar resposta após delay
+        setTimeout(() => handleSendAnswer(), 300);
+      });
+    });
+
     // Adicionar eventos para radio buttons
     const radioOptions = inputContainer.querySelectorAll('.envialead-radio-option');
     radioOptions.forEach(option => {
@@ -1062,6 +1420,12 @@
         answer = textareaInput ? textareaInput.value.trim() : '';
         break;
         
+      case 'single':
+        // Para perguntas de múltipla escolha, usar a resposta temporária
+        answer = window.tempAnswer || '';
+        window.tempAnswer = null; // Limpar após uso
+        break;
+        
       case 'radio':
         const selectedRadio = document.querySelector('input[name="envialead-radio"]:checked');
         answer = selectedRadio ? selectedRadio.value : '';
@@ -1101,26 +1465,64 @@
     // Salvar lead parcial
     saveLead(false);
     
-    // Próxima pergunta
+    // Próxima pergunta ou finalização
     window.enviaLeadCurrentQuestion++;
     
-    if (window.enviaLeadCurrentQuestion < window.enviaLeadData.questions.length) {
-      // Mostrar indicador de digitação
-      showTypingIndicator();
+    // Filtrar apenas perguntas reais (não mensagens de bot)
+    const realQuestions = window.enviaLeadData.questions.filter(q => q.type !== 'bot_message');
+    
+    if (window.enviaLeadCurrentQuestion < realQuestions.length) {
+      // Verificar se há mensagem de bot na sequência
+      const allItems = window.enviaLeadData.questions;
+      const currentRealIndex = window.enviaLeadCurrentQuestion;
       
-      // Próxima pergunta após delay
-      setTimeout(() => {
-        hideTypingIndicator();
-        const nextQuestion = window.enviaLeadData.questions[window.enviaLeadCurrentQuestion];
-        showQuestion(nextQuestion);
-      }, 2000);
+      // Procurar mensagens de bot antes da próxima pergunta
+      const botMessages = allItems.filter(item => 
+        item.type === 'bot_message' && 
+        item.order > realQuestions[currentRealIndex - 1]?.order &&
+        item.order < realQuestions[currentRealIndex]?.order
+      );
+      
+      let delay = 1000;
+      
+      // Mostrar mensagens de bot se existirem
+      if (botMessages.length > 0) {
+        botMessages.forEach((botMsg, index) => {
+          setTimeout(() => {
+            showTypingIndicator();
+            setTimeout(() => {
+              hideTypingIndicator();
+              addMessage(botMsg.title, true);
+              
+              // Se é a última mensagem bot, mostrar próxima pergunta
+              if (index === botMessages.length - 1) {
+                setTimeout(() => {
+                  showTypingIndicator();
+                  setTimeout(() => {
+                    hideTypingIndicator();
+                    showQuestion(realQuestions[currentRealIndex]);
+                  }, 1500);
+                }, 1000);
+              }
+            }, 1500);
+          }, delay);
+          delay += 3000; // Incrementar delay para cada mensagem
+        });
+      } else {
+        // Não há mensagens de bot, mostrar próxima pergunta diretamente
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          showQuestion(realQuestions[currentRealIndex]);
+        }, 2000);
+      }
     } else {
       // Finalizar conversa
       showTypingIndicator();
       
       setTimeout(() => {
         hideTypingIndicator();
-        const finalMessage = window.enviaLeadData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.';
+        const finalMessage = window.enviaLeadData.final_message_custom || window.enviaLeadData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.';
         addMessage(finalMessage, true);
         
         // Salvar lead completo

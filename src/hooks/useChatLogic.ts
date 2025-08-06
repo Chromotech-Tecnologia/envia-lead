@@ -165,11 +165,43 @@ export const useChatLogic = (flowData: any) => {
       
       setWaitingForInput(false);
       
-      // Mostrar próxima pergunta após delay
+      // Verificar se há mensagens de bot antes da próxima pergunta
       if (nextIndex < questions.length) {
-        setTimeout(() => {
-          showTypingIndicator();
-        }, 1000);
+        // Procurar mensagens de bot na sequência
+        const nextQuestion = questions[nextIndex];
+        const botMessages = allItems.filter(item => 
+          item.type === 'bot_message' && 
+          item.order > (currentQuestion.order || 0) &&
+          item.order < (nextQuestion?.order || Infinity)
+        );
+        
+        let delay = 1000;
+        
+        if (botMessages.length > 0) {
+          // Mostrar mensagens de bot primeiro
+          botMessages.forEach((botMsg, index) => {
+            setTimeout(() => {
+              setIsTyping(true);
+              setTimeout(() => {
+                setIsTyping(false);
+                addMessage(botMsg.title, true);
+                
+                // Se é a última mensagem bot, mostrar próxima pergunta
+                if (index === botMessages.length - 1) {
+                  setTimeout(() => {
+                    showTypingIndicator();
+                  }, 1000);
+                }
+              }, 1500);
+            }, delay);
+            delay += 3000;
+          });
+        } else {
+          // Não há mensagens de bot, mostrar próxima pergunta diretamente
+          setTimeout(() => {
+            showTypingIndicator();
+          }, 1000);
+        }
       } else {
         // Finalizar conversa
         setTimeout(() => {
@@ -181,7 +213,7 @@ export const useChatLogic = (flowData: any) => {
       
       return nextIndex;
     });
-  }, [questions, flowData, waitingForInput, addMessage, showTypingIndicator]);
+  }, [questions, allItems, flowData, waitingForInput, addMessage, showTypingIndicator]);
 
   const startConversation = () => {
     if (messages.length === 0 && questions.length > 0) {

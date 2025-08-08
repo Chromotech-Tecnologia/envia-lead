@@ -930,11 +930,26 @@
     );
     Object.assign(chatButton.style, buttonPosition);
     
-    // Posicionar balão de boas-vindas
+    // Posicionar balão de boas-vindas dinamicamente baseado no botão
+    const buttonSize = flowData?.button_size || 60;
+    const bubbleOffset = buttonSize + 20; // Distância do botão + margem
+    
+    let bubbleOffsetX, bubbleOffsetY;
+    
+    if ((flowData?.button_position || 'bottom-right').includes('right')) {
+      bubbleOffsetX = (flowData?.button_offset_x || 0) - bubbleOffset; // À esquerda do botão
+    } else if ((flowData?.button_position || 'bottom-right').includes('left')) {
+      bubbleOffsetX = (flowData?.button_offset_x || 0) + bubbleOffset; // À direita do botão
+    } else {
+      bubbleOffsetX = (flowData?.button_offset_x || 0) + bubbleOffset; // À direita para center
+    }
+    
+    bubbleOffsetY = (flowData?.button_offset_y || 0) + 10; // Centralizado verticalmente com o botão
+    
     const bubblePosition = calculatePosition(
       flowData?.button_position || 'bottom-right',
-      (flowData?.button_offset_x || 0) + (flowData?.button_position?.includes('right') ? -80 : 80),
-      (flowData?.button_offset_y || 0) + 80
+      bubbleOffsetX,
+      bubbleOffsetY
     );
     Object.assign(welcomeBubble.style, bubblePosition);
     
@@ -1492,7 +1507,8 @@
             showTypingIndicator();
             setTimeout(() => {
               hideTypingIndicator();
-              addMessage(botMsg.title, true);
+              const processedMessage = replaceVariables(botMsg.title, window.enviaLeadResponses);
+              addMessage(processedMessage, true);
               
               // Se é a última mensagem bot, mostrar próxima pergunta
               if (index === botMessages.length - 1) {

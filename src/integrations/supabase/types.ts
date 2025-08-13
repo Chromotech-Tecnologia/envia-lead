@@ -383,6 +383,7 @@ export type Database = {
           required: boolean | null
           title: string
           type: string
+          variable_name: string | null
         }
         Insert: {
           created_at?: string | null
@@ -394,6 +395,7 @@ export type Database = {
           required?: boolean | null
           title: string
           type: string
+          variable_name?: string | null
         }
         Update: {
           created_at?: string | null
@@ -405,6 +407,7 @@ export type Database = {
           required?: boolean | null
           title?: string
           type?: string
+          variable_name?: string | null
         }
         Relationships: [
           {

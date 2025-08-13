@@ -23,7 +23,7 @@ const FlowCard = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: FlowCar
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
+      <Card className="hover:shadow-lg transition-shadow duration-200 flow-card-container">
         <CardHeader className="pb-3">
           <FlowCardHeader
             flow={flow}
@@ -34,12 +34,12 @@ const FlowCard = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: FlowCar
           />
         </CardHeader>
         
-        <CardContent className="pt-0 flex flex-col flex-1">
-          <div className="flex-1">
+        <CardContent className="flow-card-content">
+          <div className="flow-card-stats">
             <FlowCardStats flow={flow} />
           </div>
           
-          <div className="mt-auto pt-4">
+          <div className="flow-card-actions">
             <FlowCardActions
               flow={flow}
               showPreview={showPreview}

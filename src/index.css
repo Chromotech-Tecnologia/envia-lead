@@ -112,3 +112,45 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Estilos específicos para cards de fluxo - com alta especificidade */
+.flow-cards-grid {
+  display: grid !important;
+  gap: 1.5rem !important;
+  grid-template-rows: 1fr !important;
+}
+
+@media (min-width: 768px) {
+  .flow-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flow-cards-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+.flow-card-container {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 300px !important;
+}
+
+.flow-card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  padding-top: 0 !important;
+}
+
+.flow-card-stats {
+  flex: 1 !important;
+}
+
+.flow-card-actions {
+  margin-top: auto !important;
+  padding-top: 1rem !important;
+}

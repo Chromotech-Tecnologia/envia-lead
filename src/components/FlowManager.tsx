@@ -130,7 +130,15 @@ const FlowManager = () => {
           onCreateFlow={handleCreateFlow}
         />
       ) : (
-        <div className="flow-cards-grid">
+        <div 
+          className="envialead-flow-cards-grid"
+          style={{
+            display: 'grid',
+            gap: '1.5rem',
+            gridTemplateRows: '1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'
+          }}
+        >
           {filteredFlows.map((flow) => (
             <FlowCard
               key={flow.id}

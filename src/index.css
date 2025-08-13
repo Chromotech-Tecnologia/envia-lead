@@ -114,43 +114,36 @@
 }
 
 /* Estilos específicos para cards de fluxo - com alta especificidade */
-.flow-cards-grid {
+.envialead-flow-cards-grid {
   display: grid !important;
   gap: 1.5rem !important;
   grid-template-rows: 1fr !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
 }
 
-@media (min-width: 768px) {
-  .flow-cards-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .flow-cards-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-}
-
-.flow-card-container {
+/* Force card alignment with maximum specificity */
+.envialead-flow-cards-grid > div[data-card="flow"] {
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
   min-height: 300px !important;
 }
 
-.flow-card-content {
+/* Force content layout */
+.envialead-flow-cards-grid > div[data-card="flow"] > div:last-child {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
   padding-top: 0 !important;
 }
 
-.flow-card-stats {
+/* Force stats to take available space */
+.envialead-flow-cards-grid > div[data-card="flow"] > div:last-child > div:first-child {
   flex: 1 !important;
 }
 
-.flow-card-actions {
+/* Force actions to bottom */
+.envialead-flow-cards-grid > div[data-card="flow"] > div:last-child > div:last-child {
   margin-top: auto !important;
   padding-top: 1rem !important;
 }

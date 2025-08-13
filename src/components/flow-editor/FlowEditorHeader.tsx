@@ -21,7 +21,7 @@ const FlowEditorHeader = ({
   const navigate = useNavigate();
 
   const handleBackToFlows = () => {
-    navigate('/flows');
+    navigate('/');
   };
 
   return (

@@ -140,6 +140,8 @@ export const useFlowPersistence = (flowId: string) => {
         description: flowData.description || null,
         whatsapp: flowData.whatsapp || null,
         avatar_url: flowData.avatar_url || flowData.avatar || null,
+        button_avatar_url: flowData.button_avatar_url || null,
+        attendant_name: flowData.attendant_name || 'Atendimento',
         position: flowData.position || 'bottom-right',
         button_position: flowData.button_position || 'bottom-right',
         chat_position: flowData.chat_position || 'bottom-right',

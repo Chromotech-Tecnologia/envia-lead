@@ -12,16 +12,6 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-
-    checkAuthAndRedirect();
-  }, [navigate]);
 
 
   const handleForgotPassword = () => {

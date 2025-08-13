@@ -85,6 +85,23 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   useEffect(() => {
     console.log('AuthWrapper: Configurando listener de autenticação');
     let mounted = true;
+    let redirectionInProgress = false;
+    
+    const handleRedirection = (targetPath: string, reason: string) => {
+      if (!mounted || redirectionInProgress) return;
+      
+      console.log(`AuthWrapper: ${reason}, redirecionando para ${targetPath}`);
+      redirectionInProgress = true;
+      
+      setTimeout(() => {
+        if (mounted) {
+          navigate(targetPath);
+          setTimeout(() => {
+            redirectionInProgress = false;
+          }, 500);
+        }
+      }, 100);
+    };
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -106,13 +123,12 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
           });
           
           if (location.pathname === '/auth') {
-            console.log('AuthWrapper: Redirecionando para dashboard');
-            // Usar timeout para evitar problemas de navegação
-            setTimeout(() => navigate('/'), 100);
+            handleRedirection('/', 'Usuário autenticado');
           }
-        } else if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
-          console.log('AuthWrapper: Usuário deslogado, redirecionando para auth');
-          navigate('/auth');
+        } else if (event === 'SIGNED_OUT') {
+          if (location.pathname !== '/auth') {
+            handleRedirection('/auth', 'Usuário deslogado');
+          }
         }
       }
     );
@@ -121,24 +137,31 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('AuthWrapper: Erro ao obter sessão:', error);
-      } else {
-        console.log('AuthWrapper: Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Verificar/criar perfil para sessão existente
+        setLoading(false);
+        return;
+      }
+      
+      console.log('AuthWrapper: Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Verificar/criar perfil para sessão existente
+        try {
           await createProfileIfNotExists(session.user);
+        } catch (error) {
+          console.error('Erro ao criar perfil:', error);
         }
         
-        if (!session && location.pathname !== '/auth') {
-          console.log('AuthWrapper: Sem sessão, redirecionando para auth');
-          navigate('/auth');
-        } else if (session && location.pathname === '/auth') {
-          console.log('AuthWrapper: Com sessão, redirecionando para dashboard');
-          navigate('/');
+        if (location.pathname === '/auth') {
+          handleRedirection('/', 'Sessão existente encontrada');
+        }
+      } else {
+        if (location.pathname !== '/auth') {
+          handleRedirection('/auth', 'Sem sessão ativa');
         }
       }
+      
       setLoading(false);
     });
 

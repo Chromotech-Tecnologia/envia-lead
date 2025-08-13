@@ -19,18 +19,20 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/404" element={<NotFound />} />
-          <Route element={<AuthWrapper><Layout /></AuthWrapper>}>
-            <Route path="/" element={<Index />} />
-            <Route path="/flows" element={<FlowManager />} />
-            <Route path="/leads" element={<LeadsTable />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/test" element={<Test />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
+        <AuthWrapper>
+          <Routes>
+            <Route path="/404" element={<NotFound />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/flows" element={<FlowManager />} />
+              <Route path="/leads" element={<LeadsTable />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/test" element={<Test />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </AuthWrapper>
       </div>
     </BrowserRouter>
   );

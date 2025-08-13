@@ -133,7 +133,10 @@ export const useFlowPersistence = (flowId: string) => {
 
   const saveCompleteFlow = async (flowData: any) => {
     try {
-      console.log('Iniciando salvamento completo do fluxo:', flowId, flowData);
+      console.log('=== INICIANDO SALVAMENTO COMPLETO ===');
+      console.log('FlowId:', flowId);
+      console.log('FlowData completo:', JSON.stringify(flowData, null, 2));
+      console.log('whatsapp_message_template no flowData:', flowData.whatsapp_message_template);
 
       // Salvar dados principais do fluxo
       const flowUpdateData = {
@@ -159,8 +162,10 @@ export const useFlowPersistence = (flowId: string) => {
           text: '#1F2937',
           background: '#FFFFFF'
         },
-        minimum_question: flowData.minimumQuestion || 1,
-        welcome_message: flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?',
+        minimum_question: flowData.minimumQuestion || flowData.minimum_question || 1,
+        welcome_message: flowData.welcomeMessage || flowData.welcome_message || 'Olá! Como posso ajudá-lo?',
+        final_message: flowData.final_message || 'Obrigado pelo seu contato! Em breve entraremos em contato.',
+        final_message_custom: flowData.final_message_custom || null,
         show_whatsapp_button: flowData.showWhatsappButton !== false,
         whatsapp_message_template: flowData.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.',
       };

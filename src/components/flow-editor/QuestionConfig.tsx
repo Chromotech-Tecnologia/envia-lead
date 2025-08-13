@@ -55,7 +55,16 @@ const QuestionConfig = ({ flowData, setFlowData }: QuestionConfigProps) => {
           <Textarea
             id="whatsappMessageTemplate"
             value={flowData.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.'}
-            onChange={(e) => setFlowData(prev => ({...prev, whatsapp_message_template: e.target.value}))}
+            onChange={(e) => {
+              console.log('=== ALTERANDO WHATSAPP MESSAGE TEMPLATE ===');
+              console.log('Valor anterior:', flowData.whatsapp_message_template);
+              console.log('Novo valor:', e.target.value);
+              setFlowData(prev => {
+                const updated = {...prev, whatsapp_message_template: e.target.value};
+                console.log('Estado atualizado:', updated.whatsapp_message_template);
+                return updated;
+              });
+            }}
             placeholder="Use #nome, #telefone, #email para variáveis dinâmicas..."
             className="min-h-[60px]"
           />

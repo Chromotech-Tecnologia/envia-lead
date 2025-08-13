@@ -162,6 +162,7 @@ export const useFlowPersistence = (flowId: string) => {
         minimum_question: flowData.minimumQuestion || 1,
         welcome_message: flowData.welcomeMessage || 'Olá! Como posso ajudá-lo?',
         show_whatsapp_button: flowData.showWhatsappButton !== false,
+        whatsapp_message_template: flowData.whatsapp_message_template || 'Olá, meu nome é #nome e gostaria de mais informações.',
       };
 
       console.log('Atualizando dados principais do fluxo:', flowUpdateData);

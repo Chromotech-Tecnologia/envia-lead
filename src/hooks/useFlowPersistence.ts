@@ -110,7 +110,8 @@ export const useFlowPersistence = (flowId: string) => {
           placeholder: question.placeholder || null,
           options: question.options ? JSON.stringify(question.options) : null,
           required: question.required || false,
-          order_index: question.order || (index + 1)
+          order_index: question.order || (index + 1),
+          variable_name: question.variable_name || null
         }));
 
         const { error: insertError } = await supabase

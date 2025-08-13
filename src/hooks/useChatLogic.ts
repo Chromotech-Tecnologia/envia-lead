@@ -51,7 +51,12 @@ export const useChatLogic = (flowData: any) => {
       const questionTitle = question.title.toLowerCase();
       const answer = responses[question.id] || '';
       
-      // Mapear variáveis baseadas no conteúdo da pergunta
+      // Primeiro, verificar se há variable_name definido
+      if (question.variable_name) {
+        variableMap[`#${question.variable_name}`] = answer;
+      }
+      
+      // Mapear variáveis baseadas no conteúdo da pergunta (fallback)
       if (questionTitle.includes('nome')) {
         variableMap['#nome'] = answer;
         variableMap['#name'] = answer;
@@ -127,10 +132,11 @@ export const useChatLogic = (flowData: any) => {
             }, 100);
           }
         } else {
-          setShowCompletion(true);
+          console.log('[ChatLogic] Finalizando conversa - mostrando mensagem final');
           const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
           setTimeout(() => {
             addMessage(finalMessage, true);
+            setShowCompletion(true);
           }, 100);
         }
         
@@ -204,10 +210,11 @@ export const useChatLogic = (flowData: any) => {
         }
       } else {
         // Finalizar conversa
+        console.log('[ChatLogic] Finalizando conversa na handleSendAnswer');
         setTimeout(() => {
-          setShowCompletion(true);
           const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
           addMessage(finalMessage, true);
+          setShowCompletion(true);
         }, 1000);
       }
       

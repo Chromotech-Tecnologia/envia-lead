@@ -114,14 +114,26 @@ const QuestionCard = ({ question, index, isEditing, onEdit, onSave, onDelete, on
 
             {localQuestion.type !== 'bot_message' && (
               <>
-                <div>
-                  <Label>Placeholder</Label>
-                  <Input
-                    value={localQuestion.placeholder || ''}
-                    onChange={(e) => setLocalQuestion({ ...localQuestion, placeholder: e.target.value })}
-                    placeholder={getPlaceholderText(localQuestion.type, localQuestion.title)}
-                  />
-                </div>
+            <div>
+              <Label>Placeholder</Label>
+              <Input
+                value={localQuestion.placeholder || ''}
+                onChange={(e) => setLocalQuestion({ ...localQuestion, placeholder: e.target.value })}
+                placeholder={getPlaceholderText(localQuestion.type, localQuestion.title)}
+              />
+            </div>
+
+            <div>
+              <Label>Nome da Variável (para WhatsApp)</Label>
+              <Input
+                value={localQuestion.variable_name || ''}
+                onChange={(e) => setLocalQuestion({ ...localQuestion, variable_name: e.target.value })}
+                placeholder="Ex: nome, telefone, email, empresa"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Use como #nome, #telefone no template do WhatsApp
+              </p>
+            </div>
 
                 <div className="flex items-center space-x-2">
                   <Switch

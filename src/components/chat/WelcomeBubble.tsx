@@ -9,14 +9,47 @@ interface WelcomeBubbleProps {
 
 const WelcomeBubble = ({ showWelcomeBubble, position, colors, flowData, onClose }: WelcomeBubbleProps) => {
   const getWelcomeBubblePosition = () => {
+    const buttonSize = flowData?.button_size || 64;
+    const buttonOffsetX = flowData?.button_offset_x || 0;
+    const buttonOffsetY = flowData?.button_offset_y || 0;
+    
+    // Calculate position to avoid overlapping with button
+    const clearance = 20; // Space between bubble and button
+    const bubbleOffset = buttonSize + clearance;
+    
     if (position.includes('right')) {
-      return { bottom: '80px', right: '80px', left: 'auto', maxWidth: '250px', width: 'max-content' };
+      return { 
+        bottom: `${30 + buttonOffsetY + bubbleOffset}px`, 
+        right: `${20 + buttonOffsetX}px`, 
+        left: 'auto', 
+        maxWidth: '250px', 
+        width: 'max-content' 
+      };
     } else if (position.includes('left')) {
-      return { bottom: '80px', left: '80px', right: 'auto', maxWidth: '250px', width: 'max-content' };
+      return { 
+        bottom: `${30 + buttonOffsetY + bubbleOffset}px`, 
+        left: `${20 + buttonOffsetX}px`, 
+        right: 'auto', 
+        maxWidth: '250px', 
+        width: 'max-content' 
+      };
     } else if (position.includes('center')) {
-      return { bottom: '80px', left: '50%', transform: 'translateX(-50%)', right: 'auto', maxWidth: '250px', width: 'max-content' };
+      return { 
+        bottom: `${30 + buttonOffsetY + bubbleOffset}px`, 
+        left: '50%', 
+        transform: `translateX(calc(-50% + ${buttonOffsetX}px))`, 
+        right: 'auto', 
+        maxWidth: '250px', 
+        width: 'max-content' 
+      };
     }
-    return { bottom: '80px', right: '80px', left: 'auto', maxWidth: '250px', width: 'max-content' };
+    return { 
+      bottom: `${30 + buttonOffsetY + bubbleOffset}px`, 
+      right: `${20 + buttonOffsetX}px`, 
+      left: 'auto', 
+      maxWidth: '250px', 
+      width: 'max-content' 
+    };
   };
 
   if (!showWelcomeBubble) return null;

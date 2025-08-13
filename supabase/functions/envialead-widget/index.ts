@@ -73,9 +73,32 @@ Deno.serve(async (req) => {
     const currentUrl = req.headers.get('referer') || req.headers.get('origin');
     const allowedUrls = urls?.map(u => u.url) || [];
     
-    if (allowedUrls.length > 0 && currentUrl) {
+    // Domínios sempre autorizados (plataforma principal)
+    const platformDomains = [
+      'envialead.com.br',
+      'envialead.lovable.app',
+      'localhost',
+      '127.0.0.1'
+    ];
+    
+    // Verificar se é um domínio da plataforma
+    const isPlatformDomain = currentUrl ? platformDomains.some(domain => {
+      try {
+        const url = new URL(currentUrl);
+        return url.hostname.includes(domain) || domain.includes(url.hostname);
+      } catch {
+        return currentUrl.includes(domain);
+      }
+    }) : false;
+    
+    if (allowedUrls.length > 0 && currentUrl && !isPlatformDomain) {
       const isAllowed = allowedUrls.some(allowedUrl => {
         try {
+          // Suporte a wildcards
+          if (allowedUrl === '*' || allowedUrl.startsWith('*.')) {
+            return true;
+          }
+          
           const allowed = new URL(allowedUrl);
           const current = new URL(currentUrl);
           return allowed.hostname === current.hostname;

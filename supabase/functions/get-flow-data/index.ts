@@ -91,9 +91,39 @@ Deno.serve(async (req) => {
     
     console.log(`[get-flow-data] URL atual: ${currentUrl}, URLs permitidas:`, allowedUrls);
     
-    if (allowedUrls.length > 0 && currentUrl) {
+    // Domínios sempre autorizados (plataforma principal)
+    const platformDomains = [
+      'envialead.com.br',
+      'envialead.lovable.app',
+      'localhost',
+      '127.0.0.1'
+    ];
+    
+    // Verificar se é um domínio da plataforma
+    const isPlatformDomain = currentUrl ? platformDomains.some(domain => {
+      try {
+        const url = new URL(currentUrl);
+        const isDomainAllowed = url.hostname.includes(domain) || domain.includes(url.hostname);
+        console.log(`[get-flow-data] Verificando domínio da plataforma: ${url.hostname} vs ${domain} = ${isDomainAllowed}`);
+        return isDomainAllowed;
+      } catch {
+        const isDomainAllowed = currentUrl.includes(domain);
+        console.log(`[get-flow-data] Verificando domínio da plataforma (fallback): ${currentUrl} vs ${domain} = ${isDomainAllowed}`);
+        return isDomainAllowed;
+      }
+    }) : false;
+    
+    if (isPlatformDomain) {
+      console.log(`[get-flow-data] Domínio da plataforma autorizado automaticamente: ${currentUrl}`);
+    } else if (allowedUrls.length > 0 && currentUrl) {
       const isAllowed = allowedUrls.some(allowedUrl => {
         try {
+          // Suporte a wildcards
+          if (allowedUrl === '*' || allowedUrl.startsWith('*.')) {
+            console.log(`[get-flow-data] Wildcard encontrado: ${allowedUrl}`);
+            return true;
+          }
+          
           const allowed = new URL(allowedUrl);
           const current = new URL(currentUrl);
           console.log(`[get-flow-data] Verificando: ${allowed.hostname} vs ${current.hostname}`);

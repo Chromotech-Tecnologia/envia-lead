@@ -84,6 +84,29 @@
       console.log('[EnviaLead] Domínio atual:', currentDomain);
       console.log('[EnviaLead] URLs autorizadas:', authorizedUrls);
       
+      // Domínios sempre autorizados (plataforma principal)
+      const platformDomains = [
+        'envialead.com.br',
+        'envialead.lovable.app',
+        'localhost',
+        '127.0.0.1'
+      ];
+      
+      // Verificar se é um domínio da plataforma
+      const isPlatformDomain = platformDomains.some(domain => {
+        try {
+          const url = new URL(currentUrl.startsWith('http') ? currentUrl : 'https://' + currentUrl);
+          return url.hostname.includes(domain) || domain.includes(url.hostname);
+        } catch {
+          return currentDomain.includes(domain) || domain.includes(currentDomain);
+        }
+      });
+      
+      if (isPlatformDomain) {
+        console.log('[EnviaLead] Domínio da plataforma autorizado automaticamente');
+        return true;
+      }
+      
       if (!authorizedUrls || authorizedUrls.length === 0) {
         console.log('[EnviaLead] Nenhuma URL configurada, permitindo em qualquer domínio');
         return true;
@@ -98,7 +121,8 @@
       for (const authorizedUrl of validUrls) {
         console.log('[EnviaLead] Verificando URL autorizada:', authorizedUrl);
         
-        if (authorizedUrl === '*') {
+        // Wildcard ou domínio com asterisco
+        if (authorizedUrl === '*' || authorizedUrl.startsWith('*.')) {
           console.log('[EnviaLead] Wildcard encontrado, permitindo acesso');
           return true;
         }

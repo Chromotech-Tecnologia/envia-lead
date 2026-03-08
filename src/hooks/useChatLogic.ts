@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface Message {
   id: string;
@@ -16,6 +15,7 @@ export const useChatLogic = (flowData: any) => {
   const [showCompletion, setShowCompletion] = useState(false);
   const [waitingForInput, setWaitingForInput] = useState(false);
   const responsesRef = useRef<Record<string, string>>({});
+  const currentItemIndexRef = useRef(0);
 
   // Unified sorted list of all items (questions + bot_messages)
   const allItems = flowData?.questions ? flowData.questions
@@ -31,15 +31,21 @@ export const useChatLogic = (flowData: any) => {
     }))
     .sort((a: any, b: any) => a.order - b.order) : [];
 
+  // Keep allItems in a ref for stable access in timeouts
+  const allItemsRef = useRef(allItems);
+  allItemsRef.current = allItems;
+
   // Only questions (for variable mapping)
   const allQuestions = allItems.filter((item: any) => item.type !== 'bot_message');
+  const allQuestionsRef = useRef(allQuestions);
+  allQuestionsRef.current = allQuestions;
 
   // Replace variables in text
   const replaceVariables = useCallback((text: string, currentResponses: Record<string, string>) => {
     let processedText = text;
     const variableMap: Record<string, string> = {};
 
-    allQuestions.forEach((question: any, index: number) => {
+    allQuestionsRef.current.forEach((question: any, index: number) => {
       const questionTitle = question.title.toLowerCase();
       const answer = currentResponses[question.id] || '';
 
@@ -80,7 +86,7 @@ export const useChatLogic = (flowData: any) => {
     });
 
     return processedText;
-  }, [allQuestions]);
+  }, []);
 
   const addMessage = useCallback((text: string, isBot: boolean, currentResponses?: Record<string, string>) => {
     const processedText = isBot ? replaceVariables(text, currentResponses || responsesRef.current) : text;
@@ -93,37 +99,41 @@ export const useChatLogic = (flowData: any) => {
     setMessages(prev => [...prev, newMessage]);
   }, [replaceVariables]);
 
-  // Sequential processing: iterate through allItems one by one
-  const processItem = useCallback((itemIndex: number) => {
-    if (itemIndex >= allItems.length) {
-      // All items processed - show completion
+  // Use a ref for processItem so setTimeout always calls the latest version
+  const processItemRef = useRef<(itemIndex: number) => void>(() => {});
+
+  processItemRef.current = (itemIndex: number) => {
+    const items = allItemsRef.current;
+    
+    console.log('[useChatLogic] processItem called, index:', itemIndex, 'total items:', items.length);
+    
+    if (itemIndex >= items.length) {
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
-        const finalMessage = flowData?.final_message_custom || flowData?.final_message || 'Obrigado pelas informações! Em breve entraremos em contato.';
+        const finalMessage = flowData?.final_message_custom || flowData?.final_message || flowData?.finalMessage || 'Obrigado pelas informações! Em breve entraremos em contato.';
         addMessage(finalMessage, true);
         setShowCompletion(true);
       }, 1500);
       return;
     }
 
-    const item = allItems[itemIndex];
+    const item = items[itemIndex];
+    console.log('[useChatLogic] Processing item:', item.type, item.title);
 
     if (item.type === 'bot_message') {
-      // Bot message: show with typing, then auto-advance
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
         addMessage(item.title, true);
-        // Auto-advance to next item after a short delay
         const nextIndex = itemIndex + 1;
+        currentItemIndexRef.current = nextIndex;
         setCurrentItemIndex(nextIndex);
         setTimeout(() => {
-          processItem(nextIndex);
+          processItemRef.current(nextIndex);
         }, 800);
       }, 1500);
     } else {
-      // Question: show with typing, then wait for input
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
@@ -131,44 +141,44 @@ export const useChatLogic = (flowData: any) => {
         setWaitingForInput(true);
       }, 1500);
     }
-  }, [allItems, flowData, addMessage]);
+  };
 
   const handleSendAnswer = useCallback((answer: string) => {
     if (!answer.trim() || !waitingForInput) return;
 
-    const currentItem = allItems[currentItemIndex];
+    const currentIdx = currentItemIndexRef.current;
+    const items = allItemsRef.current;
+    const currentItem = items[currentIdx];
     if (!currentItem) return;
 
-    // Save response
     const newResponses = { ...responsesRef.current, [currentItem.id]: answer };
     responsesRef.current = newResponses;
     setResponses(newResponses);
 
-    // Add user message
     addMessage(answer, false);
     setWaitingForInput(false);
 
-    // Advance to next item
-    const nextIndex = currentItemIndex + 1;
+    const nextIndex = currentIdx + 1;
+    currentItemIndexRef.current = nextIndex;
     setCurrentItemIndex(nextIndex);
 
     setTimeout(() => {
-      processItem(nextIndex);
+      processItemRef.current(nextIndex);
     }, 1000);
-  }, [allItems, currentItemIndex, waitingForInput, addMessage, processItem]);
+  }, [waitingForInput, addMessage]);
 
   const startConversation = useCallback(() => {
-    if (messages.length === 0 && allItems.length > 0) {
+    if (messages.length === 0 && allItemsRef.current.length > 0) {
       setTimeout(() => {
-        addMessage(flowData?.welcome_message || 'Olá! Como posso ajudá-lo hoje?', true);
+        const welcomeMsg = flowData?.welcome_message || flowData?.welcomeMessage || 'Olá! Como posso ajudá-lo hoje?';
+        addMessage(welcomeMsg, true);
         setTimeout(() => {
-          processItem(0);
+          processItemRef.current(0);
         }, 1000);
       }, 500);
     }
-  }, [messages.length, allItems.length, flowData, addMessage, processItem]);
+  }, [messages.length, flowData, addMessage]);
 
-  // Current item is the current question (non-bot_message) for input rendering
   const currentItem = allItems[currentItemIndex];
   const currentQuestion = currentItem && currentItem.type !== 'bot_message' ? currentItem : null;
 

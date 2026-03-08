@@ -52,7 +52,7 @@ export type Database = {
           created_at: string
           flow_id: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_ping: string
           updated_at: string
@@ -63,7 +63,7 @@ export type Database = {
           created_at?: string
           flow_id: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_ping?: string
           updated_at?: string
@@ -74,7 +74,7 @@ export type Database = {
           created_at?: string
           flow_id?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_ping?: string
           updated_at?: string
@@ -154,7 +154,7 @@ export type Database = {
           created_at: string
           flow_id: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_id: string | null
           url: string
           user_agent: string | null
@@ -163,7 +163,7 @@ export type Database = {
           created_at?: string
           flow_id: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           url: string
           user_agent?: string | null
@@ -172,7 +172,7 @@ export type Database = {
           created_at?: string
           flow_id?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           url?: string
           user_agent?: string | null
@@ -287,7 +287,7 @@ export type Database = {
           created_at: string | null
           flow_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           responses: Json
           user_agent: string | null
         }
@@ -297,7 +297,7 @@ export type Database = {
           created_at?: string | null
           flow_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           responses: Json
           user_agent?: string | null
         }
@@ -307,7 +307,7 @@ export type Database = {
           created_at?: string | null
           flow_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           responses?: Json
           user_agent?: string | null
         }
@@ -520,20 +520,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      get_user_company_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      is_global_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      get_user_company_id: { Args: never; Returns: string }
+      get_user_role: { Args: never; Returns: string }
+      is_global_admin: { Args: never; Returns: boolean }
       test_trigger_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action_statement: string
           event_manipulation: string

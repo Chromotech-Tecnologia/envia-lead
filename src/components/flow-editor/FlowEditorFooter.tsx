@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Save, Eye, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface FlowEditorFooterProps {
   showPreview: boolean;
@@ -20,16 +19,11 @@ const FlowEditorFooter = ({
   onSave,
   onSaveAndExit
 }: FlowEditorFooterProps) => {
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    navigate('/flows');
-  };
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={handleGoBack}>
+          <Button variant="outline" onClick={onGoBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Fluxos
           </Button>

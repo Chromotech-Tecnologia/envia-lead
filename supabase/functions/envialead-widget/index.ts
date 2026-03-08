@@ -243,7 +243,8 @@ Deno.serve(async (req) => {
     
     Object.keys(variableMap).forEach(function(variable) {
       if (variableMap[variable]) {
-        var regex = new RegExp(variable, 'gi');
+        var escaped = variable.replace(/[-\\/\\\\^$*+?.()|\\[\\]{}]/g, '\\\\$&');
+        var regex = new RegExp(escaped, 'gi');
         processedText = processedText.replace(regex, variableMap[variable]);
       }
     });
@@ -700,8 +701,13 @@ Deno.serve(async (req) => {
   function openChatModal() {
     if (isModalOpen) return;
     
-    var modal = createChatModal();
-    document.body.appendChild(modal);
+    if (chatModal) {
+      // Reopen existing modal (preserves conversation)
+      chatModal.style.display = 'flex';
+    } else {
+      var modal = createChatModal();
+      document.body.appendChild(modal);
+    }
     isModalOpen = true;
     
     if (!conversationStarted) {
@@ -711,8 +717,7 @@ Deno.serve(async (req) => {
 
   function closeChatModal() {
     if (!isModalOpen || !chatModal) return;
-    document.body.removeChild(chatModal);
-    chatModal = null;
+    chatModal.style.display = 'none';
     isModalOpen = false;
   }
 
@@ -738,28 +743,36 @@ Deno.serve(async (req) => {
 
   // Sequential processing: iterate through allItems one by one
   function processNextItem() {
-    if (currentItemIndex >= allItems.length) {
-      showCompletionMessage();
-      return;
-    }
-    
-    var item = allItems[currentItemIndex];
-    
-    if (item.type === 'bot_message') {
-      // Bot message: show with typing indicator, then auto-advance
-      showQuestionWithTyping(item.title, function() {
-        currentItemIndex++;
-        // Auto-advance after short delay
-        setTimeout(function() {
-          processNextItem();
-        }, 800);
-      });
-    } else {
-      // Question: show with typing indicator, then wait for input
-      showQuestionWithTyping(item.title, function() {
-        waitingForInput = true;
-        createQuestionInput(item);
-      });
+    try {
+      if (currentItemIndex >= allItems.length) {
+        showCompletionMessage();
+        return;
+      }
+      
+      var item = allItems[currentItemIndex];
+      console.log('[EnviaLead Widget] Processing item', currentItemIndex, item.type, item.title);
+      
+      if (item.type === 'bot_message') {
+        // Bot message: show with typing indicator, then auto-advance
+        showQuestionWithTyping(item.title, function() {
+          currentItemIndex++;
+          // Auto-advance after short delay
+          setTimeout(function() {
+            processNextItem();
+          }, 800);
+        });
+      } else {
+        // Question: show with typing indicator, then wait for input
+        showQuestionWithTyping(item.title, function() {
+          waitingForInput = true;
+          createQuestionInput(item);
+        });
+      }
+    } catch (error) {
+      console.error('[EnviaLead Widget] Erro ao processar item:', error);
+      // Try to advance past the broken item
+      currentItemIndex++;
+      setTimeout(function() { processNextItem(); }, 500);
     }
   }
 

@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Save, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface FlowEditorHeaderProps {
   flowName: string;
@@ -9,6 +8,7 @@ interface FlowEditorHeaderProps {
   isSaving: boolean;
   showPreview: boolean;
   onTogglePreview: () => void;
+  onExit: () => void;
 }
 
 const FlowEditorHeader = ({ 
@@ -16,20 +16,16 @@ const FlowEditorHeader = ({
   onSave, 
   isSaving, 
   showPreview, 
-  onTogglePreview 
+  onTogglePreview,
+  onExit
 }: FlowEditorHeaderProps) => {
-  const navigate = useNavigate();
-
-  const handleBackToFlows = () => {
-    navigate('/flows');
-  };
 
   return (
     <div className="flex items-center justify-between p-4 bg-white border-b">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
-          onClick={handleBackToFlows}
+          onClick={onExit}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 p-2"
         >
           <ArrowLeft className="w-4 h-4" />

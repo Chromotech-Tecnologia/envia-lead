@@ -20,11 +20,6 @@ const FlowEditorFooter = ({
   onSave,
   onSaveAndExit
 }: FlowEditorFooterProps) => {
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    navigate('/flows');
-  };
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
       <div className="container mx-auto px-4 py-4">

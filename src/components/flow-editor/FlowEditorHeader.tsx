@@ -9,6 +9,7 @@ interface FlowEditorHeaderProps {
   isSaving: boolean;
   showPreview: boolean;
   onTogglePreview: () => void;
+  onExit: () => void;
 }
 
 const FlowEditorHeader = ({ 
@@ -16,13 +17,9 @@ const FlowEditorHeader = ({
   onSave, 
   isSaving, 
   showPreview, 
-  onTogglePreview 
+  onTogglePreview,
+  onExit
 }: FlowEditorHeaderProps) => {
-  const navigate = useNavigate();
-
-  const handleBackToFlows = () => {
-    navigate('/flows');
-  };
 
   return (
     <div className="flex items-center justify-between p-4 bg-white border-b">

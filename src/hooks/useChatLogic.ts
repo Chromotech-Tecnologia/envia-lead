@@ -73,7 +73,8 @@ export const useChatLogic = (flowData: any) => {
 
     Object.keys(variableMap).forEach(variable => {
       if (variableMap[variable]) {
-        const regex = new RegExp(variable, 'gi');
+        const escaped = variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, 'gi');
         processedText = processedText.replace(regex, variableMap[variable]);
       }
     });

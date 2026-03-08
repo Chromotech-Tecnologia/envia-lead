@@ -100,6 +100,7 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
             isSaving={isSaving}
             showPreview={showPreview}
             onTogglePreview={handleTogglePreview}
+            onExit={onExit}
           />
 
           <FlowEditorTabs 

@@ -243,7 +243,8 @@ Deno.serve(async (req) => {
     
     Object.keys(variableMap).forEach(function(variable) {
       if (variableMap[variable]) {
-        var regex = new RegExp(variable, 'gi');
+        var escaped = variable.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+        var regex = new RegExp(escaped, 'gi');
         processedText = processedText.replace(regex, variableMap[variable]);
       }
     });

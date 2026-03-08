@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
   let chatButton = null;
   let chatModal = null;
   let welcomeBubble = null;
-  let currentQuestionIndex = 0;
+  let currentItemIndex = 0;
   let userResponses = {};
   let isModalOpen = false;
   let isTyping = false;
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
   let allQuestions = [];
   let conversationStarted = false;
   
-  // Process questions - separate bot_messages from actual questions
+  // Process all items into a single sorted array
   if (flowData.questions) {
     allItems = flowData.questions.map(function(q) {
       return {

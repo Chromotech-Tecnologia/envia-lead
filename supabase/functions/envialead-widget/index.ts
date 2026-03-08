@@ -712,8 +712,7 @@ Deno.serve(async (req) => {
 
   function closeChatModal() {
     if (!isModalOpen || !chatModal) return;
-    document.body.removeChild(chatModal);
-    chatModal = null;
+    chatModal.style.display = 'none';
     isModalOpen = false;
   }
 

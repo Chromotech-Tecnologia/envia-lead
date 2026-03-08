@@ -701,8 +701,13 @@ Deno.serve(async (req) => {
   function openChatModal() {
     if (isModalOpen) return;
     
-    var modal = createChatModal();
-    document.body.appendChild(modal);
+    if (chatModal) {
+      // Reopen existing modal (preserves conversation)
+      chatModal.style.display = 'flex';
+    } else {
+      var modal = createChatModal();
+      document.body.appendChild(modal);
+    }
     isModalOpen = true;
     
     if (!conversationStarted) {

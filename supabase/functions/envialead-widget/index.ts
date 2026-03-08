@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
   let chatButton = null;
   let chatModal = null;
   let welcomeBubble = null;
-  let currentQuestionIndex = 0;
+  let currentItemIndex = 0;
   let userResponses = {};
   let isModalOpen = false;
   let isTyping = false;
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
   let allQuestions = [];
   let conversationStarted = false;
   
-  // Process questions - separate bot_messages from actual questions
+  // Process all items into a single sorted array
   if (flowData.questions) {
     allItems = flowData.questions.map(function(q) {
       return {
@@ -736,53 +736,31 @@ Deno.serve(async (req) => {
     }, 500);
   }
 
-  // Process the next item in the flow (question or bot_message)
+  // Sequential processing: iterate through allItems one by one
   function processNextItem() {
-    if (currentQuestionIndex >= allQuestions.length) {
+    if (currentItemIndex >= allItems.length) {
       showCompletionMessage();
       return;
     }
     
-    var currentQuestion = allQuestions[currentQuestionIndex];
+    var item = allItems[currentItemIndex];
     
-    // Check if there are bot messages before this question
-    var prevQuestion = currentQuestionIndex > 0 ? allQuestions[currentQuestionIndex - 1] : null;
-    var prevOrder = prevQuestion ? prevQuestion.order : -1;
-    var currentOrder = currentQuestion.order;
-    
-    var botMsgsBefore = allItems.filter(function(item) {
-      return item.type === 'bot_message' && item.order > prevOrder && item.order < currentOrder;
-    });
-    
-    if (botMsgsBefore.length > 0) {
-      // Show bot messages first, then the question
-      showBotMessagesSequence(botMsgsBefore, 0, function() {
-        showQuestionWithTyping(currentQuestion.title, function() {
-          waitingForInput = true;
-          createQuestionInput(currentQuestion);
-        });
+    if (item.type === 'bot_message') {
+      // Bot message: show with typing indicator, then auto-advance
+      showQuestionWithTyping(item.title, function() {
+        currentItemIndex++;
+        // Auto-advance after short delay
+        setTimeout(function() {
+          processNextItem();
+        }, 800);
       });
     } else {
-      // Show question directly with typing indicator
-      showQuestionWithTyping(currentQuestion.title, function() {
+      // Question: show with typing indicator, then wait for input
+      showQuestionWithTyping(item.title, function() {
         waitingForInput = true;
-        createQuestionInput(currentQuestion);
+        createQuestionInput(item);
       });
     }
-  }
-  
-  // Show a sequence of bot messages with typing indicators
-  function showBotMessagesSequence(messages, index, callback) {
-    if (index >= messages.length) {
-      if (callback) callback();
-      return;
-    }
-    
-    showQuestionWithTyping(messages[index].title, function() {
-      setTimeout(function() {
-        showBotMessagesSequence(messages, index + 1, callback);
-      }, 500);
-    });
   }
 
   // Create input for current question (matching ChatInput.tsx)
@@ -965,7 +943,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Handle user answer (matching useChatLogic.ts handleSendAnswer)
+  // Handle user answer
   function handleAnswer(questionId, answer) {
     if (!waitingForInput) return;
     waitingForInput = false;
@@ -973,7 +951,7 @@ Deno.serve(async (req) => {
     userResponses[questionId] = answer;
     addUserMessage(answer);
     
-    currentQuestionIndex++;
+    currentItemIndex++;
     
     // Clear input
     var inputContainer = document.getElementById('envialead-input-container');

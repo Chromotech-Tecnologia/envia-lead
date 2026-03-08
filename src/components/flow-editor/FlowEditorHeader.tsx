@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Save, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface FlowEditorHeaderProps {
   flowName: string;

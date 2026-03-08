@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Save, Eye, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface FlowEditorFooterProps {
   showPreview: boolean;

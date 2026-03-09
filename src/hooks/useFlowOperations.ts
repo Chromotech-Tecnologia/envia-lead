@@ -15,6 +15,17 @@ export const useFlowOperations = () => {
   
   const { saveCompleteFlow } = useFlowPersistence(selectedFlow?.id);
 
+  const isValidUUID = (id: unknown) =>
+    typeof id === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  const ensureQuestionsHaveStableIds = (questions: any[] = []) =>
+    questions.map((question, index) => ({
+      ...question,
+      id: isValidUUID(question.id) ? question.id : crypto.randomUUID(),
+      order: question.order ?? (index + 1)
+    }));
+
   const initializeFlowData = (flow: any) => {
     return {
       name: flow?.name || 'Novo Fluxo',
@@ -32,9 +43,9 @@ export const useFlowOperations = () => {
         text: '#1F2937',
         background: '#FFFFFF'
       },
-      questions: flow?.questions && flow.questions.length > 0 ? flow.questions : [
+      questions: flow?.questions && flow.questions.length > 0 ? ensureQuestionsHaveStableIds(flow.questions) : [
         {
-          id: Date.now(),
+          id: crypto.randomUUID(),
           type: 'text',
           title: 'Qual é o seu nome?',
           placeholder: 'Digite seu nome completo',
@@ -76,8 +87,15 @@ export const useFlowOperations = () => {
 
   const handleSaveFlow = async () => {
     if (selectedFlow && flowData) {
-      console.log('Salvando fluxo com dados:', flowData);
-      const success = await saveCompleteFlow(flowData);
+      const normalizedFlowData = {
+        ...flowData,
+        questions: ensureQuestionsHaveStableIds(flowData.questions || [])
+      };
+
+      setFlowData(normalizedFlowData);
+      console.log('Salvando fluxo com dados:', normalizedFlowData);
+
+      const success = await saveCompleteFlow(normalizedFlowData);
       if (success) {
         // Recarregar os dados automaticamente após salvar
         await refetch();

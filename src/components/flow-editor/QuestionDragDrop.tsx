@@ -11,49 +11,56 @@ interface QuestionDragDropProps {
 }
 
 const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
-  const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<string | number | null>(null);
 
   const questions = flowData?.questions || [];
 
   const addQuestion = (type: string) => {
-    const newQuestion = {
-      id: Date.now(),
-      type,
-      title: type === 'bot_message' ? 'Nova mensagem do bot' : 'Nova pergunta',
-      placeholder: type === 'bot_message' ? '' : 'Digite sua resposta...',
-      required: type !== 'bot_message',
-      order: questions.length,
-      options: type === 'select' || type === 'radio' ? ['Opção 1', 'Opção 2'] : []
-    };
-    
+    const questionId = crypto.randomUUID();
+
     setFlowData((prev: any) => {
       const currentData = prev || {};
+      const currentQuestions = currentData.questions || [];
+
+      const newQuestion = {
+        id: questionId,
+        type,
+        title: type === 'bot_message' ? 'Nova mensagem do bot' : 'Nova pergunta',
+        placeholder: type === 'bot_message' ? '' : 'Digite sua resposta...',
+        required: type !== 'bot_message',
+        order: currentQuestions.length + 1,
+        options: type === 'select' || type === 'radio' ? ['Opção 1', 'Opção 2'] : []
+      };
+
       return {
         ...currentData,
-        questions: [...questions, newQuestion]
+        questions: [...currentQuestions, newQuestion]
       };
     });
-    
-    setEditingQuestion(newQuestion.id);
+
+    setEditingQuestion(questionId);
   };
 
-  const updateQuestion = (id: number, updates: any) => {
+  const updateQuestion = (id: string | number, updates: any) => {
     setFlowData((prev: any) => {
       const currentData = prev || {};
-      const updatedQuestions = questions.map((q: any) => q.id === id ? { ...q, ...updates } : q);
+      const currentQuestions = currentData.questions || [];
+
       return {
         ...currentData,
-        questions: updatedQuestions
+        questions: currentQuestions.map((q: any) => q.id === id ? { ...q, ...updates } : q)
       };
     });
   };
 
-  const deleteQuestion = (id: number) => {
+  const deleteQuestion = (id: string | number) => {
     setFlowData((prev: any) => {
       const currentData = prev || {};
+      const currentQuestions = currentData.questions || [];
+
       return {
         ...currentData,
-        questions: questions.filter((q: any) => q.id !== id)
+        questions: currentQuestions.filter((q: any) => q.id !== id)
       };
     });
   };
@@ -67,7 +74,7 @@ const QuestionDragDrop = ({ flowData, setFlowData }: QuestionDragDropProps) => {
 
     const updatedQuestions = items.map((item: any, index: number) => ({
       ...item,
-      order: index
+      order: index + 1
     }));
 
     setFlowData((prev: any) => {

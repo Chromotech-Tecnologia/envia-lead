@@ -50,7 +50,7 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
         },
         questions: flow.questions || [
           {
-            id: 1,
+            id: crypto.randomUUID(),
             type: 'text',
             title: 'Qual é o seu nome?',
             placeholder: 'Digite seu nome completo',

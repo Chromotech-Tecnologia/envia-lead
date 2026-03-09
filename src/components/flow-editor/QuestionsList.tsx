@@ -4,12 +4,12 @@ import QuestionCard from './QuestionCard';
 
 interface QuestionsListProps {
   questions: any[];
-  editingQuestion: number | null;
+  editingQuestion: string | number | null;
   onDragEnd: (result: any) => void;
-  onEditQuestion: (id: number) => void;
+  onEditQuestion: (id: string | number) => void;
   onSaveQuestion: () => void;
-  onDeleteQuestion: (id: number) => void;
-  onUpdateQuestion: (id: number, updates: any) => void;
+  onDeleteQuestion: (id: string | number) => void;
+  onUpdateQuestion: (id: string | number, updates: any) => void;
 }
 
 const QuestionsList = ({

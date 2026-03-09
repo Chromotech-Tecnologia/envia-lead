@@ -90,33 +90,89 @@ export const useFlowPersistence = (flowId: string) => {
     try {
       console.log('Salvando perguntas para flow:', flowId, questions);
       
-      // Deletar perguntas existentes
-      const { error: deleteError } = await supabase
+      // Se questions é undefined/null, não fazer nada (proteger contra state corrompido)
+      if (!questions) {
+        console.warn('Questions é undefined/null - ignorando para não apagar dados existentes');
+        return;
+      }
+
+      // Buscar perguntas existentes no banco
+      const { data: existingQuestions, error: fetchError } = await supabase
         .from('questions')
-        .delete()
+        .select('id')
         .eq('flow_id', flowId);
 
-      if (deleteError) {
-        console.error('Erro ao deletar perguntas existentes:', deleteError);
-        throw deleteError;
+      if (fetchError) {
+        console.error('Erro ao buscar perguntas existentes:', fetchError);
+        throw fetchError;
+      }
+
+      const existingIds = new Set((existingQuestions || []).map(q => q.id));
+      
+      // Separar perguntas existentes (UUID válido) de novas (id numérico do Date.now())
+      const isValidUUID = (id: any) => typeof id === 'string' && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      
+      const questionsToUpsert = questions.filter(q => isValidUUID(q.id) && existingIds.has(q.id));
+      const questionsToInsert = questions.filter(q => !isValidUUID(q.id) || !existingIds.has(q.id));
+      const currentIds = new Set(questions.filter(q => isValidUUID(q.id)).map(q => q.id));
+      const idsToDelete = [...existingIds].filter(id => !currentIds.has(id));
+
+      console.log('Upsert:', questionsToUpsert.length, 'Insert:', questionsToInsert.length, 'Delete:', idsToDelete.length);
+
+      // Deletar perguntas removidas
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('questions')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Erro ao deletar perguntas removidas:', deleteError);
+          throw deleteError;
+        }
+      }
+
+      // Atualizar perguntas existentes
+      for (const question of questionsToUpsert) {
+        const index = questions.indexOf(question);
+        const { error: updateError } = await supabase
+          .from('questions')
+          .update({
+            type: question.type || 'text',
+            title: question.title || 'Pergunta sem título',
+            placeholder: question.placeholder || null,
+            options: question.options ? JSON.stringify(question.options) : null,
+            required: question.required || false,
+            order_index: question.order ?? (index + 1),
+            variable_name: question.variable_name || null
+          })
+          .eq('id', question.id);
+
+        if (updateError) {
+          console.error('Erro ao atualizar pergunta:', updateError);
+          throw updateError;
+        }
       }
 
       // Inserir novas perguntas
-      if (questions && questions.length > 0) {
-        const questionsToInsert = questions.map((question, index) => ({
-          flow_id: flowId,
-          type: question.type || 'text',
-          title: question.title || 'Pergunta sem título',
-          placeholder: question.placeholder || null,
-          options: question.options ? JSON.stringify(question.options) : null,
-          required: question.required || false,
-          order_index: question.order || (index + 1),
-          variable_name: question.variable_name || null
-        }));
+      if (questionsToInsert.length > 0) {
+        const newQuestions = questionsToInsert.map((question, idx) => {
+          const globalIndex = questions.indexOf(question);
+          return {
+            flow_id: flowId,
+            type: question.type || 'text',
+            title: question.title || 'Pergunta sem título',
+            placeholder: question.placeholder || null,
+            options: question.options ? JSON.stringify(question.options) : null,
+            required: question.required || false,
+            order_index: question.order ?? (globalIndex + 1),
+            variable_name: question.variable_name || null
+          };
+        });
 
         const { error: insertError } = await supabase
           .from('questions')
-          .insert(questionsToInsert);
+          .insert(newQuestions);
         
         if (insertError) {
           console.error('Erro ao inserir perguntas:', insertError);

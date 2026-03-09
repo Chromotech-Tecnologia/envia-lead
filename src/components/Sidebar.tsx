@@ -30,6 +30,15 @@ interface SidebarProps {
 
 const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data } = await supabase.rpc('is_global_admin');
+      setIsGlobalAdmin(!!data);
+    };
+    checkAdmin();
+  }, []);
 
   const handleLogout = async () => {
     if (window.confirm('Tem certeza que deseja sair?')) {

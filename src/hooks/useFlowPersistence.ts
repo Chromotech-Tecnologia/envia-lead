@@ -109,12 +109,20 @@ export const useFlowPersistence = (flowId: string) => {
 
       const existingIds = new Set((existingQuestions || []).map(q => q.id));
       
-      // Separar perguntas existentes (UUID válido) de novas (id numérico do Date.now())
-      const isValidUUID = (id: any) => typeof id === 'string' && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-      
-      const questionsToUpsert = questions.filter(q => isValidUUID(q.id) && existingIds.has(q.id));
-      const questionsToInsert = questions.filter(q => !isValidUUID(q.id) || !existingIds.has(q.id));
-      const currentIds = new Set(questions.filter(q => isValidUUID(q.id)).map(q => q.id));
+      // Normalizar IDs para manter consistência entre UI e banco
+      const isValidUUID = (id: unknown) =>
+        typeof id === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      const normalizedQuestions = questions.map((question, index) => ({
+        ...question,
+        id: isValidUUID(question.id) ? question.id : crypto.randomUUID(),
+        order: question.order ?? (index + 1)
+      }));
+
+      const questionsToUpsert = normalizedQuestions.filter(q => existingIds.has(q.id));
+      const questionsToInsert = normalizedQuestions.filter(q => !existingIds.has(q.id));
+      const currentIds = new Set(normalizedQuestions.map(q => q.id));
       const idsToDelete = [...existingIds].filter(id => !currentIds.has(id));
 
       console.log('Upsert:', questionsToUpsert.length, 'Insert:', questionsToInsert.length, 'Delete:', idsToDelete.length);
@@ -134,16 +142,15 @@ export const useFlowPersistence = (flowId: string) => {
 
       // Atualizar perguntas existentes
       for (const question of questionsToUpsert) {
-        const index = questions.indexOf(question);
         const { error: updateError } = await supabase
           .from('questions')
           .update({
             type: question.type || 'text',
             title: question.title || 'Pergunta sem título',
             placeholder: question.placeholder || null,
-            options: question.options ? JSON.stringify(question.options) : null,
-            required: question.required || false,
-            order_index: question.order ?? (index + 1),
+            options: question.options ?? null,
+            required: question.required ?? false,
+            order_index: question.order,
             variable_name: question.variable_name || null
           })
           .eq('id', question.id);
@@ -156,19 +163,17 @@ export const useFlowPersistence = (flowId: string) => {
 
       // Inserir novas perguntas
       if (questionsToInsert.length > 0) {
-        const newQuestions = questionsToInsert.map((question, idx) => {
-          const globalIndex = questions.indexOf(question);
-          return {
-            flow_id: flowId,
-            type: question.type || 'text',
-            title: question.title || 'Pergunta sem título',
-            placeholder: question.placeholder || null,
-            options: question.options ? JSON.stringify(question.options) : null,
-            required: question.required || false,
-            order_index: question.order ?? (globalIndex + 1),
-            variable_name: question.variable_name || null
-          };
-        });
+        const newQuestions = questionsToInsert.map((question) => ({
+          id: question.id,
+          flow_id: flowId,
+          type: question.type || 'text',
+          title: question.title || 'Pergunta sem título',
+          placeholder: question.placeholder || null,
+          options: question.options ?? null,
+          required: question.required ?? false,
+          order_index: question.order,
+          variable_name: question.variable_name || null
+        }));
 
         const { error: insertError } = await supabase
           .from('questions')

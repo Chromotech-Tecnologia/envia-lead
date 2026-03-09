@@ -147,7 +147,7 @@ export const useFlowPersistence = (flowId: string) => {
         const { error: deleteError } = await supabase
           .from('questions')
           .delete()
-          .in('id', idsToDelete);
+          .in('id', idsToDelete as string[]);
 
         if (deleteError) {
           console.error('Erro ao deletar perguntas removidas:', deleteError);

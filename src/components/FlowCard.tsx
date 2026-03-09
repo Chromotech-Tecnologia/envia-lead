@@ -21,10 +21,12 @@ const FlowCard = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: FlowCar
     setShowPreview(!showPreview);
   };
 
+  const primaryColor = flow.primary_color || 'hsl(267 100% 50%)';
+
   return (
     <>
       <Card 
-        className="hover:shadow-lg transition-shadow duration-200"
+        className="glass-card hover:-translate-y-1 hover:shadow-3d-hover transition-all duration-300 group relative overflow-hidden"
         data-card="flow"
         style={{
           display: 'flex',
@@ -33,7 +35,13 @@ const FlowCard = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: FlowCar
           minHeight: '300px'
         }}
       >
-        <CardHeader className="pb-3">
+        {/* Top accent bar */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-1 rounded-t-lg"
+          style={{ background: `linear-gradient(90deg, ${primaryColor}, hsl(206 100% 50%))` }}
+        />
+
+        <CardHeader className="pb-3 pt-5">
           <FlowCardHeader
             flow={flow}
             onEdit={onEdit}

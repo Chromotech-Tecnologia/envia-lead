@@ -1,5 +1,4 @@
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -47,11 +46,11 @@ const FlowCardHeader = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: F
 
   return (
     <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg font-bold text-foreground mb-1 truncate">
           {flow.name}
         </h3>
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
           {flow.description || 'Sem descrição'}
         </p>
         
@@ -59,7 +58,7 @@ const FlowCardHeader = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: F
           <div className="flex items-center gap-2">
             {flow.primary_color && (
               <div 
-                className="w-4 h-4 rounded-full border border-gray-300"
+                className="w-5 h-5 rounded-lg border-2 border-white shadow-sm"
                 style={{ backgroundColor: flow.primary_color }}
                 title="Cor primária"
               />
@@ -67,9 +66,12 @@ const FlowCardHeader = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: F
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              {flow.is_active ? 'Ativo' : 'Inativo'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full animate-pulse-dot ${flow.is_active ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+              <span className={`text-xs font-medium ${flow.is_active ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {flow.is_active ? 'Ativo' : 'Inativo'}
+              </span>
+            </div>
             <Switch
               checked={flow.is_active}
               onCheckedChange={handleToggleActive}
@@ -80,11 +82,11 @@ const FlowCardHeader = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: F
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -mt-1">
             <MoreVertical className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-white">
+        <DropdownMenuContent align="end" className="bg-popover border-border shadow-3d">
           <DropdownMenuItem onClick={() => onEdit(flow.id)}>
             <Edit className="w-4 h-4 mr-2" />
             Editar
@@ -95,7 +97,7 @@ const FlowCardHeader = ({ flow, onEdit, onDelete, onDuplicate, onFlowUpdate }: F
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => onDelete(flow.id)}
-            className="text-red-600"
+            className="text-destructive focus:text-destructive"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Excluir

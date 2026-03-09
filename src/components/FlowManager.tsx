@@ -50,13 +50,11 @@ const FlowManager = () => {
     }
   };
 
-  // Filtrar fluxos
   const filteredFlows = flows.filter(flow => {
     const matchesSearch = flow.name.toLowerCase().includes(searchFilter.toLowerCase());
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && flow.is_active) ||
       (statusFilter === 'inactive' && !flow.is_active);
-    
     return matchesSearch && matchesStatus;
   });
 
@@ -77,43 +75,45 @@ const FlowManager = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando fluxos...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando fluxos...</p>
         </div>
       </div>
     );
   }
 
-  console.log('FlowManager renderizado - flows:', flows.length, 'loading:', loading);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fluxos</h1>
-          <p className="text-gray-600 mt-2">Gerencie seus fluxos de captura de leads</p>
+          <h1 className="text-3xl font-bold text-gradient-primary">Fluxos</h1>
+          <p className="text-muted-foreground mt-1">Gerencie seus fluxos de captura de leads</p>
         </div>
-        <Button onClick={handleCreateFlow} className="bg-purple-600 hover:bg-purple-700">
+        <Button 
+          onClick={handleCreateFlow} 
+          className="envia-lead-gradient hover:opacity-90 shadow-glow-primary rounded-xl px-6 text-primary-foreground"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Criar Fluxo
         </Button>
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center glass-card rounded-xl p-4 shadow-3d">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar por nome..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-xl border-border bg-background/50"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 rounded-xl border-border bg-background/50">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -136,18 +136,19 @@ const FlowManager = () => {
             display: 'grid',
             gap: '1.5rem',
             gridTemplateRows: '1fr',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))'
           }}
         >
-          {filteredFlows.map((flow) => (
-            <FlowCard
-              key={flow.id}
-              flow={flow}
-              onEdit={() => handleEditFlow(flow)}
-              onDelete={() => handleDeleteFlow(flow.id)}
-              onDuplicate={() => handleDuplicateFlow(flow.id)}
-              onFlowUpdate={() => window.location.reload()}
-            />
+          {filteredFlows.map((flow, index) => (
+            <div key={flow.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 80}ms` }}>
+              <FlowCard
+                flow={flow}
+                onEdit={() => handleEditFlow(flow)}
+                onDelete={() => handleDeleteFlow(flow.id)}
+                onDuplicate={() => handleDuplicateFlow(flow.id)}
+                onFlowUpdate={() => window.location.reload()}
+              />
+            </div>
           ))}
         </div>
       )}

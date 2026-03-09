@@ -35,21 +35,25 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 267 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-background: 260 60% 12%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 267 100% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 260 40% 20%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 260 30% 22%;
     --sidebar-ring: 267 100% 50%;
 
     /* Cores específicas do Envia Lead */
     --envia-lead-primary: 267 100% 50%;
     --envia-lead-secondary: 206 100% 50%;
     --envia-lead-accent: 285 100% 60%;
+    
+    /* Surface tokens */
+    --surface-glass: 0 0% 100% / 0.7;
+    --surface-elevated: 0 0% 100%;
   }
 
   .dark {
@@ -101,7 +105,53 @@
   }
 }
 
-/* Estilos específicos para o Envia Lead */
+/* ========== UTILITY CLASSES ========== */
+
+/* Glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* 3D Shadow Effects */
+.shadow-3d {
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-3d-hover {
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-glow-primary {
+  box-shadow: 0 8px 32px -8px hsl(267 100% 50% / 0.3);
+}
+
+/* Gradient text */
+.text-gradient-primary {
+  background: linear-gradient(135deg, hsl(267 100% 50%) 0%, hsl(206 100% 50%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Envia Lead specific gradients */
 .envia-lead-gradient {
   background: linear-gradient(135deg, hsl(var(--envia-lead-primary)) 0%, hsl(var(--envia-lead-secondary)) 100%);
 }
@@ -113,15 +163,124 @@
   background-clip: text;
 }
 
-/* Estilos específicos para cards de fluxo - com alta especificidade */
+/* Background patterns */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Animated gradient border */
+.border-gradient {
+  position: relative;
+}
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, hsl(267 100% 50% / 0.3), hsl(206 100% 50% / 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Metric icon containers */
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon-purple {
+  background: linear-gradient(135deg, hsl(267 100% 50% / 0.15), hsl(267 100% 50% / 0.05));
+  color: hsl(267 100% 50%);
+}
+
+.metric-icon-blue {
+  background: linear-gradient(135deg, hsl(206 100% 50% / 0.15), hsl(206 100% 50% / 0.05));
+  color: hsl(206 100% 50%);
+}
+
+.metric-icon-green {
+  background: linear-gradient(135deg, hsl(142 76% 36% / 0.15), hsl(142 76% 36% / 0.05));
+  color: hsl(142 76% 36%);
+}
+
+.metric-icon-amber {
+  background: linear-gradient(135deg, hsl(38 92% 50% / 0.15), hsl(38 92% 50% / 0.05));
+  color: hsl(38 92% 50%);
+}
+
+/* ========== ANIMATIONS ========== */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+
+/* ========== FLOW CARDS GRID ========== */
+
 .envialead-flow-cards-grid {
   display: grid !important;
   gap: 1.5rem !important;
   grid-template-rows: 1fr !important;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
 }
 
-/* Force card alignment with maximum specificity */
 .envialead-flow-cards-grid > div[data-card="flow"] {
   display: flex !important;
   flex-direction: column !important;
@@ -129,7 +288,6 @@
   min-height: 300px !important;
 }
 
-/* Force content layout */
 .envialead-flow-cards-grid > div[data-card="flow"] > div:last-child {
   display: flex !important;
   flex-direction: column !important;
@@ -137,12 +295,10 @@
   padding-top: 0 !important;
 }
 
-/* Force stats to take available space */
 .envialead-flow-cards-grid > div[data-card="flow"] > div:last-child > div:first-child {
   flex: 1 !important;
 }
 
-/* Force actions to bottom */
 .envialead-flow-cards-grid > div[data-card="flow"] > div:last-child > div:last-child {
   margin-top: auto !important;
   padding-top: 1rem !important;

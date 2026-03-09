@@ -86,11 +86,13 @@ export const useFlowPersistence = (flowId: string) => {
     }
   };
 
+  const ALLOWED_QUESTION_TYPES = ['text','email','phone','number','textarea','select','radio','bot_message','single','multiple'];
+
   const saveFlowQuestions = async (flowId: string, questions: any[]) => {
     try {
       console.log('Salvando perguntas para flow:', flowId, questions);
       
-      // Se questions é undefined/null, não fazer nada (proteger contra state corrompido)
+      // Se questions é undefined/null, não fazer nada
       if (!questions) {
         console.warn('Questions é undefined/null - ignorando para não apagar dados existentes');
         return;

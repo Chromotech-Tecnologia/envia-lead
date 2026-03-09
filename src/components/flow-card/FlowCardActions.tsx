@@ -25,7 +25,7 @@ const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCar
           onClick={handleVisualizarClick}
           variant="outline"
           size="sm"
-          className="flex-1"
+          className="flex-1 rounded-xl border-border hover:bg-muted/50 transition-all duration-200"
         >
           {showFloatingPreview ? (
             <>
@@ -43,7 +43,7 @@ const FlowCardActions = ({ flow, showPreview, onPreviewToggle, onEdit }: FlowCar
         <Button
           onClick={() => onEdit(flow.id)}
           size="sm"
-          className="flex-1 envia-lead-gradient hover:opacity-90"
+          className="flex-1 envia-lead-gradient hover:opacity-90 rounded-xl shadow-glow-primary hover:shadow-glow transition-all duration-200 text-primary-foreground"
         >
           <Edit className="w-4 h-4 mr-2" />
           Editar

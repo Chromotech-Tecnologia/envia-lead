@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -61,44 +60,77 @@ const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed 
 
   return (
     <div
-      className={`flex flex-col h-screen bg-white border-r border-gray-200 shadow-lg ${
+      className={`flex flex-col h-screen ${
         isCollapsed ? 'w-20' : 'w-64'
       } transition-all duration-300 ease-in-out overflow-y-auto`}
+      style={{
+        background: 'linear-gradient(180deg, hsl(260 60% 12%) 0%, hsl(240 40% 10%) 100%)',
+      }}
     >
+      {/* Header */}
       <div className="flex items-center justify-between p-4 flex-shrink-0">
         <Logo isCollapsed={isCollapsed} />
-        <Button variant="ghost" size="icon" onClick={toggleCollapse}>
-          {isCollapsed ? <Menu /> : <ChevronLeft />}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleCollapse}
+          className="text-white/70 hover:text-white hover:bg-white/10"
+        >
+          {isCollapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </div>
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/10 mb-2" />
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {menuItems.map((item) => (
           <NavLink
             key={item.label}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center space-x-3 p-2 rounded-md hover:bg-gray-200 transition-colors duration-200 ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative ${
                 isActive
-                  ? 'bg-gray-200 font-medium'
-                  : 'text-gray-600'
+                  ? 'bg-white/15 text-white font-medium shadow-lg shadow-black/10'
+                  : 'text-white/60 hover:text-white hover:bg-white/8'
               }`
             }
           >
-            <item.icon className="h-5 w-5" />
-            {!isCollapsed && <span>{item.label}</span>}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-primary" />
+                )}
+                <div className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-primary/20 text-primary-foreground' 
+                    : 'text-white/60 group-hover:text-white'
+                }`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                {!isCollapsed && <span className="text-sm">{item.label}</span>}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
       
-      <div className="px-2 pb-4 flex-shrink-0">
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/10 mb-2" />
+
+      {/* Logout */}
+      <div className="px-3 pb-4 flex-shrink-0">
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="w-full justify-start gap-3 text-red-400/80 hover:text-red-300 hover:bg-red-500/10 rounded-xl px-3 py-2.5"
         >
-          <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">Sair</span>}
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg">
+            <LogOut className="h-5 w-5" />
+          </div>
+          {!isCollapsed && <span className="text-sm">Sair</span>}
         </Button>
       </div>
     </div>

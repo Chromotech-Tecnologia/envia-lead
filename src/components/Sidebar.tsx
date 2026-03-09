@@ -7,11 +7,13 @@ import {
   Settings,
   ChevronLeft, 
   Menu,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import Logo from './Logo';
+import { useEffect, useState } from 'react';
 
 interface MenuItem {
   icon: any;
@@ -28,6 +30,15 @@ interface SidebarProps {
 
 const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data } = await supabase.rpc('is_global_admin');
+      setIsGlobalAdmin(!!data);
+    };
+    checkAdmin();
+  }, []);
 
   const handleLogout = async () => {
     if (window.confirm('Tem certeza que deseja sair?')) {
@@ -50,6 +61,7 @@ const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed 
     { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
     { icon: Users, label: 'Leads', path: '/leads' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
+    ...(isGlobalAdmin ? [{ icon: Shield, label: 'Admin', path: '/admin' }] : []),
   ];
 
   const toggleCollapse = () => {

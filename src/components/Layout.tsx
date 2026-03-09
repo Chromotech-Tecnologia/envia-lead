@@ -1,6 +1,7 @@
 
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import AdminViewBanner from './AdminViewBanner';
 import { useState } from 'react';
 
 const Layout = () => {
@@ -21,6 +22,7 @@ const Layout = () => {
           background: 'linear-gradient(135deg, hsl(220 30% 97%) 0%, hsl(240 20% 96%) 50%, hsl(267 30% 96%) 100%)',
         }}
       >
+        <AdminViewBanner />
         <div className="flex-1 overflow-auto bg-grid-pattern">
           <div className="p-8">
             <Outlet />

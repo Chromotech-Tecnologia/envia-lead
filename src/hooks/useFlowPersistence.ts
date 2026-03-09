@@ -86,13 +86,28 @@ export const useFlowPersistence = (flowId: string) => {
     }
   };
 
+  const ALLOWED_QUESTION_TYPES = ['text','email','phone','number','textarea','select','radio','bot_message','single','multiple'];
+
   const saveFlowQuestions = async (flowId: string, questions: any[]) => {
     try {
       console.log('Salvando perguntas para flow:', flowId, questions);
       
-      // Se questions é undefined/null, não fazer nada (proteger contra state corrompido)
+      // Se questions é undefined/null, não fazer nada
       if (!questions) {
         console.warn('Questions é undefined/null - ignorando para não apagar dados existentes');
+        return;
+      }
+
+      // Validar tipos antes de salvar
+      const invalidQuestions = questions.filter(q => !ALLOWED_QUESTION_TYPES.includes(q.type));
+      if (invalidQuestions.length > 0) {
+        const invalidTypes = invalidQuestions.map(q => q.type).join(', ');
+        console.error('Tipos de pergunta inválidos:', invalidTypes);
+        toast({
+          variant: "destructive",
+          title: "Tipo de pergunta não suportado",
+          description: `Tipos inválidos encontrados: ${invalidTypes}`,
+        });
         return;
       }
 
@@ -132,7 +147,7 @@ export const useFlowPersistence = (flowId: string) => {
         const { error: deleteError } = await supabase
           .from('questions')
           .delete()
-          .in('id', idsToDelete);
+          .in('id', idsToDelete as string[]);
 
         if (deleteError) {
           console.error('Erro ao deletar perguntas removidas:', deleteError);

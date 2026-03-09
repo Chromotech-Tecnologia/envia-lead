@@ -98,8 +98,20 @@ export const useFlowPersistence = (flowId: string) => {
         return;
       }
 
+      // Validar tipos antes de salvar
+      const invalidQuestions = questions.filter(q => !ALLOWED_QUESTION_TYPES.includes(q.type));
+      if (invalidQuestions.length > 0) {
+        const invalidTypes = invalidQuestions.map(q => q.type).join(', ');
+        console.error('Tipos de pergunta inválidos:', invalidTypes);
+        toast({
+          variant: "destructive",
+          title: "Tipo de pergunta não suportado",
+          description: `Tipos inválidos encontrados: ${invalidTypes}`,
+        });
+        return;
+      }
+
       // Buscar perguntas existentes no banco
-      const { data: existingQuestions, error: fetchError } = await supabase
         .from('questions')
         .select('id')
         .eq('flow_id', flowId);

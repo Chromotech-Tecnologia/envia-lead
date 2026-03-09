@@ -113,6 +113,7 @@ export const useFlowPersistence = (flowId: string) => {
 
       // Buscar perguntas existentes no banco
       const { data: existingQuestions, error: fetchError } = await supabase
+        .from('questions')
         .select('id')
         .eq('flow_id', flowId);
 

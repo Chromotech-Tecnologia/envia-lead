@@ -28,25 +28,25 @@ const PositionSettings = ({ flowData, setFlowData }: PositionSettingsProps) => {
   ];
 
   const updateButtonPosition = (position: string) => {
-    setFlowData({ ...flowData, button_position: position });
+    setFlowData(prev => ({ ...prev, button_position: position }));
   };
 
   const updateChatPosition = (position: string) => {
-    setFlowData({ ...flowData, chat_position: position });
+    setFlowData(prev => ({ ...prev, chat_position: position }));
   };
 
   const updateButtonOffset = (axis: 'x' | 'y', value: number) => {
     const key = `button_offset_${axis}`;
-    setFlowData({ ...flowData, [key]: value });
+    setFlowData(prev => ({ ...prev, [key]: value }));
   };
 
   const updateChatOffset = (axis: 'x' | 'y', value: number) => {
     const key = `chat_offset_${axis}`;
-    setFlowData({ ...flowData, [key]: value });
+    setFlowData(prev => ({ ...prev, [key]: value }));
   };
 
   const updateDimensions = (key: string, value: number) => {
-    setFlowData({ ...flowData, [key]: value });
+    setFlowData(prev => ({ ...prev, [key]: value }));
   };
 
   const PositionGrid = ({ currentValue, onSelect, title }: { currentValue: string; onSelect: (value: string) => void; title: string }) => (

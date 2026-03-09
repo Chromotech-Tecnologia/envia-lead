@@ -19,10 +19,12 @@ interface FlowEditorProps {
 const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndExit, onExit, onPreview }: FlowEditorProps) => {
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [initializedFlowId, setInitializedFlowId] = useState<string | null>(null);
 
-  // Inicializar dados do fluxo quando um fluxo for selecionado para edição
+  // Inicializar dados do fluxo quando um fluxo for selecionado para edição (apenas uma vez por fluxo)
   useEffect(() => {
-    if (flow && isEditing) {
+    if (flow && isEditing && flow.id !== initializedFlowId) {
+      setInitializedFlowId(flow.id);
       setFlowData({
         name: flow.name || 'Novo Fluxo',
         description: flow.description || '',
@@ -61,7 +63,7 @@ const FlowEditor = ({ flow, isEditing, flowData, setFlowData, onSave, onSaveAndE
         showWhatsappButton: flow.show_whatsapp_button !== false
       });
     }
-  }, [flow, isEditing, setFlowData]);
+  }, [flow, isEditing]);
 
   const handleSave = async () => {
     setIsSaving(true);

@@ -7,11 +7,13 @@ import {
   Settings,
   ChevronLeft, 
   Menu,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import Logo from './Logo';
+import { useEffect, useState } from 'react';
 
 interface MenuItem {
   icon: any;

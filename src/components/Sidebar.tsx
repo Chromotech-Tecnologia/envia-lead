@@ -61,6 +61,7 @@ const Sidebar = ({ activeTab, setActiveTab, isCollapsed = false, setIsCollapsed 
     { icon: MessageSquare, label: 'Fluxos', path: '/flows' },
     { icon: Users, label: 'Leads', path: '/leads' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
+    ...(isGlobalAdmin ? [{ icon: Shield, label: 'Admin', path: '/admin' }] : []),
   ];
 
   const toggleCollapse = () => {

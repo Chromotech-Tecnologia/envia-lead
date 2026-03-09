@@ -1,0 +1,1 @@
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS trial_end_date TIMESTAMPTZ NULL;

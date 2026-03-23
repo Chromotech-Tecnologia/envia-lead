@@ -5,29 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Verifica se a URL atual corresponde à URL permitida (hostname + path)
-function urlMatches(currentUrl: string, allowedUrl: string): boolean {
-  try {
-    if (allowedUrl === '*' || allowedUrl.startsWith('*.')) return true;
-    
-    const normalizedAllowed = allowedUrl.startsWith('http') ? allowedUrl : 'https://' + allowedUrl;
-    const allowed = new URL(normalizedAllowed);
-    const current = new URL(currentUrl);
-    
-    if (allowed.hostname !== current.hostname) return false;
-    
-    const allowedPath = allowed.pathname.replace(/\/+$/, '');
-    if (allowedPath && allowedPath !== '') {
-      const currentPath = current.pathname.replace(/\/+$/, '');
-      return currentPath === allowedPath || currentPath.startsWith(allowedPath + '/');
-    }
-    
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -36,6 +13,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const companyId = url.searchParams.get('company');
+    const clientUrl = url.searchParams.get('url'); // URL passada pelo client-side JS
 
     if (!companyId) {
       return new Response(
@@ -44,13 +22,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Se não recebeu a URL do cliente, retornar um script que detecta a URL e faz a chamada real
+    if (!clientUrl) {
+      const loaderBootstrap = `
+(function() {
+  var currentUrl = encodeURIComponent(window.location.href);
+  var script = document.createElement('script');
+  script.src = '${url.origin}${url.pathname}?company=${companyId}&url=' + currentUrl;
+  script.async = true;
+  document.head.appendChild(script);
+})();
+`;
+      return new Response(loaderBootstrap, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/javascript' }
+      });
+    }
+
+    // Agora temos a URL real do cliente
+    const decodedUrl = decodeURIComponent(clientUrl);
+    console.log(`[envialead-loader] Company: ${companyId}, URL: ${decodedUrl}`);
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const currentUrl = req.headers.get('referer') || req.headers.get('origin');
-    
-    console.log(`[envialead-loader] Company: ${companyId}, URL: ${currentUrl}`);
 
     // Buscar todos os fluxos ativos da empresa
     const { data: flows, error: flowsError } = await supabase
@@ -74,17 +68,6 @@ Deno.serve(async (req) => {
       .select('flow_id, url')
       .in('flow_id', flowIds);
 
-    // Domínios da plataforma (sempre autorizados)
-    const platformDomains = ['envialead.com.br', 'envialead.lovable.app', 'localhost', '127.0.0.1'];
-    const isPlatformDomain = currentUrl ? platformDomains.some(domain => {
-      try {
-        const u = new URL(currentUrl);
-        return u.hostname.includes(domain) || domain.includes(u.hostname);
-      } catch {
-        return currentUrl.includes(domain);
-      }
-    }) : false;
-
     // Encontrar o fluxo que corresponde à URL atual
     let matchedFlowId: string | null = null;
     let bestMatchLength = -1;
@@ -92,23 +75,13 @@ Deno.serve(async (req) => {
     for (const flow of flows) {
       const urls = (flowUrls || []).filter(u => u.flow_id === flow.id).map(u => u.url);
       
-      // Se o fluxo não tem URLs configuradas, pular (não exibir em qualquer página)
-      if (urls.length === 0) {
-        // Se é domínio da plataforma e não há outro match, usar este como fallback
-        if (isPlatformDomain && !matchedFlowId) {
-          matchedFlowId = flow.id;
-        }
-        continue;
-      }
+      if (urls.length === 0) continue;
 
       const validUrls = urls.filter(u => u && u.trim() !== '');
       if (validUrls.length === 0) continue;
 
       for (const allowedUrl of validUrls) {
-        if (!currentUrl) continue;
-        
-        if (urlMatches(currentUrl, allowedUrl)) {
-          // Calcular especificidade: URLs com path mais longo são mais específicas
+        if (urlMatches(decodedUrl, allowedUrl)) {
           try {
             const normalized = allowedUrl.startsWith('http') ? allowedUrl : 'https://' + allowedUrl;
             const pathLength = new URL(normalized).pathname.replace(/\/+$/, '').length;
@@ -124,16 +97,15 @@ Deno.serve(async (req) => {
     }
 
     if (!matchedFlowId) {
-      console.log(`[envialead-loader] Nenhum fluxo correspondente para URL: ${currentUrl}`);
+      console.log(`[envialead-loader] Nenhum fluxo correspondente para URL: ${decodedUrl}`);
       return new Response(
         'console.log("[EnviaLead Loader] Nenhum fluxo correspondente para esta página");',
         { headers: { ...corsHeaders, 'Content-Type': 'text/javascript' } }
       );
     }
 
-    console.log(`[envialead-loader] Fluxo encontrado: ${matchedFlowId} para URL: ${currentUrl}`);
+    console.log(`[envialead-loader] Fluxo encontrado: ${matchedFlowId} para URL: ${decodedUrl}`);
 
-    // Injetar o script do widget com o flow_id correspondente
     const widgetUrl = `${supabaseUrl}/functions/v1/envialead-widget?flow=${matchedFlowId}`;
     
     const loaderScript = `
@@ -158,3 +130,25 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function urlMatches(currentUrl: string, allowedUrl: string): boolean {
+  try {
+    if (allowedUrl === '*' || allowedUrl.startsWith('*.')) return true;
+    
+    const normalizedAllowed = allowedUrl.startsWith('http') ? allowedUrl : 'https://' + allowedUrl;
+    const allowed = new URL(normalizedAllowed);
+    const current = new URL(currentUrl);
+    
+    if (allowed.hostname !== current.hostname) return false;
+    
+    const allowedPath = allowed.pathname.replace(/\/+$/, '');
+    if (allowedPath && allowedPath !== '') {
+      const currentPath = current.pathname.replace(/\/+$/, '');
+      return currentPath === allowedPath || currentPath.startsWith(allowedPath + '/');
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
+}

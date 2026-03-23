@@ -31,10 +31,13 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   };
 
   const generateIntegrationCode = () => {
-    // Usar o ID real do fluxo diretamente
     const realFlowId = flow?.id;
-    
     return `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-widget?flow=${realFlowId}'></script>`;
+  };
+
+  const generateCompanyCode = () => {
+    const companyId = flow?.company_id || flowData?.company_id;
+    return `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-loader?company=${companyId}'></script>`;
   };
 
   const handleCopyCode = async () => {

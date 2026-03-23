@@ -72,9 +72,24 @@ Deno.serve(async (req) => {
       const isAllowed = allowedUrls.some(allowedUrl => {
         try {
           if (allowedUrl === '*' || allowedUrl.startsWith('*.')) return true;
-          const allowed = new URL(allowedUrl);
+          
+          // Normalizar a URL permitida
+          const normalizedAllowed = allowedUrl.startsWith('http') ? allowedUrl : 'https://' + allowedUrl;
+          const allowed = new URL(normalizedAllowed);
           const current = new URL(currentUrl);
-          return allowed.hostname === current.hostname;
+          
+          // Comparar hostname
+          if (allowed.hostname !== current.hostname) return false;
+          
+          // Se a URL permitida tem path (além de /), comparar o path também
+          const allowedPath = allowed.pathname.replace(/\/+$/, '');
+          if (allowedPath && allowedPath !== '') {
+            const currentPath = current.pathname.replace(/\/+$/, '');
+            return currentPath === allowedPath || currentPath.startsWith(allowedPath + '/');
+          }
+          
+          // Se só tem domínio (sem path), aceitar qualquer página
+          return true;
         } catch {
           return false;
         }

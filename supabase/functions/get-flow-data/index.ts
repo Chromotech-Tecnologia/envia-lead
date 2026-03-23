@@ -118,16 +118,29 @@ Deno.serve(async (req) => {
     } else if (allowedUrls.length > 0 && currentUrl) {
       const isAllowed = allowedUrls.some(allowedUrl => {
         try {
-          // Suporte a wildcards
           if (allowedUrl === '*' || allowedUrl.startsWith('*.')) {
             console.log(`[get-flow-data] Wildcard encontrado: ${allowedUrl}`);
             return true;
           }
           
-          const allowed = new URL(allowedUrl);
+          const normalizedAllowed = allowedUrl.startsWith('http') ? allowedUrl : 'https://' + allowedUrl;
+          const allowed = new URL(normalizedAllowed);
           const current = new URL(currentUrl);
-          console.log(`[get-flow-data] Verificando: ${allowed.hostname} vs ${current.hostname}`);
-          return allowed.hostname === current.hostname;
+          
+          // Comparar hostname
+          if (allowed.hostname !== current.hostname) return false;
+          
+          // Se a URL permitida tem path (além de /), comparar o path também
+          const allowedPath = allowed.pathname.replace(/\/+$/, '');
+          if (allowedPath && allowedPath !== '') {
+            const currentPath = current.pathname.replace(/\/+$/, '');
+            console.log(`[get-flow-data] Verificando path: ${currentPath} vs ${allowedPath}`);
+            return currentPath === allowedPath || currentPath.startsWith(allowedPath + '/');
+          }
+          
+          // Se só tem domínio, aceitar qualquer página
+          console.log(`[get-flow-data] Domínio autorizado (sem path): ${allowed.hostname}`);
+          return true;
         } catch {
           return false;
         }

@@ -12,7 +12,6 @@ interface IntegrationCodeProps {
 const IntegrationCode = ({ flowId }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
 
-  // Usar o ID real do fluxo diretamente
   const integrationCode = `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-widget?flow=${flowId}'></script>`;
 
   const handleCopy = async () => {

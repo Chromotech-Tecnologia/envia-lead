@@ -15,6 +15,7 @@ interface IntegrationCodeProps {
 
 const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
+  const [copiedCompany, setCopiedCompany] = useState(false);
   const { toast } = useToast();
   const { updateFlow } = useFlowPersistence(flow?.id || '');
   
@@ -31,10 +32,13 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   };
 
   const generateIntegrationCode = () => {
-    // Usar o ID real do fluxo diretamente
     const realFlowId = flow?.id;
-    
     return `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-widget?flow=${realFlowId}'></script>`;
+  };
+
+  const generateCompanyCode = () => {
+    const companyId = flow?.company_id || flowData?.company_id;
+    return `<script src='https://fuzkdrkhvmaimpgzvimq.supabase.co/functions/v1/envialead-loader?company=${companyId}'></script>`;
   };
 
   const handleCopyCode = async () => {
@@ -305,6 +309,55 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Company-wide Code Card (Recommended) */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-green-600" />
+            Código Único por Conta
+            <Badge className="bg-green-500 text-white text-xs">Recomendado</Badge>
+          </CardTitle>
+          <CardDescription>
+            Cole uma única vez no seu site — o sistema detecta automaticamente qual fluxo exibir baseado na URL da página
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
+              <code>{generateCompanyCode()}</code>
+            </pre>
+            <Button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(generateCompanyCode());
+                  setCopiedCompany(true);
+                  toast({ title: "Código copiado!", description: "Código da empresa copiado para a área de transferência." });
+                  setTimeout(() => setCopiedCompany(false), 2000);
+                } catch { 
+                  toast({ variant: "destructive", title: "Erro ao copiar" });
+                }
+              }}
+              size="sm"
+              className="absolute top-2 right-2 bg-green-600 hover:bg-green-700"
+              disabled={!flow}
+            >
+              {copiedCompany ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+              {copiedCompany ? "Copiado!" : "Copiar"}
+            </Button>
+          </div>
+
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-medium text-green-900 mb-2">✅ Vantagens:</h4>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li>• <strong>Um código para tudo:</strong> cole uma vez e funciona para todos os fluxos</li>
+              <li>• <strong>Automático:</strong> detecta a URL e carrega o fluxo correto</li>
+              <li>• <strong>Sem retrabalho:</strong> crie novos fluxos sem alterar o site</li>
+              <li>• <strong>Específico:</strong> exibe apenas na página configurada na aba URLs</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
 

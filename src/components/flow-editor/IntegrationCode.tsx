@@ -15,6 +15,7 @@ interface IntegrationCodeProps {
 
 const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
   const [copied, setCopied] = useState(false);
+  const [copiedCompany, setCopiedCompany] = useState(false);
   const { toast } = useToast();
   const { updateFlow } = useFlowPersistence(flow?.id || '');
   

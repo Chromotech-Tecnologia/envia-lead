@@ -360,7 +360,6 @@ const IntegrationCode = ({ flow, flowData }: IntegrationCodeProps) => {
           </div>
         </CardContent>
       </Card>
-      </Card>
 
       {/* Flow Configuration Summary */}
       <Card>
